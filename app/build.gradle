@@ -41,4 +41,10 @@ dependencies {
     implementation libs.annotation
     implementation libs.room.runtime
     annotationProcessor libs.room.compiler
+    implementation libs.annotation.v110
+    implementation libs.okhttp.v4120
+    implementation libs.android
+    implementation "io.github.webrtc-sdk:android:137.7151.05"
+
+
 }

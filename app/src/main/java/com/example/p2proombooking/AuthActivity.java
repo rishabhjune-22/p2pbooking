@@ -9,8 +9,6 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 public class AuthActivity extends AppCompatActivity {
@@ -20,10 +18,6 @@ public class AuthActivity extends AppCompatActivity {
     private TextView tvToggle, tvMsg;
 
     private boolean isSignup = false;
-
-    // TEMP (will replace with Room DB)
-    private static final Map<String, String> userPass = new HashMap<>();
-    private static final Map<String, String> userIdMap = new HashMap<>(); // username -> userId
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +50,10 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void onPrimary() {
+
         AppDatabase db = AppDatabase.getInstance(this);
-        String username = etUser.getText().toString().trim();
+
+        String username = etUser.getText().toString().trim().toLowerCase();
         String pass = etPass.getText().toString();
 
         if (username.isEmpty() || pass.isEmpty()) {
@@ -69,6 +65,12 @@ public class AuthActivity extends AppCompatActivity {
 
         if (isSignup) {
 
+            String displayName = etName.getText().toString().trim();
+            if (displayName.isEmpty()) {
+                tvMsg.setText("Enter your name.");
+                return;
+            }
+
             if (db.userDao().getByUsername(username) != null) {
                 tvMsg.setText("User already exists.");
                 return;
@@ -78,43 +80,49 @@ public class AuthActivity extends AppCompatActivity {
             byte[] hash = PasswordUtils.hashPassword(pass.toCharArray(), salt);
 
             UserEntity user = new UserEntity();
-            user.userId = UUID.randomUUID().toString();
+            user.userId = UUID.randomUUID().toString(); // immutable internal ID (UUID)
             user.username = username;
-            user.displayName = etName.getText().toString().trim();
+            user.displayName = displayName;
             user.passwordHash = hash;
             user.salt = salt;
             user.createdAt = System.currentTimeMillis();
 
             db.userDao().insert(user);
 
-            session.setLoggedInUserId(user.userId);
+            // session
+            session.setLoggedIn(true);
+            session.setActiveUserId(user.userId);
+            session.setDisplayName(user.displayName); // optional cache for UI
 
             goToHome();
+
         } else {
 
             UserEntity user = db.userDao().getByUsername(username);
-
             if (user == null) {
                 tvMsg.setText("User not found.");
                 return;
             }
 
             byte[] inputHash = PasswordUtils.hashPassword(pass.toCharArray(), user.salt);
-
             if (!PasswordUtils.verify(user.passwordHash, inputHash)) {
                 tvMsg.setText("Wrong password.");
                 return;
             }
 
-            session.setLoggedInUserId(user.userId);
+            // session
+            session.setLoggedIn(true);
+            session.setActiveUserId(user.userId);
+            session.setDisplayName(user.displayName); // optional cache
+
             goToHome();
         }
     }
+
     private void goToHome() {
         Intent i = new Intent(this, HomeActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
     }
-
 }

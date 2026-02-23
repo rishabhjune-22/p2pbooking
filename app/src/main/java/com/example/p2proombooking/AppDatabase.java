@@ -1,13 +1,24 @@
 package com.example.p2proombooking;
+
 import android.content.Context;
+
 import androidx.annotation.NonNull;
 import androidx.room.Database;
 import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
-import java.util.Arrays;
 
-@Database(entities = {UserEntity.class, RoomEntity.class, BookingEntity.class}, version = 3, exportSchema = false)
+@Database(
+        entities = {
+                UserEntity.class,
+                RoomEntity.class,
+                BookingEntity.class,
+                BookingConflictEntity.class,
+                PeerStateEntity.class      // ✅ REQUIRED for sync
+        },
+        version = 5,
+        exportSchema = false
+)
 public abstract class AppDatabase extends RoomDatabase {
 
     private static volatile AppDatabase INSTANCE;
@@ -15,6 +26,8 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract UserDao userDao();
     public abstract RoomDao roomDao();
     public abstract BookingDao bookingDao();
+    public abstract BookingConflictDao bookingConflictDao();
+    public abstract PeerStateDao peerStateDao();
 
     public static AppDatabase getInstance(Context context) {
         if (INSTANCE == null) {
@@ -25,8 +38,8 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "secure_booking_db"
                             )
-                            .allowMainThreadQueries() // demo only
-                            .addCallback(prepopulateRoomsCallback(context.getApplicationContext()))
+                            .allowMainThreadQueries()   // demo only
+                            .addCallback(seedRoomsCallback())
                             .fallbackToDestructiveMigration()
                             .build();
                 }
@@ -34,17 +47,42 @@ public abstract class AppDatabase extends RoomDatabase {
         }
         return INSTANCE;
     }
-    private static Callback prepopulateRoomsCallback(Context appCtx) {
+
+    /**
+     * Seeds default rooms safely without recursive getInstance()
+     */
+    private static Callback seedRoomsCallback() {
         return new Callback() {
             @Override
             public void onCreate(@NonNull SupportSQLiteDatabase db) {
                 super.onCreate(db);
 
                 new Thread(() -> {
-                    // IMPORTANT: don't rely on INSTANCE being ready here
-                    AppDatabase database = AppDatabase.getInstance(appCtx);
+                    try {
+                        java.util.List<RoomEntity> rooms = RoomSeed.buildDefaultRooms();
+                        if (rooms == null || rooms.isEmpty()) return;
 
-                    database.roomDao().insertAll(RoomSeed.buildDefaultRooms());
+                        db.beginTransaction();
+                        try {
+                            for (RoomEntity r : rooms) {
+                                db.execSQL(
+                                        "INSERT OR IGNORE INTO rooms(roomId, building, number, suffix, displayName) VALUES(?,?,?,?,?)",
+                                        new Object[]{
+                                                r.roomId,
+                                                r.building,
+                                                r.number,
+                                                r.suffix,
+                                                r.displayName
+                                        }
+                                );
+                            }
+                            db.setTransactionSuccessful();
+                        } finally {
+                            db.endTransaction();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }).start();
             }
         };

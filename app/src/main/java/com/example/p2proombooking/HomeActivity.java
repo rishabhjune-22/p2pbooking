@@ -2,93 +2,479 @@ package com.example.p2proombooking;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.p2proombooking.AppDatabase;
-import com.example.p2proombooking.BookingEntity;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import androidx.appcompat.app.AppCompatActivity;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class HomeActivity extends AppCompatActivity {
 
+    private static final String TAG_RTC = "RTC";
+    private static final String TAG_SYNC = "SYNC";
+    private static final String WS_URL  = "ws://10.50.42.114:8080/ws";
+
     private SessionManager session;
+    private AppDatabase db;
+
+    private SignallingClient signalling;
+    private WebRtcPeer peer;
+    private SyncProtocol syncProtocol;
+
+    private String myUserId;
+    private String connectedPeerUserId;
+
+    private TextView tvSyncStatus;
+    private SwitchCompat swShowCanceled;
+    private BookingAdapter adapter;
+    private RecyclerView rv;
+
+    private final Map<String, List<JSONObject>> pendingIce = new HashMap<>();
+    private final ExecutorService io = Executors.newSingleThreadExecutor();
+    private final Handler main = new Handler(Looper.getMainLooper());
+
+    private LiveData<List<BookingEntity>> liveSource;
+    private SyncBus.Listener syncBusListener;
+
+    // Connection state
+    private volatile boolean iceConnected = false;
+    private volatile boolean dcOpen = false;
+
+    // IMPORTANT: to avoid killing first-time setup, only treat stale if we once had a working DC
+    private volatile boolean everDcOpen = false;
+
+    // if local update happens while DC not ready, sync later
+    private volatile boolean localDirty = false;
+
+    // Reconnect backoff
+    private volatile boolean reconnectScheduled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
-        RecyclerView rv = findViewById(R.id.rvBookings);
-        BookingAdapter adapter = new BookingAdapter();
-        rv.setLayoutManager(new LinearLayoutManager(this));
-        rv.setAdapter(adapter);
-
-// load bookings
-        loadBookings(adapter);
-
-
-
         session = new SessionManager(this);
+        db = AppDatabase.getInstance(this);
 
-        TextView tvUserInfo = findViewById(R.id.tvUserInfo);
-        TextView tvSyncStatus = findViewById(R.id.tvSyncStatus);
-        Button btnSyncNow = findViewById(R.id.btnSyncNow);
-        Button btnNewBooking = findViewById(R.id.btnNewBooking);
-        Button btnLogout = findViewById(R.id.btnLogout);
-
-        btnNewBooking.setOnClickListener(v -> {
-            startActivity(new Intent(this, CreateBookingActivity.class));
-        });
-
-        // If someone somehow opens Home without login, kick to Auth
-        String userId = session.getLoggedInUserId();
-        if (userId == null) {
+        myUserId = session.getActiveUserId();
+        if (myUserId == null) {
             goToAuthAndClearBackstack();
             return;
         }
 
-        // Show session info (demo)
+        TextView tvUserInfo = findViewById(R.id.tvUserInfo);
+        tvSyncStatus = findViewById(R.id.tvSyncStatus);
+        swShowCanceled = findViewById(R.id.swShowCanceled);
+
+        Button btnNewBooking = findViewById(R.id.btnNewBooking);
+        Button btnLogout = findViewById(R.id.btnLogout);
+
         String deviceId = session.getOrCreateDeviceId();
-        tvUserInfo.setText("Logged in as: " + userId + "\nDevice: " + deviceId);
+        tvUserInfo.setText(
+                "Name: " + session.getDisplayName()
+                        + "\nUserId: " + myUserId
+                        + "\nDevice: " + deviceId
+        );
+        tvSyncStatus.setText("Signal: Connecting...");
 
-        // Demo sync status (we’ll wire real WebRTC later)
-        tvSyncStatus.setText("Sync Status: Offline (demo)");
+        // RecyclerView
+        rv = findViewById(R.id.rvBookings);
+        adapter = new BookingAdapter(
 
-        btnSyncNow.setOnClickListener(v ->
-                Toast.makeText(this, "Sync will be added after local DB + bookings.", Toast.LENGTH_SHORT).show()
+                // Cancel
+                booking -> io.execute(() -> {
+                    String canceledBy = session.getActiveUserId();
+                    if (canceledBy == null) {
+                        runOnUiThread(this::goToAuthAndClearBackstack);
+                        return;
+                    }
+
+                    db.bookingDao().cancelBooking(
+                            booking.bookingId,
+                            canceledBy,
+                            System.currentTimeMillis()
+                    );
+
+                    SyncBus.notifyLocalChange();
+
+                    runOnUiThread(() ->
+                            Toast.makeText(this, "Booking canceled", Toast.LENGTH_SHORT).show()
+                    );
+                }),
+
+                // Edit / Resolve
+                booking -> {
+                    Intent i;
+                    if (BookingConstants.STATUS_CONFLICTED.equalsIgnoreCase(booking.status)) {
+                        i = new Intent(this, ResolveConflictActivity.class);
+                        i.putExtra(ResolveConflictActivity.EXTRA_BOOKING_ID, booking.bookingId);
+                    } else {
+                        i = new Intent(this, EditBookingActivity.class);
+                        i.putExtra(EditBookingActivity.EXTRA_BOOKING_ID, booking.bookingId);
+                    }
+                    startActivity(i);
+                }
         );
 
+        rv.setLayoutManager(new LinearLayoutManager(this));
+        rv.setAdapter(adapter);
+
+        // LiveData observe
+        swShowCanceled.setOnCheckedChangeListener((btn, checked) -> observeBookings(checked));
+        observeBookings(false);
+
+        btnNewBooking.setOnClickListener(v ->
+                startActivity(new Intent(this, CreateBookingActivity.class))
+        );
 
         btnLogout.setOnClickListener(v -> {
             session.logout();
             goToAuthAndClearBackstack();
         });
+
+        // SyncBus listener
+        syncBusListener = new SyncBus.Listener() {
+            @Override public void onLocalDbChanged() {}
+
+            @Override
+            public void onLocalChange() {
+                localDirty = true;
+                Log.d(TAG_SYNC, "Local change -> dirty=true, protocol=" + (syncProtocol != null));
+
+                // if protocol ready, poke immediately
+                if (syncProtocol != null && dcOpen && peer != null && peer.isDataChannelOpen()) {
+                    syncProtocol.sendPoke();
+                    localDirty = false;
+                    Log.d(TAG_SYNC, "Poke sent -> dirty=false");
+                } else {
+                    Log.d(TAG_SYNC, "DC not ready -> will sync on next DC OPEN");
+                }
+            }
+
+            @Override
+            public void onRemoteChange() {
+                Log.d(TAG_SYNC, "Remote change applied (LiveData will refresh)");
+            }
+        };
+        SyncBus.addListener(syncBusListener);
+
+        // Start signalling
+        startSignalling(WS_URL);
+    }
+
+    private void observeBookings(boolean showCanceled) {
+        if (liveSource != null) liveSource.removeObservers(this);
+
+        liveSource = showCanceled
+                ? db.bookingDao().observeAllIncludingCanceled()
+                : db.bookingDao().observeAllActive();
+
+        liveSource.observe(this, adapter::submit);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        if (syncBusListener != null) {
+            SyncBus.removeListener(syncBusListener);
+            syncBusListener = null;
+        }
+
+        io.shutdownNow();
+        safeClosePeer();
+        syncProtocol = null;
+    }
+
+    // -----------------------------
+    // SAFE close + state reset
+    // -----------------------------
+    private void safeClosePeer() {
+        try { if (syncProtocol != null) syncProtocol.close(); } catch (Exception ignored) {}
+        syncProtocol = null;
+
+        try { if (peer != null) peer.close(); } catch (Exception ignored) {}
+        peer = null;
+
+        connectedPeerUserId = null;
+        pendingIce.clear();
+
+        iceConnected = false;
+        dcOpen = false;
+        reconnectScheduled = false;
     }
 
     private void goToAuthAndClearBackstack() {
         Intent i = new Intent(this, AuthActivity.class);
-        // Clear the back stack so back won't return to Home
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
     }
 
-    private void loadBookings(BookingAdapter adapter) {
-        List<BookingEntity> list = AppDatabase.getInstance(this).bookingDao().getAll();
-        adapter.submit(list);
+    // -----------------------------
+    // Reconnect helper (single-shot)
+    // -----------------------------
+    private void scheduleReconnect(String reason) {
+        if (reconnectScheduled) return;
+        reconnectScheduled = true;
+
+        final String target = connectedPeerUserId;
+
+        Log.w(TAG_RTC, "scheduleReconnect reason=" + reason + " target=" + target);
+
+        // Close current peer safely
+        safeClosePeer();
+
+        // Try reconnect a bit later
+        main.postDelayed(() -> {
+            reconnectScheduled = false;
+            if (signalling != null && target != null) {
+                connectToPeerIfNeeded(target);
+            }
+        }, 900);
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        RecyclerView rv = findViewById(R.id.rvBookings);
-        if (rv.getAdapter() instanceof BookingAdapter) {
-            loadBookings((BookingAdapter) rv.getAdapter());
+    // -----------------------------
+    // Signalling + WebRTC wiring
+    // -----------------------------
+    private void startSignalling(String wsUrl) {
+        signalling = new SignallingClient(wsUrl, myUserId, new SignallingClient.Listener() {
+
+            @Override
+            public void onJoined(JSONArray peers) {
+                runOnUiThread(() ->
+                        tvSyncStatus.setText("Signal: Joined. Peers=" + (peers == null ? 0 : peers.length()))
+                );
+                if (peers != null && peers.length() > 0) {
+                    connectToPeerIfNeeded(peers.optString(0, null));
+                }
+            }
+
+            @Override
+            public void onPeerJoined(String userId) {
+                runOnUiThread(() -> tvSyncStatus.setText("Signal: Peer joined"));
+                connectToPeerIfNeeded(userId);
+            }
+
+            @Override
+            public void onPeerLeft(String userId) {
+                runOnUiThread(() -> tvSyncStatus.setText("Signal: Peer left"));
+                if (connectedPeerUserId != null && connectedPeerUserId.equalsIgnoreCase(userId)) {
+                    scheduleReconnect("peer-left");
+                }
+            }
+
+            @Override
+            public void onOffer(String from, String sdp) {
+                runOnUiThread(() -> tvSyncStatus.setText("Signal: Offer"));
+                ensurePeer(from);
+                if (peer != null) {
+                    peer.onRemoteOffer(sdp);
+                    flushPendingIce(from);
+                }
+            }
+
+            @Override
+            public void onAnswer(String from, String sdp) {
+                runOnUiThread(() -> tvSyncStatus.setText("Signal: Answer"));
+                if (peer != null) {
+                    peer.onRemoteAnswer(sdp);
+                    flushPendingIce(from);
+                }
+            }
+
+            @Override
+            public void onIce(String from, JSONObject cand) {
+                if (cand == null) return;
+
+                // If we don't yet know peer/connected id, queue
+                if (peer == null || connectedPeerUserId == null) {
+                    queueIce(from, cand);
+                    return;
+                }
+
+                // Only accept ICE for current connection
+                if (!from.equalsIgnoreCase(connectedPeerUserId)) return;
+
+                peer.onRemoteIce(
+                        cand.optString("sdpMid", "0"),
+                        cand.optInt("sdpMLineIndex", 0),
+                        cand.optString("candidate", "")
+                );
+            }
+
+            @Override
+            public void onError(String err) {
+                runOnUiThread(() -> tvSyncStatus.setText("Signal/WebRTC error: " + err));
+                Log.e(TAG_RTC, "signalling error=" + err);
+
+                // don't instantly close on generic errors; only reconnect for hard failures
+                if (err != null && err.toLowerCase().contains("closed")) {
+                    scheduleReconnect("signalling-closed");
+                }
+            }
+        });
+
+        signalling.connect();
+    }
+
+    private void connectToPeerIfNeeded(String otherUserId) {
+        if (otherUserId == null || otherUserId.trim().isEmpty()) return;
+        if (otherUserId.equalsIgnoreCase(myUserId)) return;
+
+        // Already have an active, usable connection?
+        if (peer != null && iceConnected && dcOpen && peer.isDataChannelOpen()) {
+            return;
+        }
+
+        // IMPORTANT CHANGE:
+        // Do NOT treat "not usable" as stale during initial negotiation.
+        // Only treat stale if we previously had a working DC (everDcOpen == true).
+        if (peer != null && everDcOpen) {
+            boolean usable = iceConnected && dcOpen && peer.isDataChannelOpen();
+            if (!usable) {
+                Log.w(TAG_RTC, "Stale peer (had DC before) -> reconnect");
+                scheduleReconnect("stale-peer");
+            } else {
+                return;
+            }
+        }
+
+        ensurePeer(otherUserId);
+
+        boolean iAmCaller = myUserId.compareToIgnoreCase(otherUserId) < 0;
+        Log.d(TAG_RTC, "tieBreak my=" + myUserId + " other=" + otherUserId + " caller=" + iAmCaller);
+
+        if (iAmCaller) {
+            runOnUiThread(() -> tvSyncStatus.setText("WebRTC: creating offer"));
+            if (peer != null) peer.startAsCaller();
+        } else {
+            runOnUiThread(() -> tvSyncStatus.setText("WebRTC: waiting for offer"));
+        }
+    }
+
+    private void ensurePeer(String otherUserId) {
+        if (peer != null) return;
+
+        connectedPeerUserId = otherUserId;
+
+        peer = new WebRtcPeer(this, otherUserId, signalling, new WebRtcPeer.Listener() {
+
+            @Override
+            public void onIceConnected() {
+                iceConnected = true;
+                runOnUiThread(() -> tvSyncStatus.setText("WebRTC: ICE Connected ✅"));
+            }
+
+            @Override
+            public void onIceDisconnected() {
+                // IMPORTANT: do not flap during initial setup
+                // If we never had DC open before, ignore transient disconnects (offer/answer timing)
+                if (!everDcOpen) {
+                    Log.w(TAG_RTC, "ICE disconnected during initial setup -> ignoring");
+                    return;
+                }
+
+                runOnUiThread(() -> {
+                    tvSyncStatus.setText("WebRTC: ICE Disconnected ⚠");
+                    scheduleReconnect("ice-disconnected");
+                });
+            }
+
+            @Override
+            public void onIceFailed() {
+                runOnUiThread(() -> {
+                    tvSyncStatus.setText("WebRTC: ICE Failed ❌");
+                    scheduleReconnect("ice-failed");
+                });
+            }
+
+            @Override
+            public void onDataChannelOpen() {
+                dcOpen = true;
+                everDcOpen = true;
+
+                if (syncProtocol == null) {
+                    syncProtocol = new SyncProtocol(HomeActivity.this, otherUserId, peer);
+                }
+                syncProtocol.onDataChannelOpen();
+
+                // If local changes happened while offline, sync immediately
+                if (localDirty) {
+                    syncProtocol.sendPoke();
+                    localDirty = false;
+                    Log.d(TAG_SYNC, "DC open -> flushed localDirty via poke");
+                }
+
+                runOnUiThread(() -> tvSyncStatus.setText("DC: OPEN ✅ Sync started"));
+            }
+
+            @Override
+            public void onDataChannelClosed() {
+                // If we never had DC open, let negotiation continue; don't auto-reconnect.
+                if (!everDcOpen) {
+                    Log.w(TAG_RTC, "DC closed during initial setup -> ignoring");
+                    return;
+                }
+
+                runOnUiThread(() -> {
+                    tvSyncStatus.setText("DC: CLOSED ⚠");
+                    scheduleReconnect("dc-closed");
+                });
+            }
+
+            @Override
+            public void onDataChannelMessage(String text) {
+                if (syncProtocol != null) syncProtocol.onMessage(text);
+            }
+
+            @Override
+            public void onError(String err) {
+                Log.e(TAG_RTC, "peer err=" + err);
+                // do not close here; most errors are already handled by ICE/DC state changes
+            }
+        });
+
+        peer.createPeerConnection();
+        flushPendingIce(otherUserId);
+    }
+
+    private void queueIce(String from, JSONObject cand) {
+        List<JSONObject> q = pendingIce.get(from);
+        if (q == null) q = new ArrayList<>();
+        q.add(cand);
+        pendingIce.put(from, q);
+    }
+
+    private void flushPendingIce(String from) {
+        if (peer == null) return;
+        List<JSONObject> q = pendingIce.remove(from);
+        if (q == null || q.isEmpty()) return;
+
+        for (JSONObject cand : q) {
+            peer.onRemoteIce(
+                    cand.optString("sdpMid", "0"),
+                    cand.optInt("sdpMLineIndex", 0),
+                    cand.optString("candidate", "")
+            );
         }
     }
 }

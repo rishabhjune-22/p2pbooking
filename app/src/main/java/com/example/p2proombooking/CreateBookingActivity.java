@@ -1,6 +1,7 @@
 package com.example.p2proombooking;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -100,16 +101,9 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void saveBooking() {
-        long now = System.currentTimeMillis();
-        b.createdAt = now;
-        b.lastModifiedAt = now;   // you can keep or remove this later
-        b.updatedAt = now;
-        b.version = 1;
-        b.status = "ACTIVE";
-
 
         SessionManager sm = new SessionManager(this);
-        String userId = sm.getLoggedInUserId();
+        String userId = sm.getActiveUserId();
         if (userId == null) {
             tvMsg.setText("Session expired. Please login again.");
             return;
@@ -133,26 +127,55 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         AppDatabase db = AppDatabase.getInstance(this);
 
-        // conflict check
-        List<BookingEntity> overlaps = db.bookingDao().findOverlaps(roomId, startUtc, endUtc);
-        if (overlaps != null && !overlaps.isEmpty()) {
-            tvMsg.setText("CONFLICT: Room already booked in this time range.");
-            return;
-        }
+        // ✅ move DB work off main thread for smoothness + no random UI delays
+        new Thread(() -> {
+            try {
+                List<BookingEntity> overlaps = db.bookingDao().findOverlaps(roomId, startUtc, endUtc);
+                if (overlaps != null && !overlaps.isEmpty()) {
+                    runOnUiThread(() -> tvMsg.setText("⚠ Room already booked in this time range."));
+                    return;
+                }
 
-        BookingEntity b = new BookingEntity();
-        b.bookingId = UUID.randomUUID().toString();
-        b.roomId = roomId;
-        b.startUtc = startUtc;
-        b.endUtc = endUtc;
-        b.createdByUserId = userId;
-        b.createdAt = System.currentTimeMillis();
-        b.lastModifiedAt = b.createdAt;
-        b.status = "ACTIVE";
+                long now = System.currentTimeMillis();
+                String deviceId = sm.getOrCreateDeviceId();
 
-        db.bookingDao().insert(b);
-        finish();
+                BookingEntity b = new BookingEntity();
+                b.bookingId = UUID.randomUUID().toString();
+                b.roomId = roomId;
+                b.startUtc = startUtc;
+                b.endUtc = endUtc;
+
+                b.createdByUserId = userId;
+                b.createdByDeviceId = deviceId;
+
+                b.createdAt = now;
+                b.updatedAt = now;
+                b.version = 1;
+
+                b.status = BookingConstants.STATUS_ACTIVE;
+                b.canceledByUserId = null;
+                b.canceledAt = 0L;
+
+                b.syncFlag = BookingConstants.SYNC_PENDING;
+                b.deletedFlag = 0;
+
+                db.bookingDao().insert(b);
+
+                Log.d("SYNC", "Created booking -> SyncBus.notifyLocalChange()");
+                SyncBus.notifyLocalChange(); // ✅ now this triggers poke reliably
+
+                runOnUiThread(() -> {
+                    tvMsg.setText("Booking created successfully ✅");
+                    finish();
+                });
+
+            } catch (Exception e) {
+                Log.e("SYNC", "saveBooking failed", e);
+                runOnUiThread(() -> tvMsg.setText("Save failed: " + e.getMessage()));
+            }
+        }).start();
     }
+
 
     private void refreshDateTimeFields() {
         etStartDT.setText(displayFmt.format(startCal.getTime()));

@@ -17,7 +17,7 @@ public class SplashActivity extends AppCompatActivity {
         SessionManager session = new SessionManager(this);
         session.getOrCreateDeviceId(); // ensures device identity exists
 
-        String userId = session.getLoggedInUserId();
+        String userId = session.getActiveUserId();
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
             if (userId != null) {

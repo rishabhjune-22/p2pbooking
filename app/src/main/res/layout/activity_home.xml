@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -62,6 +63,17 @@
             android:text="Sync Now"
             android:layout_marginTop="8dp"/>
     </LinearLayout>
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/swShowCanceled"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="Show canceled bookings"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="10dp"
+        app:layout_constraintTop_toBottomOf="@id/layoutSync"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <!-- New Booking Button -->
     <Button
@@ -72,8 +84,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
         android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutSync"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/swShowCanceled"        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
     <!-- Booking List -->
@@ -99,5 +110,50 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnSimulateConflict"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="click"
+        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
+        app:layout_constraintStart_toStartOf="@+id/btnLogout" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnstressCreateBookings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="stressCreate"
+        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
+        app:layout_constraintStart_toEndOf="@+id/btnSimulateConflict" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnstressEditBookings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="stressEdit"
+        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnstressCreateBookings" />
+
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnstressConflict"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="stressConflict"
+        app:layout_constraintBottom_toTopOf="@+id/btnstressCreateBookings"
+        app:layout_constraintStart_toStartOf="@+id/btnSimulateConflict" />
+
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/btnFullStress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="btnFullStress"
+        app:layout_constraintBottom_toTopOf="@+id/btnstressEditBookings"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/btnstressConflict" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
