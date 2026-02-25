@@ -39,12 +39,28 @@ public class SignallingClient {
 
     // track peers so we can fire joined/left events
     private final Set<String> lastPeers = new HashSet<>();
-
+    private volatile boolean manuallyClosed = false;
+    private volatile boolean connected = false;
     public SignallingClient(String wsUrl, String myUserId, Listener listener) {
         this.wsUrl = wsUrl;
         this.myUserId = myUserId;
         this.listener = listener;
     }
+
+    public boolean isConnected() { return connected; }
+
+    public void disconnect() {
+        manuallyClosed = true;
+        connected = false;
+        try { if (ws != null) ws.close(1000, "bye"); } catch (Exception ignored) {}
+        ws = null;
+    }
+
+    public void reconnect() {
+        manuallyClosed = false;
+        connect();
+    }
+
 
     public void connect() {
         Request req = new Request.Builder().url(wsUrl).build();
@@ -52,6 +68,7 @@ public class SignallingClient {
 
             @Override
             public void onOpen(WebSocket webSocket, Response response) {
+                connected = true;
                 Log.d(TAG, "WS open: " + wsUrl);
 
                 // IMPORTANT: register with your server
@@ -133,7 +150,7 @@ public class SignallingClient {
                             if (listener != null) listener.onIce(from, cand);
                             break;
                         }
-
+//tobesolvederror
                         case "error": {
                             String code = msg.optString("code", "UNKNOWN");
                             if (listener != null) listener.onError("server error: " + code);
@@ -157,15 +174,26 @@ public class SignallingClient {
 
             @Override
             public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                connected = false;
+
                 Log.e(TAG, "WS failure", t);
                 if (listener != null) listener.onError("ws failure: " + t.getMessage());
+                if (!manuallyClosed) {
+                    try { webSocket.cancel(); } catch (Exception ignored) {}
+                }
             }
 
             @Override
             public void onClosed(WebSocket webSocket, int code, String reason) {
+                connected = false;
                 Log.d(TAG, "WS closed: " + code + " " + reason);
                 if (listener != null) listener.onError("ws closed: " + reason);
             }
+            @Override
+            public void onClosing(WebSocket webSocket, int code, String reason) {
+                connected = false;
+            }
+
         });
     }
 

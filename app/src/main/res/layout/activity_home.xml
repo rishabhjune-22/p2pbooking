@@ -111,49 +111,16 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnSimulateConflict"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="click"
-        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
-        app:layout_constraintStart_toStartOf="@+id/btnLogout" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnstressCreateBookings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="stressCreate"
-        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
-        app:layout_constraintStart_toEndOf="@+id/btnSimulateConflict" />
-
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnstressEditBookings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="stressEdit"
-        app:layout_constraintBottom_toTopOf="@+id/btnLogout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btnstressCreateBookings" />
 
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnstressConflict"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="stressConflict"
-        app:layout_constraintBottom_toTopOf="@+id/btnstressCreateBookings"
-        app:layout_constraintStart_toStartOf="@+id/btnSimulateConflict" />
 
 
-    <androidx.appcompat.widget.AppCompatButton
-        android:id="@+id/btnFullStress"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="btnFullStress"
-        app:layout_constraintBottom_toTopOf="@+id/btnstressEditBookings"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/btnstressConflict" />
+
+
+
+
+
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

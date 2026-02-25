@@ -1,6 +1,9 @@
 package com.example.p2proombooking;
 
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.Network;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -65,7 +68,12 @@ public class HomeActivity extends AppCompatActivity {
 
     // Reconnect backoff
     private volatile boolean reconnectScheduled = false;
+    private ConnectivityManager cm;
+    private ConnectivityManager.NetworkCallback netCb;
 
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private int reconnectAttempt = 0;
+    private Button btnSyncNow;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,12 +88,14 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+
         TextView tvUserInfo = findViewById(R.id.tvUserInfo);
         tvSyncStatus = findViewById(R.id.tvSyncStatus);
         swShowCanceled = findViewById(R.id.swShowCanceled);
 
         Button btnNewBooking = findViewById(R.id.btnNewBooking);
         Button btnLogout = findViewById(R.id.btnLogout);
+        btnSyncNow = findViewById(R.id.btnSyncNow);
 
         String deviceId = session.getOrCreateDeviceId();
         tvUserInfo.setText(
@@ -150,6 +160,36 @@ public class HomeActivity extends AppCompatActivity {
             goToAuthAndClearBackstack();
         });
 
+        btnSyncNow.setOnClickListener(v -> {
+            // 1) If DC is open, just poke sync immediately
+            if (syncProtocol != null && peer != null && dcOpen && peer.isDataChannelOpen()) {
+                tvSyncStatus.setText("Sync: forcing now…");
+                syncProtocol.sendPoke();
+                localDirty = false;
+                Toast.makeText(this, "Sync triggered", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 2) If signalling is connected but WebRTC/DC isn't ready yet, try to connect to a peer
+            if (signalling != null && signalling.isConnected()) {
+                tvSyncStatus.setText("Sync: connecting to peer…");
+                if (connectedPeerUserId != null) {
+                    connectToPeerIfNeeded(connectedPeerUserId);
+                } else {
+                    // no known peer yet, still try signalling reconnect to fetch peers/join state
+                    scheduleReconnectNow();
+                }
+                Toast.makeText(this, "Trying to connect…", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // 3) Signalling not connected -> reconnect signalling
+            tvSyncStatus.setText("Signal: reconnecting (manual)...");
+            scheduleReconnectNow();
+            Toast.makeText(this, "Reconnecting…", Toast.LENGTH_SHORT).show();
+        });
+
+
         // SyncBus listener
         syncBusListener = new SyncBus.Listener() {
             @Override public void onLocalDbChanged() {}
@@ -176,6 +216,31 @@ public class HomeActivity extends AppCompatActivity {
         };
         SyncBus.addListener(syncBusListener);
 
+
+
+
+        cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        netCb = new ConnectivityManager.NetworkCallback() {
+            @Override
+            public void onAvailable(Network network) {
+                runOnUiThread(() -> tvSyncStatus.setText("Network: available ✅"));
+                scheduleReconnectNow();
+            }
+
+            @Override
+            public void onLost(Network network) {
+                runOnUiThread(() -> tvSyncStatus.setText("Network: lost ⚠"));
+                // optional: close current stuff
+                // safeClosePeer();
+            }
+        };
+
+        cm.registerDefaultNetworkCallback(netCb);
+
+
+
+
         // Start signalling
         startSignalling(WS_URL);
     }
@@ -189,10 +254,21 @@ public class HomeActivity extends AppCompatActivity {
 
         liveSource.observe(this, adapter::submit);
     }
-
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // If signalling is dead, try
+        if (signalling == null || !signalling.isConnected()) {
+            scheduleReconnectNow();
+        }
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (cm != null && netCb != null) {
+            try { cm.unregisterNetworkCallback(netCb); } catch (Exception ignored) {}
+            netCb = null;
+        }
 
         if (syncBusListener != null) {
             SyncBus.removeListener(syncBusListener);
@@ -330,7 +406,11 @@ public class HomeActivity extends AppCompatActivity {
                 if (err != null && err.toLowerCase().contains("closed")) {
                     scheduleReconnect("signalling-closed");
                 }
+                scheduleReconnectWithBackoff();
             }
+
+
+
         });
 
         signalling.connect();
@@ -477,4 +557,43 @@ public class HomeActivity extends AppCompatActivity {
             );
         }
     }
+
+
+    private void scheduleReconnectNow() {
+        reconnectAttempt = 0;
+        scheduleReconnectWithBackoff();
+    }
+
+    private void scheduleReconnectWithBackoff() {
+        if (reconnectScheduled) return;
+        reconnectScheduled = true;
+
+        long delay = Math.min(8000, 500L * (1L << Math.min(reconnectAttempt, 4))); // 0.5s,1s,2s,4s,8s max
+        reconnectAttempt++;
+
+        mainHandler.postDelayed(() -> {
+            reconnectScheduled = false;
+            tryReconnect();
+        }, delay);
+    }
+
+    private void tryReconnect() {
+        // if already connected, do nothing
+        if (signalling != null && signalling.isConnected()) return;
+
+        runOnUiThread(() -> tvSyncStatus.setText("Signal: reconnecting... (" + reconnectAttempt + ")"));
+
+        // reset peer state (important)
+        safeClosePeer();
+        syncProtocol = null;
+
+        if (signalling == null) {
+            startSignalling(WS_URL);
+            return;
+        }
+
+        signalling.reconnect();
+    }
+
+
 }

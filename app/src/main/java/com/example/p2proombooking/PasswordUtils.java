@@ -24,6 +24,7 @@ public class PasswordUtils {
         } catch (Exception e) {
             throw new RuntimeException("Password hashing failed", e);
         }
+
     }
 
     public static boolean verify(byte[] storedHash, byte[] inputHash) {
