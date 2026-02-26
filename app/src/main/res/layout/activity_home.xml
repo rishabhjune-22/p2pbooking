@@ -50,18 +50,50 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <TextView
-            android:id="@+id/tvSyncStatus"
+            android:id="@+id/tvNetStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Sync Status: Offline"
+            android:text="Network: -"
             android:textSize="14sp"/>
+
+        <TextView
+            android:id="@+id/tvSignalStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Signalling: -"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tvWebRtcStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="WebRTC: -"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tvDcStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DataChannel: -"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
+
+        <TextView
+            android:id="@+id/tvSyncInfo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Sync: -"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"/>
 
         <Button
             android:id="@+id/btnSyncNow"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Sync Now"
-            android:layout_marginTop="8dp"/>
+            android:layout_marginTop="10dp"/>
     </LinearLayout>
     <androidx.appcompat.widget.SwitchCompat
         android:id="@+id/swShowCanceled"

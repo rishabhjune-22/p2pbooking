@@ -235,4 +235,17 @@ public class SignallingClient {
             Log.d(TAG, "TX ice to=" + to);
         } catch (Exception ignored) {}
     }
+
+    public void refreshPeers() {
+        if (ws == null || !connected) return;
+        try {
+            JSONObject hello = new JSONObject();
+            hello.put("type", "hello");
+            hello.put("userId", myUserId);
+            ws.send(hello.toString());
+            Log.d(TAG, "Sent hello (refresh) userId=" + myUserId);
+        } catch (Exception e) {
+            Log.e(TAG, "refreshPeers failed", e);
+        }
+    }
 }

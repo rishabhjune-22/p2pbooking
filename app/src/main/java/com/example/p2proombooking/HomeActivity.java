@@ -32,7 +32,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private static final String TAG_RTC = "RTC";
     private static final String TAG_SYNC = "SYNC";
-    private static final String WS_URL  = "ws://10.50.42.114:8080/ws";
+    private static final String WS_URL  = "ws://10.50.49.9:8080/ws";
 
     private SessionManager session;
     private AppDatabase db;
@@ -44,10 +44,16 @@ public class HomeActivity extends AppCompatActivity {
     private String myUserId;
     private String connectedPeerUserId;
 
-    private TextView tvSyncStatus;
     private SwitchCompat swShowCanceled;
     private BookingAdapter adapter;
     private RecyclerView rv;
+
+    // Status views
+    private TextView tvNetStatus;
+    private TextView tvSignalStatus;
+    private TextView tvWebRtcStatus;
+    private TextView tvDcStatus;
+    private TextView tvSyncInfo;
 
     private final Map<String, List<JSONObject>> pendingIce = new HashMap<>();
     private final ExecutorService io = Executors.newSingleThreadExecutor();
@@ -59,11 +65,7 @@ public class HomeActivity extends AppCompatActivity {
     // Connection state
     private volatile boolean iceConnected = false;
     private volatile boolean dcOpen = false;
-
-    // IMPORTANT: to avoid killing first-time setup, only treat stale if we once had a working DC
-    private volatile boolean everDcOpen = false;
-
-    // if local update happens while DC not ready, sync later
+    private volatile boolean everDcOpen = false;  // only treat stale if DC once opened
     private volatile boolean localDirty = false;
 
     // Reconnect backoff
@@ -73,7 +75,9 @@ public class HomeActivity extends AppCompatActivity {
 
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private int reconnectAttempt = 0;
+
     private Button btnSyncNow;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,9 +92,21 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-
         TextView tvUserInfo = findViewById(R.id.tvUserInfo);
-        tvSyncStatus = findViewById(R.id.tvSyncStatus);
+
+        // status widgets
+        tvNetStatus = findViewById(R.id.tvNetStatus);
+        tvSignalStatus = findViewById(R.id.tvSignalStatus);
+        tvWebRtcStatus = findViewById(R.id.tvWebRtcStatus);
+        tvDcStatus = findViewById(R.id.tvDcStatus);
+        tvSyncInfo = findViewById(R.id.tvSyncInfo);
+
+        tvNetStatus.setText("Network: checking…");
+        tvSignalStatus.setText("Signalling: connecting…");
+        tvWebRtcStatus.setText("WebRTC: -");
+        tvDcStatus.setText("DataChannel: -");
+        tvSyncInfo.setText("Sync: idle");
+
         swShowCanceled = findViewById(R.id.swShowCanceled);
 
         Button btnNewBooking = findViewById(R.id.btnNewBooking);
@@ -103,7 +119,6 @@ public class HomeActivity extends AppCompatActivity {
                         + "\nUserId: " + myUserId
                         + "\nDevice: " + deviceId
         );
-        tvSyncStatus.setText("Signal: Connecting...");
 
         // RecyclerView
         rv = findViewById(R.id.rvBookings);
@@ -163,7 +178,7 @@ public class HomeActivity extends AppCompatActivity {
         btnSyncNow.setOnClickListener(v -> {
             // 1) If DC is open, just poke sync immediately
             if (syncProtocol != null && peer != null && dcOpen && peer.isDataChannelOpen()) {
-                tvSyncStatus.setText("Sync: forcing now…");
+                tvSyncInfo.setText("Sync: forcing now…");
                 syncProtocol.sendPoke();
                 localDirty = false;
                 Toast.makeText(this, "Sync triggered", Toast.LENGTH_SHORT).show();
@@ -172,23 +187,24 @@ public class HomeActivity extends AppCompatActivity {
 
             // 2) If signalling is connected but WebRTC/DC isn't ready yet, try to connect to a peer
             if (signalling != null && signalling.isConnected()) {
-                tvSyncStatus.setText("Sync: connecting to peer…");
+                tvSyncInfo.setText("Sync: connecting to peer…");
+
                 if (connectedPeerUserId != null) {
                     connectToPeerIfNeeded(connectedPeerUserId);
                 } else {
-                    // no known peer yet, still try signalling reconnect to fetch peers/join state
-                    scheduleReconnectNow();
+                    tvSignalStatus.setText("Signalling: fetching peers…");
+                    signalling.refreshPeers();   // ✅ correct with your FastAPI server
                 }
+
                 Toast.makeText(this, "Trying to connect…", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             // 3) Signalling not connected -> reconnect signalling
-            tvSyncStatus.setText("Signal: reconnecting (manual)...");
+            tvSignalStatus.setText("Signalling: reconnecting (manual)…");
             scheduleReconnectNow();
             Toast.makeText(this, "Reconnecting…", Toast.LENGTH_SHORT).show();
         });
-
 
         // SyncBus listener
         syncBusListener = new SyncBus.Listener() {
@@ -199,7 +215,6 @@ public class HomeActivity extends AppCompatActivity {
                 localDirty = true;
                 Log.d(TAG_SYNC, "Local change -> dirty=true, protocol=" + (syncProtocol != null));
 
-                // if protocol ready, poke immediately
                 if (syncProtocol != null && dcOpen && peer != null && peer.isDataChannelOpen()) {
                     syncProtocol.sendPoke();
                     localDirty = false;
@@ -216,30 +231,20 @@ public class HomeActivity extends AppCompatActivity {
         };
         SyncBus.addListener(syncBusListener);
 
-
-
-
         cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-
         netCb = new ConnectivityManager.NetworkCallback() {
             @Override
             public void onAvailable(Network network) {
-                runOnUiThread(() -> tvSyncStatus.setText("Network: available ✅"));
+                runOnUiThread(() -> tvNetStatus.setText("Network: available ✅"));
                 scheduleReconnectNow();
             }
 
             @Override
             public void onLost(Network network) {
-                runOnUiThread(() -> tvSyncStatus.setText("Network: lost ⚠"));
-                // optional: close current stuff
-                // safeClosePeer();
+                runOnUiThread(() -> tvNetStatus.setText("Network: lost ⚠"));
             }
         };
-
         cm.registerDefaultNetworkCallback(netCb);
-
-
-
 
         // Start signalling
         startSignalling(WS_URL);
@@ -254,14 +259,15 @@ public class HomeActivity extends AppCompatActivity {
 
         liveSource.observe(this, adapter::submit);
     }
+
     @Override
     protected void onResume() {
         super.onResume();
-        // If signalling is dead, try
         if (signalling == null || !signalling.isConnected()) {
             scheduleReconnectNow();
         }
     }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -283,21 +289,33 @@ public class HomeActivity extends AppCompatActivity {
     // -----------------------------
     // SAFE close + state reset
     // -----------------------------
-    private void safeClosePeer() {
+    private void safeClosePeer(boolean resetUi) {
+        // close protocol first (it may have threads/executor)
         try { if (syncProtocol != null) syncProtocol.close(); } catch (Exception ignored) {}
         syncProtocol = null;
 
+        // close peer connection
         try { if (peer != null) peer.close(); } catch (Exception ignored) {}
         peer = null;
 
+        // reset ids + queues
         connectedPeerUserId = null;
         pendingIce.clear();
 
+        // reset state flags
         iceConnected = false;
         dcOpen = false;
-        reconnectScheduled = false;
+
+        // IMPORTANT: don't reset everDcOpen (your logic relies on it)
+
+        if (resetUi) {
+            resetStatusUi("peer closed");
+        }
     }
 
+    private void safeClosePeer() {
+        safeClosePeer(true);
+    }
     private void goToAuthAndClearBackstack() {
         Intent i = new Intent(this, AuthActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -316,10 +334,15 @@ public class HomeActivity extends AppCompatActivity {
 
         Log.w(TAG_RTC, "scheduleReconnect reason=" + reason + " target=" + target);
 
-        // Close current peer safely
-        safeClosePeer();
+        runOnUiThread(() -> {
+            tvWebRtcStatus.setText("WebRTC: reconnecting…");
+            tvDcStatus.setText("DataChannel: reconnecting…");
+            tvSyncInfo.setText("Sync: waiting…");
+        });
 
-        // Try reconnect a bit later
+        // close without overwriting UI
+        safeClosePeer(false);
+
         main.postDelayed(() -> {
             reconnectScheduled = false;
             if (signalling != null && target != null) {
@@ -337,7 +360,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onJoined(JSONArray peers) {
                 runOnUiThread(() ->
-                        tvSyncStatus.setText("Signal: Joined. Peers=" + (peers == null ? 0 : peers.length()))
+                        tvSignalStatus.setText("Signalling: joined ✅ peers=" + (peers == null ? 0 : peers.length()))
                 );
                 if (peers != null && peers.length() > 0) {
                     connectToPeerIfNeeded(peers.optString(0, null));
@@ -346,13 +369,13 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onPeerJoined(String userId) {
-                runOnUiThread(() -> tvSyncStatus.setText("Signal: Peer joined"));
+                runOnUiThread(() -> tvSignalStatus.setText("Signalling: peer joined ✅"));
                 connectToPeerIfNeeded(userId);
             }
 
             @Override
             public void onPeerLeft(String userId) {
-                runOnUiThread(() -> tvSyncStatus.setText("Signal: Peer left"));
+                runOnUiThread(() -> tvSignalStatus.setText("Signalling: peer left ⚠"));
                 if (connectedPeerUserId != null && connectedPeerUserId.equalsIgnoreCase(userId)) {
                     scheduleReconnect("peer-left");
                 }
@@ -360,7 +383,7 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onOffer(String from, String sdp) {
-                runOnUiThread(() -> tvSyncStatus.setText("Signal: Offer"));
+                runOnUiThread(() -> tvSignalStatus.setText("Signalling: offer received"));
                 ensurePeer(from);
                 if (peer != null) {
                     peer.onRemoteOffer(sdp);
@@ -370,7 +393,7 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onAnswer(String from, String sdp) {
-                runOnUiThread(() -> tvSyncStatus.setText("Signal: Answer"));
+                runOnUiThread(() -> tvSignalStatus.setText("Signalling: answer received"));
                 if (peer != null) {
                     peer.onRemoteAnswer(sdp);
                     flushPendingIce(from);
@@ -381,13 +404,11 @@ public class HomeActivity extends AppCompatActivity {
             public void onIce(String from, JSONObject cand) {
                 if (cand == null) return;
 
-                // If we don't yet know peer/connected id, queue
                 if (peer == null || connectedPeerUserId == null) {
                     queueIce(from, cand);
                     return;
                 }
 
-                // Only accept ICE for current connection
                 if (!from.equalsIgnoreCase(connectedPeerUserId)) return;
 
                 peer.onRemoteIce(
@@ -399,18 +420,14 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onError(String err) {
-                runOnUiThread(() -> tvSyncStatus.setText("Signal/WebRTC error: " + err));
+                runOnUiThread(() -> tvSignalStatus.setText("Signalling: error ❌ " + err));
                 Log.e(TAG_RTC, "signalling error=" + err);
 
-                // don't instantly close on generic errors; only reconnect for hard failures
                 if (err != null && err.toLowerCase().contains("closed")) {
                     scheduleReconnect("signalling-closed");
                 }
                 scheduleReconnectWithBackoff();
             }
-
-
-
         });
 
         signalling.connect();
@@ -420,14 +437,10 @@ public class HomeActivity extends AppCompatActivity {
         if (otherUserId == null || otherUserId.trim().isEmpty()) return;
         if (otherUserId.equalsIgnoreCase(myUserId)) return;
 
-        // Already have an active, usable connection?
         if (peer != null && iceConnected && dcOpen && peer.isDataChannelOpen()) {
             return;
         }
 
-        // IMPORTANT CHANGE:
-        // Do NOT treat "not usable" as stale during initial negotiation.
-        // Only treat stale if we previously had a working DC (everDcOpen == true).
         if (peer != null && everDcOpen) {
             boolean usable = iceConnected && dcOpen && peer.isDataChannelOpen();
             if (!usable) {
@@ -444,10 +457,10 @@ public class HomeActivity extends AppCompatActivity {
         Log.d(TAG_RTC, "tieBreak my=" + myUserId + " other=" + otherUserId + " caller=" + iAmCaller);
 
         if (iAmCaller) {
-            runOnUiThread(() -> tvSyncStatus.setText("WebRTC: creating offer"));
+            runOnUiThread(() -> tvWebRtcStatus.setText("WebRTC: creating offer…"));
             if (peer != null) peer.startAsCaller();
         } else {
-            runOnUiThread(() -> tvSyncStatus.setText("WebRTC: waiting for offer"));
+            runOnUiThread(() -> tvWebRtcStatus.setText("WebRTC: waiting for offer…"));
         }
     }
 
@@ -461,20 +474,18 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onIceConnected() {
                 iceConnected = true;
-                runOnUiThread(() -> tvSyncStatus.setText("WebRTC: ICE Connected ✅"));
+                runOnUiThread(() -> tvWebRtcStatus.setText("WebRTC: ICE connected ✅"));
             }
 
             @Override
             public void onIceDisconnected() {
-                // IMPORTANT: do not flap during initial setup
-                // If we never had DC open before, ignore transient disconnects (offer/answer timing)
                 if (!everDcOpen) {
                     Log.w(TAG_RTC, "ICE disconnected during initial setup -> ignoring");
                     return;
                 }
 
                 runOnUiThread(() -> {
-                    tvSyncStatus.setText("WebRTC: ICE Disconnected ⚠");
+                    tvWebRtcStatus.setText("WebRTC: ICE disconnected ⚠");
                     scheduleReconnect("ice-disconnected");
                 });
             }
@@ -482,7 +493,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onIceFailed() {
                 runOnUiThread(() -> {
-                    tvSyncStatus.setText("WebRTC: ICE Failed ❌");
+                    tvWebRtcStatus.setText("WebRTC: ICE failed ❌");
                     scheduleReconnect("ice-failed");
                 });
             }
@@ -497,26 +508,26 @@ public class HomeActivity extends AppCompatActivity {
                 }
                 syncProtocol.onDataChannelOpen();
 
-                // If local changes happened while offline, sync immediately
                 if (localDirty) {
                     syncProtocol.sendPoke();
                     localDirty = false;
-                    Log.d(TAG_SYNC, "DC open -> flushed localDirty via poke");
+                    runOnUiThread(() -> tvSyncInfo.setText("Sync: flushed local changes ✅"));
+                } else {
+                    runOnUiThread(() -> tvSyncInfo.setText("Sync: ready ✅"));
                 }
 
-                runOnUiThread(() -> tvSyncStatus.setText("DC: OPEN ✅ Sync started"));
+                runOnUiThread(() -> tvDcStatus.setText("DataChannel: OPEN ✅"));
             }
 
             @Override
             public void onDataChannelClosed() {
-                // If we never had DC open, let negotiation continue; don't auto-reconnect.
                 if (!everDcOpen) {
                     Log.w(TAG_RTC, "DC closed during initial setup -> ignoring");
                     return;
                 }
 
                 runOnUiThread(() -> {
-                    tvSyncStatus.setText("DC: CLOSED ⚠");
+                    tvDcStatus.setText("DataChannel: CLOSED ⚠");
                     scheduleReconnect("dc-closed");
                 });
             }
@@ -529,7 +540,6 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onError(String err) {
                 Log.e(TAG_RTC, "peer err=" + err);
-                // do not close here; most errors are already handled by ICE/DC state changes
             }
         });
 
@@ -558,7 +568,6 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-
     private void scheduleReconnectNow() {
         reconnectAttempt = 0;
         scheduleReconnectWithBackoff();
@@ -568,7 +577,7 @@ public class HomeActivity extends AppCompatActivity {
         if (reconnectScheduled) return;
         reconnectScheduled = true;
 
-        long delay = Math.min(8000, 500L * (1L << Math.min(reconnectAttempt, 4))); // 0.5s,1s,2s,4s,8s max
+        long delay = Math.min(8000, 500L * (1L << Math.min(reconnectAttempt, 4)));
         reconnectAttempt++;
 
         mainHandler.postDelayed(() -> {
@@ -578,14 +587,17 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void tryReconnect() {
-        // if already connected, do nothing
         if (signalling != null && signalling.isConnected()) return;
 
-        runOnUiThread(() -> tvSyncStatus.setText("Signal: reconnecting... (" + reconnectAttempt + ")"));
+        runOnUiThread(() -> {
+            tvSignalStatus.setText("Signalling: reconnecting… (" + reconnectAttempt + ")");
+            tvWebRtcStatus.setText("WebRTC: -");
+            tvDcStatus.setText("DataChannel: -");
+            tvSyncInfo.setText("Sync: idle");
+        });
 
-        // reset peer state (important)
-        safeClosePeer();
-        syncProtocol = null;
+        // close without overwriting the UI we just set
+        safeClosePeer(false);
 
         if (signalling == null) {
             startSignalling(WS_URL);
@@ -595,5 +607,13 @@ public class HomeActivity extends AppCompatActivity {
         signalling.reconnect();
     }
 
-
+    private void resetStatusUi(String reason) {
+        runOnUiThread(() -> {
+            // keep network text as-is (it’s managed by NetworkCallback)
+            tvSignalStatus.setText("Signalling: -");
+            tvWebRtcStatus.setText("WebRTC: -");
+            tvDcStatus.setText("DataChannel: -");
+            tvSyncInfo.setText(reason == null ? "Sync: idle" : ("Sync: idle (" + reason + ")"));
+        });
+    }
 }
