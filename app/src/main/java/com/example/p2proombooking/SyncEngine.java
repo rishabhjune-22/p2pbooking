@@ -21,9 +21,53 @@ public class SyncEngine {
     public void applyRemoteBooking(BookingEntity remote) {
 
         BookingEntity local = bookingDao.getById(remote.bookingId);
-
+        if (local != null && remote.updatedAt == local.updatedAt) {
+            return;
+        }
         // 1) Not exists locally → insert remote
         if (local == null) {
+
+            BookingEntity overlap = bookingDao.findFirstOverlap(
+                    remote.roomId,
+                    remote.startUtc,
+                    remote.endUtc
+            );
+
+            if (overlap != null) {
+
+                // store conflict
+                BookingConflictEntity c = new BookingConflictEntity();
+
+                c.bookingId = overlap.bookingId;
+
+                c.localRoomId = overlap.roomId;
+                c.localStartUtc = overlap.startUtc;
+                c.localEndUtc = overlap.endUtc;
+                c.localStatus = overlap.status;
+                c.localVersion = overlap.version;
+                c.localUpdatedAt = overlap.updatedAt;
+
+                c.remoteRoomId = remote.roomId;
+                c.remoteStartUtc = remote.startUtc;
+                c.remoteEndUtc = remote.endUtc;
+                c.remoteStatus = remote.status;
+                c.remoteVersion = remote.version;
+                c.remoteUpdatedAt = remote.updatedAt;
+
+                c.detectedAt = System.currentTimeMillis();
+
+                bookingConflictDao.upsert(c);
+
+                overlap.status = BookingConstants.STATUS_CONFLICTED;
+                overlap.syncFlag = BookingConstants.SYNC_PENDING;
+                overlap.updatedAt = System.currentTimeMillis();
+                overlap.version++;
+
+                bookingDao.update(overlap);
+
+                return;
+            }
+
             remote.syncFlag = BookingConstants.SYNCED;
             remote.lastSyncedAt = System.currentTimeMillis();
             bookingDao.insert(remote);
@@ -32,9 +76,15 @@ public class SyncEngine {
 
         // 2) Remote version higher → accept
         if (remote.version > local.version) {
+
             remote.syncFlag = BookingConstants.SYNCED;
             remote.lastSyncedAt = System.currentTimeMillis();
+
             bookingDao.update(remote);
+
+            // 🔴 IMPORTANT: remove conflict entry if exists
+            bookingConflictDao.deleteById(remote.bookingId);
+
             return;
         }
 
@@ -50,10 +100,12 @@ public class SyncEngine {
 
         // 4a) Same version but different content → use updatedAt as tiebreaker
         if (remote.updatedAt > local.updatedAt) {
-            // accept remote (no conflict)
+
             remote.syncFlag = BookingConstants.SYNCED;
             remote.lastSyncedAt = System.currentTimeMillis();
             bookingDao.update(remote);
+            bookingConflictDao.deleteById(remote.bookingId);
+
             return;
         }
 

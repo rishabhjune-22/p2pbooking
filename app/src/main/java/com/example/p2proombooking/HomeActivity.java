@@ -92,6 +92,15 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+        db.bookingDao()
+                .observeAllIncludingCanceled()
+                .observe(this, bookings -> {
+
+                    if (syncProtocol != null) {
+                        syncProtocol.sendPoke();
+                    }
+
+                });
         TextView tvUserInfo = findViewById(R.id.tvUserInfo);
 
         // status widgets

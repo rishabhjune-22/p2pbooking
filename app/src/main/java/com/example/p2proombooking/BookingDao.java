@@ -7,7 +7,6 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
-
 import java.util.List;
 
 @Dao
@@ -24,31 +23,29 @@ public interface BookingDao {
     void update(BookingEntity booking);
 
     // =============================
-    // LIVE OBSERVERS (IMPORTANT FOR SMOOTH UI)
+    // LIVE OBSERVERS (UI)
     // =============================
-
 
     @Query("SELECT * FROM bookings WHERE status = 'ACTIVE' AND deletedFlag = 0 ORDER BY startUtc DESC")
     LiveData<List<BookingEntity>> observeAllActive();
 
     @Query("SELECT * FROM bookings WHERE deletedFlag = 0 ORDER BY startUtc DESC")
     LiveData<List<BookingEntity>> observeAllIncludingCanceled();
+
+
     // =============================
-    // NON-LIVE READS (for sync engine)
+    // NON-LIVE READS (SYNC ENGINE)
     // =============================
 
-    @Query("SELECT * FROM bookings " +
-            "WHERE status = 'ACTIVE' AND deletedFlag = 0 " +
-            "ORDER BY startUtc DESC")
+    @Query("SELECT * FROM bookings WHERE status = 'ACTIVE' AND deletedFlag = 0 ORDER BY startUtc DESC")
     List<BookingEntity> getAllActive();
 
-    @Query("SELECT * FROM bookings " +
-            "WHERE deletedFlag = 0 " +
-            "ORDER BY startUtc DESC")
+    @Query("SELECT * FROM bookings WHERE deletedFlag = 0 ORDER BY startUtc DESC")
     List<BookingEntity> getAllIncludingCanceled();
 
     @Query("SELECT * FROM bookings WHERE bookingId = :bookingId LIMIT 1")
     BookingEntity getById(String bookingId);
+
 
     // =============================
     // OVERLAP CHECKS
@@ -80,8 +77,23 @@ public interface BookingDao {
             long newEndUtc
     );
 
+    // FAST overlap detection for SyncEngine
+    @Query("SELECT * FROM bookings " +
+            "WHERE roomId = :roomId " +
+            "AND status = 'ACTIVE' " +
+            "AND deletedFlag = 0 " +
+            "AND (:newStartUtc < endUtc) " +
+            "AND (:newEndUtc > startUtc) " +
+            "LIMIT 1")
+    BookingEntity findFirstOverlap(
+            String roomId,
+            long newStartUtc,
+            long newEndUtc
+    );
+
+
     // =============================
-    // CANCEL (Soft delete via status)
+    // CANCEL BOOKING
     // =============================
 
     @Query("UPDATE bookings SET " +
@@ -98,11 +110,11 @@ public interface BookingDao {
             long now
     );
 
+
     // =============================
     // SYNC OPERATIONS
     // =============================
 
-    // Items waiting to send to peer
     @Query("SELECT * FROM bookings " +
             "WHERE syncFlag = 'PENDING_SYNC' " +
             "AND status != 'CONFLICTED' " +
@@ -110,7 +122,6 @@ public interface BookingDao {
             "ORDER BY updatedAt ASC")
     List<BookingEntity> getPendingSync();
 
-    // Everything modified after peer’s last sync
     @Query("SELECT * FROM bookings " +
             "WHERE updatedAt > :since " +
             "AND deletedFlag = 0 " +
@@ -118,14 +129,12 @@ public interface BookingDao {
             "ORDER BY updatedAt ASC")
     List<BookingEntity> getChangesSince(long since);
 
-    // Mark a single row synced
     @Query("UPDATE bookings SET " +
             "syncFlag = 'SYNCED', " +
             "lastSyncedAt = :now " +
             "WHERE bookingId = :bookingId AND deletedFlag = 0")
     void markSynced(String bookingId, long now);
 
-    // Mark batch synced (after ACK)
     @Query("UPDATE bookings SET " +
             "syncFlag = 'SYNCED', " +
             "lastSyncedAt = :now " +
@@ -133,7 +142,4 @@ public interface BookingDao {
             "AND syncFlag = 'PENDING_SYNC' " +
             "AND deletedFlag = 0")
     void markSyncedUpTo(long maxUpdatedAt, long now);
-
-
-
 }

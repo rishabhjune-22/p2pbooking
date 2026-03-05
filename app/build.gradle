@@ -45,6 +45,7 @@ dependencies {
     implementation libs.okhttp.v4120
     implementation libs.android
     implementation "io.github.webrtc-sdk:android:137.7151.05"
+    implementation "androidx.work:work-runtime:2.9.0"
 
 
 }
