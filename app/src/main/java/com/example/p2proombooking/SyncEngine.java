@@ -3,154 +3,205 @@ package com.example.p2proombooking;
 import android.content.Context;
 
 import java.util.List;
+import java.util.UUID;
 
 public class SyncEngine {
 
     private final BookingDao bookingDao;
-    private final BookingConflictDao bookingConflictDao;
 
     public SyncEngine(Context context) {
         AppDatabase db = AppDatabase.getInstance(context);
         this.bookingDao = db.bookingDao();
-        this.bookingConflictDao = db.bookingConflictDao();
     }
 
-    // -----------------------------
-    // APPLY REMOTE BOOKING
-    // -----------------------------
     public void applyRemoteBooking(BookingEntity remote) {
 
-        BookingEntity local = bookingDao.getById(remote.bookingId);
-        if (local != null && remote.updatedAt == local.updatedAt) {
+        BookingEntity exactLocal = bookingDao.getById(remote.bookingId);
+
+        // -------------------------------------------------
+        // 0) Tombstone handling first
+        // -------------------------------------------------
+        if (remote.deletedFlag == 1) {
+            applyTombstone(remote, exactLocal);
             return;
         }
-        // 1) Not exists locally → insert remote
-        if (local == null) {
 
-            BookingEntity overlap = bookingDao.findFirstOverlap(
-                    remote.roomId,
-                    remote.startUtc,
-                    remote.endUtc
-            );
+        // Same exact record already present
+        if (exactLocal != null
+                && exactLocal.version == remote.version
+                && exactLocal.updatedAt == remote.updatedAt
+                && isSameContent(exactLocal, remote)) {
+            return;
+        }
 
-            if (overlap != null) {
+        // -------------------------------------------------
+        // 1) Find all overlapping active contenders locally
+        // -------------------------------------------------
+        List<BookingEntity> overlaps = bookingDao.findOverlaps(
+                remote.roomId,
+                remote.startUtc,
+                remote.endUtc
+        );
 
-                // store conflict
-                BookingConflictEntity c = new BookingConflictEntity();
+        // Remove self from overlap list if present
+        if (overlaps != null) {
+            for (int i = overlaps.size() - 1; i >= 0; i--) {
+                BookingEntity b = overlaps.get(i);
+                if (b != null && remote.bookingId.equals(b.bookingId)) {
+                    overlaps.remove(i);
+                }
+            }
+        }
 
-                c.bookingId = overlap.bookingId;
+        // -------------------------------------------------
+        // 2) No overlap -> normal exact-id reconciliation
+        // -------------------------------------------------
+        if (overlaps == null || overlaps.isEmpty()) {
+            applyNonOverlappingRemote(remote, exactLocal);
+            return;
+        }
 
-                c.localRoomId = overlap.roomId;
-                c.localStartUtc = overlap.startUtc;
-                c.localEndUtc = overlap.endUtc;
-                c.localStatus = overlap.status;
-                c.localVersion = overlap.version;
-                c.localUpdatedAt = overlap.updatedAt;
+        // -------------------------------------------------
+        // 3) Automatic resolution: latest booking wins
+        // -------------------------------------------------
+        BookingEntity winner = remote;
+        for (BookingEntity localOverlap : overlaps) {
+            if (localOverlap == null) continue;
+            if (compareBookingPriority(localOverlap, winner) > 0) {
+                winner = localOverlap;
+            }
+        }
 
-                c.remoteRoomId = remote.roomId;
-                c.remoteStartUtc = remote.startUtc;
-                c.remoteEndUtc = remote.endUtc;
-                c.remoteStatus = remote.status;
-                c.remoteVersion = remote.version;
-                c.remoteUpdatedAt = remote.updatedAt;
+        // -------------------------------------------------
+        // 4) Apply winner and tombstone all losers
+        // -------------------------------------------------
+        long now = System.currentTimeMillis();
 
-                c.detectedAt = System.currentTimeMillis();
+        // If remote wins, store/update remote as active
+        if (winner.bookingId.equals(remote.bookingId)) {
+            remote.deletedFlag = 0;
+            remote.syncFlag = BookingConstants.SYNCED;
+            remote.lastSyncedAt = now;
 
-                bookingConflictDao.upsert(c);
-
-                overlap.status = BookingConstants.STATUS_CONFLICTED;
-                overlap.syncFlag = BookingConstants.SYNC_PENDING;
-                overlap.updatedAt = System.currentTimeMillis();
-                overlap.version++;
-
-                bookingDao.update(overlap);
-
-                return;
+            if (exactLocal == null) {
+                bookingDao.insert(remote);
+            } else {
+                bookingDao.update(remote);
             }
 
+            // Tombstone all overlapping local losers
+            for (BookingEntity loser : overlaps) {
+                if (loser == null) continue;
+                tombstoneLoser(loser, remote, now);
+            }
+        } else {
+            // Some local overlap already wins, so remote loses
+            BookingEntity remoteLoser = buildRemoteTombstone(remote, winner, now);
+
+            if (exactLocal == null) {
+                bookingDao.insert(remoteLoser);
+            } else {
+                bookingDao.update(remoteLoser);
+            }
+        }
+    }
+
+    private void applyNonOverlappingRemote(BookingEntity remote, BookingEntity exactLocal) {
+        long now = System.currentTimeMillis();
+
+        if (exactLocal == null) {
+            remote.deletedFlag = 0;
             remote.syncFlag = BookingConstants.SYNCED;
-            remote.lastSyncedAt = System.currentTimeMillis();
+            remote.lastSyncedAt = now;
             bookingDao.insert(remote);
             return;
         }
 
-        // 2) Remote version higher → accept
-        if (remote.version > local.version) {
+        int cmp = compareBookingPriority(remote, exactLocal);
 
+        if (cmp > 0) {
+            remote.deletedFlag = 0;
             remote.syncFlag = BookingConstants.SYNCED;
-            remote.lastSyncedAt = System.currentTimeMillis();
-
+            remote.lastSyncedAt = now;
             bookingDao.update(remote);
-
-            // 🔴 IMPORTANT: remove conflict entry if exists
-            bookingConflictDao.deleteById(remote.bookingId);
-
-            return;
         }
-
-        // 3) Local version higher → ignore
-        if (remote.version < local.version) {
-            return;
-        }
-
-        // 4) Same version
-        if (isSameContent(local, remote)) {
-            return; // nothing to do
-        }
-
-        // 4a) Same version but different content → use updatedAt as tiebreaker
-        if (remote.updatedAt > local.updatedAt) {
-
-            remote.syncFlag = BookingConstants.SYNCED;
-            remote.lastSyncedAt = System.currentTimeMillis();
-            bookingDao.update(remote);
-            bookingConflictDao.deleteById(remote.bookingId);
-
-            return;
-        }
-
-        if (remote.updatedAt < local.updatedAt) {
-            // keep local (no conflict)
-            return;
-        }
-
-        // 4b) Same version AND same updatedAt but different content → real conflict
-        BookingConflictEntity c = new BookingConflictEntity();
-        c.bookingId = local.bookingId;
-
-        c.localRoomId = local.roomId;
-        c.localStartUtc = local.startUtc;
-        c.localEndUtc = local.endUtc;
-        c.localStatus = local.status;
-        c.localVersion = local.version;
-        c.localUpdatedAt = local.updatedAt;
-
-        c.remoteRoomId = remote.roomId;
-        c.remoteStartUtc = remote.startUtc;
-        c.remoteEndUtc = remote.endUtc;
-        c.remoteStatus = remote.status;
-        c.remoteVersion = remote.version;
-        c.remoteUpdatedAt = remote.updatedAt;
-
-        c.detectedAt = System.currentTimeMillis();
-        bookingConflictDao.upsert(c);
-
-        local.status = BookingConstants.STATUS_CONFLICTED;
-        local.syncFlag = BookingConstants.SYNC_PENDING;
-        local.updatedAt = System.currentTimeMillis();
-        local.version = local.version + 1;
-
-        bookingDao.update(local);
     }
 
-    // -----------------------------
-    // CONTENT COMPARISON
-    // -----------------------------
+    private void applyTombstone(BookingEntity remoteTombstone, BookingEntity exactLocal) {
+        long now = System.currentTimeMillis();
+
+        if (exactLocal == null) {
+            remoteTombstone.syncFlag = BookingConstants.SYNCED;
+            remoteTombstone.lastSyncedAt = now;
+            bookingDao.insert(remoteTombstone);
+            return;
+        }
+
+        int cmp = compareBookingPriority(remoteTombstone, exactLocal);
+        if (cmp >= 0) {
+            remoteTombstone.syncFlag = BookingConstants.SYNCED;
+            remoteTombstone.lastSyncedAt = now;
+            bookingDao.update(remoteTombstone);
+        }
+    }
+
+    private void tombstoneLoser(BookingEntity loser, BookingEntity winner, long now) {
+        loser.deletedFlag = 1;
+        loser.status = BookingConstants.STATUS_ACTIVE; // keep non-conflicted
+        loser.updatedAt = Math.max(now, winner.updatedAt);
+        loser.version = Math.max(loser.version, winner.version);
+        loser.syncFlag = BookingConstants.SYNC_PENDING;
+        bookingDao.update(loser);
+    }
+
+    private BookingEntity buildRemoteTombstone(BookingEntity remoteLoser, BookingEntity winner, long now) {
+        BookingEntity tomb = new BookingEntity();
+
+        tomb.bookingId = remoteLoser.bookingId;
+        tomb.roomId = remoteLoser.roomId;
+        tomb.startUtc = remoteLoser.startUtc;
+        tomb.endUtc = remoteLoser.endUtc;
+
+        tomb.createdAt = remoteLoser.createdAt;
+        tomb.createdByUserId = remoteLoser.createdByUserId;
+        tomb.createdByDeviceId = remoteLoser.createdByDeviceId;
+
+        tomb.canceledByUserId = remoteLoser.canceledByUserId;
+        tomb.canceledAt = remoteLoser.canceledAt;
+
+        tomb.status = BookingConstants.STATUS_ACTIVE;
+        tomb.deletedFlag = 1;
+        tomb.updatedAt = Math.max(now, winner.updatedAt);
+        tomb.version = Math.max(remoteLoser.version, winner.version);
+        tomb.syncFlag = BookingConstants.SYNC_PENDING;
+        tomb.lastSyncedAt = 0L;
+
+        return tomb;
+    }
+
+    /**
+     * > 0 means a wins
+     * < 0 means b wins
+     * = 0 means same priority
+     */
+    private int compareBookingPriority(BookingEntity a, BookingEntity b) {
+        if (a.updatedAt != b.updatedAt) {
+            return Long.compare(a.updatedAt, b.updatedAt);
+        }
+        if (a.version != b.version) {
+            return Integer.compare(a.version, b.version);
+        }
+        String aId = a.bookingId == null ? "" : a.bookingId;
+        String bId = b.bookingId == null ? "" : b.bookingId;
+        return aId.compareTo(bId);
+    }
+
     private boolean isSameContent(BookingEntity a, BookingEntity b) {
         return safeEquals(a.roomId, b.roomId)
                 && a.startUtc == b.startUtc
                 && a.endUtc == b.endUtc
-                && safeEquals(a.status, b.status);
+                && safeEquals(a.status, b.status)
+                && a.deletedFlag == b.deletedFlag;
     }
 
     private boolean safeEquals(String a, String b) {
@@ -159,9 +210,6 @@ public class SyncEngine {
         return a.equals(b);
     }
 
-    // -----------------------------
-    // SYNC OUTGOING
-    // -----------------------------
     public List<BookingEntity> getPendingChanges() {
         return bookingDao.getPendingSync();
     }
@@ -170,31 +218,5 @@ public class SyncEngine {
         bookingDao.markSynced(bookingId, System.currentTimeMillis());
     }
 
-    // -----------------------------
-    // TEST SIMULATION
-    // -----------------------------
-    public void simulateRemoteConflict() {
 
-        List<BookingEntity> list = bookingDao.getAllActive();
-        if (list == null || list.isEmpty()) return;
-
-        BookingEntity local = list.get(0);
-
-        BookingEntity remote = new BookingEntity();
-        remote.bookingId = local.bookingId;
-        remote.roomId = local.roomId;
-        remote.startUtc = local.startUtc + 30 * 60 * 1000L;
-        remote.endUtc = local.endUtc + 30 * 60 * 1000L;
-        remote.status = BookingConstants.STATUS_ACTIVE;
-        remote.version = local.version; // same version
-        remote.updatedAt = System.currentTimeMillis();
-        remote.syncFlag = BookingConstants.SYNCED;
-
-        // copy safe audit
-        remote.createdAt = local.createdAt;
-        remote.createdByUserId = local.createdByUserId;
-        remote.createdByDeviceId = local.createdByDeviceId;
-
-        applyRemoteBooking(remote);
-    }
 }

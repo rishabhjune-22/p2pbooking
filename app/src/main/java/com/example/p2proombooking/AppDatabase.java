@@ -14,9 +14,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
                 RoomEntity.class,
                 BookingEntity.class,
                 BookingConflictEntity.class,
-                PeerStateEntity.class      // ✅ REQUIRED for sync
+                PeerStateEntity.class
         },
-        version = 5,
+        version = 6,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -38,7 +38,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "secure_booking_db"
                             )
-                            .allowMainThreadQueries()   // demo only
+                            .allowMainThreadQueries()
                             .addCallback(seedRoomsCallback())
                             .fallbackToDestructiveMigration()
                             .build();
@@ -48,9 +48,6 @@ public abstract class AppDatabase extends RoomDatabase {
         return INSTANCE;
     }
 
-    /**
-     * Seeds default rooms safely without recursive getInstance()
-     */
     private static Callback seedRoomsCallback() {
         return new Callback() {
             @Override

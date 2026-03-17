@@ -43,18 +43,23 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
         super(DIFF_CALLBACK);
         this.cancelCallback = cancelCallback;
         this.editCallback = editCallback;
-
-        // Helps RecyclerView keep viewholders stable across updates (smoother)
         setHasStableIds(true);
     }
 
-    // Backward compatible so you don't need to change HomeActivity calls.
     public void submit(List<BookingEntity> list) {
         if (list == null) {
             submitList(null);
-        } else {
-            submitList(new ArrayList<>(list)); // FORCE new reference
+            return;
         }
+
+        List<BookingEntity> filtered = new ArrayList<>();
+        for (BookingEntity b : list) {
+            if (b == null) continue;
+            if (b.deletedFlag == 1) continue; // never show tombstones
+            filtered.add(b);
+        }
+
+        submitList(new ArrayList<>(filtered));
     }
 
     @Override
@@ -77,26 +82,16 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
         BookingEntity b = getItem(position);
         if (b == null) return;
 
-        // ---------- Room + Status ----------
-        h.tvRoom.setText("Room: " + safe(b.roomId) + " | Status: " + safe(b.status));
+        h.tvRoom.setText(buildRoomLine(b));
+        h.tvTime.setText(buildTimeLine(b));
 
-        // ---------- Time ----------
-        h.tvTime.setText(
-                "Start: " + fmt.format(new Date(b.startUtc)) +
-                        "   End: " + fmt.format(new Date(b.endUtc))
-        );
-
-        // ---------- Meta Info ----------
         String meta = buildMeta(b);
-
-        // ---------- Color the last "● ..." line ----------
         SpannableString spannable = new SpannableString(meta);
 
         int dotStart = meta.lastIndexOf('●');
         if (dotStart >= 0) {
-            int color = getIndicatorColor(b);
             spannable.setSpan(
-                    new ForegroundColorSpan(color),
+                    new ForegroundColorSpan(getIndicatorColor(b)),
                     dotStart,
                     meta.length(),
                     Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
@@ -105,8 +100,15 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
 
         h.tvMeta.setText(spannable);
 
-        // ---------- Tap Behavior ----------
         h.itemView.setOnClickListener(v -> {
+            if (b.deletedFlag == 1) {
+                Toast.makeText(v.getContext(),
+                        "Deleted entries cannot be edited.",
+                        Toast.LENGTH_SHORT
+                ).show();
+                return;
+            }
+
             String status = safe(b.status);
 
             if (BookingConstants.STATUS_CANCELED.equalsIgnoreCase(status)) {
@@ -117,15 +119,18 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
                 return;
             }
 
-            // ACTIVE or CONFLICTED -> edit/resolve
-            if (editCallback != null) editCallback.onEdit(b);
+            if (editCallback != null) {
+                editCallback.onEdit(b);
+            }
         });
 
-        // ---------- Long Press = Cancel ----------
         h.itemView.setOnLongClickListener(v -> {
-            String status = safe(b.status);
+            if (b.deletedFlag == 1) return true;
 
-            if (!BookingConstants.STATUS_ACTIVE.equalsIgnoreCase(status)) return true;
+            String status = safe(b.status);
+            if (!BookingConstants.STATUS_ACTIVE.equalsIgnoreCase(status)) {
+                return true;
+            }
 
             new AlertDialog.Builder(v.getContext())
                     .setTitle("Cancel booking?")
@@ -143,6 +148,15 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
 
             return true;
         });
+    }
+
+    private String buildRoomLine(BookingEntity b) {
+        return "Room: " + safe(b.roomId) + " | Status: " + getDisplayStatus(b);
+    }
+
+    private String buildTimeLine(BookingEntity b) {
+        return "Start: " + fmt.format(new Date(b.startUtc)) +
+                "   End: " + fmt.format(new Date(b.endUtc));
     }
 
     private String buildMeta(BookingEntity b) {
@@ -171,35 +185,37 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
         }
 
         sb.append("\nDevice: ").append(safe(b.createdByDeviceId));
-
-        // indicator (last line)
         sb.append("\n").append(getIndicatorText(b));
 
         return sb.toString();
     }
 
+    private String getDisplayStatus(BookingEntity b) {
+        return safe(b.status);
+    }
+
     private String getIndicatorText(BookingEntity b) {
-        if (BookingConstants.STATUS_CONFLICTED.equalsIgnoreCase(safe(b.status))) {
-            return "● Conflict";
-        }
         if (BookingConstants.SYNC_PENDING.equalsIgnoreCase(safe(b.syncFlag))) {
             return "● Pending Sync";
+        }
+        if (BookingConstants.STATUS_CANCELED.equalsIgnoreCase(safe(b.status))) {
+            return "● Canceled";
         }
         return "● Synced";
     }
 
     private int getIndicatorColor(BookingEntity b) {
-        if (BookingConstants.STATUS_CONFLICTED.equalsIgnoreCase(safe(b.status))) {
-            return Color.parseColor("#EF6C00"); // Orange
-        }
         if (BookingConstants.SYNC_PENDING.equalsIgnoreCase(safe(b.syncFlag))) {
             return Color.RED;
         }
-        return Color.parseColor("#2E7D32"); // Green
+        if (BookingConstants.STATUS_CANCELED.equalsIgnoreCase(safe(b.status))) {
+            return Color.parseColor("#616161");
+        }
+        return Color.parseColor("#2E7D32");
     }
 
     private static String safe(String s) {
-        return (s == null) ? "" : s;
+        return s == null ? "" : s;
     }
 
     static class VH extends RecyclerView.ViewHolder {
@@ -222,7 +238,6 @@ public class BookingAdapter extends ListAdapter<BookingEntity, BookingAdapter.VH
 
                 @Override
                 public boolean areContentsTheSame(@NonNull BookingEntity oldItem, @NonNull BookingEntity newItem) {
-                    // If any important field changes, RV will update that row only.
                     return Objects.equals(oldItem.roomId, newItem.roomId)
                             && oldItem.startUtc == newItem.startUtc
                             && oldItem.endUtc == newItem.endUtc

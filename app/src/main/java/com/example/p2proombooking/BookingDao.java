@@ -12,30 +12,24 @@ import java.util.List;
 @Dao
 public interface BookingDao {
 
-    // =============================
-    // INSERT / UPDATE
-    // =============================
-
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(BookingEntity booking);
 
     @Update
     void update(BookingEntity booking);
 
-    // =============================
-    // LIVE OBSERVERS (UI)
-    // =============================
+    @Query("DELETE FROM bookings WHERE bookingId = :bookingId")
+    void deleteById(String bookingId);
+
+    // =========================================================
+    // UI queries -> HIDE tombstones
+    // =========================================================
 
     @Query("SELECT * FROM bookings WHERE status = 'ACTIVE' AND deletedFlag = 0 ORDER BY startUtc DESC")
     LiveData<List<BookingEntity>> observeAllActive();
 
     @Query("SELECT * FROM bookings WHERE deletedFlag = 0 ORDER BY startUtc DESC")
     LiveData<List<BookingEntity>> observeAllIncludingCanceled();
-
-
-    // =============================
-    // NON-LIVE READS (SYNC ENGINE)
-    // =============================
 
     @Query("SELECT * FROM bookings WHERE status = 'ACTIVE' AND deletedFlag = 0 ORDER BY startUtc DESC")
     List<BookingEntity> getAllActive();
@@ -46,10 +40,9 @@ public interface BookingDao {
     @Query("SELECT * FROM bookings WHERE bookingId = :bookingId LIMIT 1")
     BookingEntity getById(String bookingId);
 
-
-    // =============================
-    // OVERLAP CHECKS
-    // =============================
+    // =========================================================
+    // Overlap checks for create/edit -> ignore tombstones
+    // =========================================================
 
     @Query("SELECT * FROM bookings " +
             "WHERE roomId = :roomId " +
@@ -77,7 +70,6 @@ public interface BookingDao {
             long newEndUtc
     );
 
-    // FAST overlap detection for SyncEngine
     @Query("SELECT * FROM bookings " +
             "WHERE roomId = :roomId " +
             "AND status = 'ACTIVE' " +
@@ -91,10 +83,26 @@ public interface BookingDao {
             long newEndUtc
     );
 
+    // =========================================================
+    // Optional resolution helper query
+    // =========================================================
 
-    // =============================
-    // CANCEL BOOKING
-    // =============================
+    @Query("SELECT * FROM bookings " +
+            "WHERE roomId = :roomId " +
+            "AND deletedFlag = 0 " +
+            "AND bookingId != :excludeBookingId " +
+            "AND (:slotStart < endUtc) " +
+            "AND (:slotEnd > startUtc)")
+    List<BookingEntity> findAllOverlappingForResolution(
+            String roomId,
+            String excludeBookingId,
+            long slotStart,
+            long slotEnd
+    );
+
+    // =========================================================
+    // Cancel booking
+    // =========================================================
 
     @Query("UPDATE bookings SET " +
             "status = 'CANCELED', " +
@@ -110,36 +118,30 @@ public interface BookingDao {
             long now
     );
 
-
-    // =============================
-    // SYNC OPERATIONS
-    // =============================
+    // =========================================================
+    // Sync queries -> MUST include tombstones
+    // =========================================================
 
     @Query("SELECT * FROM bookings " +
             "WHERE syncFlag = 'PENDING_SYNC' " +
-            "AND status != 'CONFLICTED' " +
-            "AND deletedFlag = 0 " +
             "ORDER BY updatedAt ASC")
     List<BookingEntity> getPendingSync();
 
     @Query("SELECT * FROM bookings " +
             "WHERE updatedAt > :since " +
-            "AND deletedFlag = 0 " +
-            "AND status != 'CONFLICTED' " +
             "ORDER BY updatedAt ASC")
     List<BookingEntity> getChangesSince(long since);
 
     @Query("UPDATE bookings SET " +
             "syncFlag = 'SYNCED', " +
             "lastSyncedAt = :now " +
-            "WHERE bookingId = :bookingId AND deletedFlag = 0")
+            "WHERE bookingId = :bookingId")
     void markSynced(String bookingId, long now);
 
     @Query("UPDATE bookings SET " +
             "syncFlag = 'SYNCED', " +
             "lastSyncedAt = :now " +
             "WHERE updatedAt <= :maxUpdatedAt " +
-            "AND syncFlag = 'PENDING_SYNC' " +
-            "AND deletedFlag = 0")
+            "AND syncFlag = 'PENDING_SYNC'")
     void markSyncedUpTo(long maxUpdatedAt, long now);
 }
