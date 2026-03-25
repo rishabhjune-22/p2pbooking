@@ -52,8 +52,8 @@
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/cvInfo"
-                android:layout_width="250dp"
-                android:layout_height="wrap_content"
+                android:layout_width="280dp"
+                android:layout_height="280dp"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="8dp"
                 android:visibility="gone"
@@ -66,7 +66,8 @@
                     android:id="@+id/tvInfoContent"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="12dp"
+                    android:padding="16dp"
+                    android:lineSpacingExtra="4dp"
                     android:text="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="12sp" />
