@@ -12,10 +12,10 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             android:text="Login / Signup"
             android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"/>
+            android:textStyle="bold" />
 
         <EditText
             android:id="@+id/etName"
@@ -27,19 +27,29 @@
 
         <EditText
             android:id="@+id/etUser"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="325dp"
+            android:layout_height="57dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/textshape"
+            android:drawableLeft="@drawable/user_01"
+            android:drawablePadding="15dp"
+            android:elevation="5dp"
             android:hint="User ID or username"
             android:inputType="text"
-            android:layout_marginTop="10dp"/>
+            android:paddingLeft="15dp" />
 
         <EditText
             android:id="@+id/etPass"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_width="325dp"
+            android:layout_height="57dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/textshape"
+            android:drawableLeft="@drawable/lock_01"
+            android:drawablePadding="15dp"
+            android:elevation="5dp"
             android:hint="Password"
             android:inputType="textPassword"
-            android:layout_marginTop="10dp"/>
+            android:paddingLeft="15dp" />
 
         <Button
             android:id="@+id/btnPrimary"
@@ -52,16 +62,9 @@
             android:id="@+id/tvToggle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
             android:text="No account? Signup"
-            android:textSize="14sp"
-            android:layout_marginTop="14dp"/>
-
-        <TextView
-            android:id="@+id/tvMsg"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:layout_marginTop="12dp"/>
+            android:textSize="14sp" />
 
     </LinearLayout>
 </ScrollView>
