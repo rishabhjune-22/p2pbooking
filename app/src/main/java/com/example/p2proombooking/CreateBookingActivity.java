@@ -16,8 +16,6 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.TimeZone;
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.p2proombooking.AppDatabase;
 import com.example.p2proombooking.BookingDao;
 import com.example.p2proombooking.BookingEntity;
@@ -27,7 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class CreateBookingActivity extends AppCompatActivity {
+public class CreateBookingActivity extends BaseActivity {
 
     private Spinner spRooms;
     private TextView tvMsg;

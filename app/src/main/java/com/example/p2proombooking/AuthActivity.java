@@ -15,12 +15,11 @@ import android.widget.ImageView;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.cardview.widget.CardView;
 
 import java.util.UUID;
 
-public class AuthActivity extends AppCompatActivity {
+public class AuthActivity extends BaseActivity {
     private static final int TAP_SLOP_DP = 8;
 
     private EditText etName, etUser, etPass, etConfirmPass;
@@ -127,6 +126,14 @@ public class AuthActivity extends AppCompatActivity {
             downRawX = event.getRawX();
             downRawY = event.getRawY();
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
+            if (cvInfo != null
+                    && cvInfo.getVisibility() == View.VISIBLE
+                    && isTap(event)
+                    && isTouchOutsideView(cvInfo, event)
+                    && isTouchOutsideView(btnInfo, event)) {
+                cvInfo.setVisibility(View.GONE);
+            }
+
             View v = getCurrentFocus();
             if (v instanceof EditText && isTap(event) && isTouchOutsideView(v, event)) {
                 v.clearFocus();

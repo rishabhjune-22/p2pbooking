@@ -5,6 +5,7 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:openDrawer="end">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -15,7 +16,6 @@
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
             android:layout_height="56dp"
-            android:layout_marginTop="40dp"
             android:background="#F27038"
             android:gravity="center_vertical"
             android:paddingStart="16dp"
@@ -33,15 +33,13 @@
             android:layout_width="44dp"
             android:layout_height="44dp"
             android:layout_marginEnd="16dp"
-            android:background="@android:color/transparent"
+            android:background="@drawable/icons8_profile_96"
             android:contentDescription="Open profile"
             android:padding="8dp"
             android:scaleType="centerInside"
-            android:tint="@android:color/black"
             app:layout_constraintBottom_toBottomOf="@id/tvTitle"
             app:layout_constraintEnd_toEndOf="@id/tvTitle"
-            app:layout_constraintTop_toTopOf="@id/tvTitle"
-            app:srcCompat="@drawable/user_profile_svgrepo_com" />
+            app:layout_constraintTop_toTopOf="@id/tvTitle" />
 
         <TextView
             android:id="@+id/tvUserInfo"
@@ -165,8 +163,7 @@
         android:background="@android:color/white"
         android:elevation="12dp"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:layout_marginTop="40dp">
+        android:padding="20dp">
 
 
         <ImageView
@@ -178,8 +175,7 @@
             android:clickable="true"
             android:focusable="true"
             android:padding="10dp"
-            android:src="@drawable/user_profile_svgrepo_com"
-            android:tint="#1E88E5" />
+            android:src="@drawable/icons8_profile_96" />
 
         <TextView
             android:layout_width="wrap_content"

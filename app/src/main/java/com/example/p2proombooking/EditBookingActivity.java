@@ -11,15 +11,13 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
-public class EditBookingActivity extends AppCompatActivity {
+public class EditBookingActivity extends BaseActivity {
 
     public static final String EXTRA_BOOKING_ID = "booking_id";
 

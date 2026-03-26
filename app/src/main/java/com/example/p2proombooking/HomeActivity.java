@@ -12,7 +12,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -22,9 +21,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends BaseActivity {
 
-    private static final String WS_URL = "ws://10.50.39.226:8080/ws";
+    private static final String WS_URL = "ws://10.50.27.112:8080/ws";
 
     private SessionManager session;
     private AppDatabase db;
@@ -92,7 +91,6 @@ public class HomeActivity extends AppCompatActivity {
                         + "\nDevice: " + deviceId;
         tvUserInfo.setText(userInfoText);
         tvDrawerUserInfo.setText(userInfoText);
-
         btnProfile.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
         ivDrawerProfile.setOnClickListener(v -> drawerLayout.closeDrawer(GravityCompat.END));
 
@@ -125,7 +123,6 @@ public class HomeActivity extends AppCompatActivity {
 
         meshManager.start();
     }
-
     private void setupRecycler() {
         rv = findViewById(R.id.rvBookings);
 
