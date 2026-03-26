@@ -1,158 +1,235 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.drawerlayout.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:openDrawer="end">
 
-    <!-- Toolbar -->
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:background="#1E88E5"
-        android:gravity="center_vertical"
-        android:paddingStart="16dp"
-        android:text="Secure Booking - Home"
-        android:textColor="@android:color/white"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-    <!-- User Info -->
-    <TextView
-        android:id="@+id/tvUserInfo"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Logged in as: USER_ID"
-        android:textSize="14sp"
-        android:padding="16dp"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        <TextView
+            android:id="@+id/tvTitle"
+            android:layout_width="0dp"
+            android:layout_height="56dp"
+            android:layout_marginTop="40dp"
+            android:background="#F27038"
+            android:gravity="center_vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="72dp"
+            android:text="Secure Booking - Home"
+            android:textColor="#F9DAC7"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Sync Status Card -->
+        <ImageButton
+            android:id="@+id/btnProfile"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:layout_marginEnd="16dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Open profile"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:tint="@android:color/black"
+            app:layout_constraintBottom_toBottomOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="@id/tvTitle"
+            app:layout_constraintTop_toTopOf="@id/tvTitle"
+            app:srcCompat="@drawable/user_profile_svgrepo_com" />
+
+        <TextView
+            android:id="@+id/tvUserInfo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:text="Logged in as: USER_ID"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvTitle" />
+
+        <LinearLayout
+            android:id="@+id/layoutSync"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="16dp"
+            android:background="#EEEEEE"
+            android:orientation="vertical"
+            android:padding="16dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvUserInfo">
+
+            <TextView
+                android:id="@+id/tvNetStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Network: -"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvSignalStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Signalling: -"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvWebRtcStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="WebRTC: -"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvDcStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="DataChannel: -"
+                android:textSize="14sp" />
+
+            <TextView
+                android:id="@+id/tvSyncInfo"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="Sync: -"
+                android:textSize="14sp" />
+
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnSyncNow"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/orangebtn"
+                app:backgroundTint="@null"
+                android:text="Sync Now"
+                android:textColor="#F9DAC7" />
+        </LinearLayout>
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swShowCanceled"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="16dp"
+            android:text="Show canceled bookings"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/layoutSync" />
+
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnNewBooking"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/orangebtn"
+            app:backgroundTint="@null"
+            android:text="Create New Booking"
+            android:textColor="#F9DAC7"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/swShowCanceled" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvBookings"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="16dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnNewBooking" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
     <LinearLayout
-        android:id="@+id/layoutSync"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
+        android:id="@+id/profileDrawer"
+        android:layout_width="300dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="@android:color/white"
+        android:elevation="12dp"
         android:orientation="vertical"
-        android:padding="16dp"
-        android:background="#EEEEEE"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tvUserInfo"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        android:padding="20dp"
+        android:layout_marginTop="40dp">
+
+
+        <ImageView
+            android:id="@+id/ivDrawerProfile"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:layout_gravity="end"
+            android:background="#EAF3FF"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="10dp"
+            android:src="@drawable/user_profile_svgrepo_com"
+            android:tint="#1E88E5" />
 
         <TextView
-            android:id="@+id/tvNetStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Network: -"
-            android:textSize="14sp"/>
+            android:layout_marginTop="20dp"
+            android:text="Your Profile"
+            android:textColor="#102A43"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/tvSignalStatus"
+            android:id="@+id/tvDrawerSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Signalling: -"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="6dp"
+            android:text="Account details and quick actions"
+            android:textColor="#5C6B7A"
+            android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/tvWebRtcStatus"
-            android:layout_width="wrap_content"
+            android:id="@+id/tvDrawerUserInfo"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="WebRTC: -"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="24dp"
+            android:background="#F4F7FB"
+            android:lineSpacingExtra="4dp"
+            android:padding="16dp"
+            android:text="Name: -"
+            android:textColor="#243B53"
+            android:textSize="15sp" />
 
-        <TextView
-            android:id="@+id/tvDcStatus"
-            android:layout_width="wrap_content"
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnAbout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="DataChannel: -"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="16dp"
+            android:background="@drawable/orangebtn"
+            app:backgroundTint="@null"
+            android:textColor="#F9DAC7"
+            android:text="About" />
 
-        <TextView
-            android:id="@+id/tvSyncInfo"
-            android:layout_width="wrap_content"
+        <androidx.appcompat.widget.AppCompatButton
+            android:id="@+id/btnDrawerLogout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Sync: -"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"/>
-
-        <Button
-            android:id="@+id/btnSyncNow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Sync Now"
-            android:layout_marginTop="10dp"/>
+            android:layout_marginTop="16dp"
+            android:background="@drawable/red_round_btn"
+            app:backgroundTint="@null"
+            android:text="Logout"
+            android:textColor="#F9DAC7" />
     </LinearLayout>
-    <androidx.appcompat.widget.SwitchCompat
-        android:id="@+id/swShowCanceled"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Show canceled bookings"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="10dp"
-        app:layout_constraintTop_toBottomOf="@id/layoutSync"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- New Booking Button -->
-    <Button
-        android:id="@+id/btnNewBooking"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Create New Booking"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="12dp"
-        app:layout_constraintTop_toBottomOf="@id/swShowCanceled"        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Booking List -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvBookings"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_margin="16dp"
-        app:layout_constraintTop_toBottomOf="@id/btnNewBooking"
-        app:layout_constraintBottom_toTopOf="@id/btnLogout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-    <!-- Logout Button -->
-    <Button
-        android:id="@+id/btnLogout"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Logout"
-        android:layout_margin="16dp"
-        android:backgroundTint="#D32F2F"
-        android:textColor="@android:color/white"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
-
-
-
-
-
-
-
-
-
-
-
-
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.drawerlayout.widget.DrawerLayout>

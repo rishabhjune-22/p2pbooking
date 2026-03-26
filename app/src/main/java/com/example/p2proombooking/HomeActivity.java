@@ -5,12 +5,17 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.lifecycle.LiveData;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,6 +39,8 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvWebRtcStatus;
     private TextView tvDcStatus;
     private TextView tvSyncInfo;
+    private TextView tvDrawerUserInfo;
+    private DrawerLayout drawerLayout;
 
     private LiveData<List<BookingEntity>> liveSource;
     private SyncBus.Listener syncBusListener;
@@ -55,16 +62,21 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+        drawerLayout = findViewById(R.id.drawerLayout);
         TextView tvUserInfo = findViewById(R.id.tvUserInfo);
+        tvDrawerUserInfo = findViewById(R.id.tvDrawerUserInfo);
         tvNetStatus = findViewById(R.id.tvNetStatus);
         tvSignalStatus = findViewById(R.id.tvSignalStatus);
         tvWebRtcStatus = findViewById(R.id.tvWebRtcStatus);
         tvDcStatus = findViewById(R.id.tvDcStatus);
         tvSyncInfo = findViewById(R.id.tvSyncInfo);
 
+        ImageButton btnProfile = findViewById(R.id.btnProfile);
+        View ivDrawerProfile = findViewById(R.id.ivDrawerProfile);
         swShowCanceled = findViewById(R.id.swShowCanceled);
         Button btnNewBooking = findViewById(R.id.btnNewBooking);
-        Button btnLogout = findViewById(R.id.btnLogout);
+        Button btnAbout = findViewById(R.id.btnAbout);
+        Button btnDrawerLogout = findViewById(R.id.btnDrawerLogout);
         Button btnSyncNow = findViewById(R.id.btnSyncNow);
 
         tvNetStatus.setText("Network: checking…");
@@ -74,11 +86,15 @@ public class HomeActivity extends AppCompatActivity {
         tvSyncInfo.setText("Sync: idle");
 
         String deviceId = session.getOrCreateDeviceId();
-        tvUserInfo.setText(
+        String userInfoText =
                 "Name: " + session.getDisplayName()
                         + "\nUserId: " + myUserId
-                        + "\nDevice: " + deviceId
-        );
+                        + "\nDevice: " + deviceId;
+        tvUserInfo.setText(userInfoText);
+        tvDrawerUserInfo.setText(userInfoText);
+
+        btnProfile.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.END));
+        ivDrawerProfile.setOnClickListener(v -> drawerLayout.closeDrawer(GravityCompat.END));
 
         meshManager = new MeshManager(this, myUserId, WS_URL, new MeshManager.Listener() {
             @Override
@@ -103,7 +119,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         setupRecycler();
-        setupButtons(btnNewBooking, btnLogout, btnSyncNow);
+        setupButtons(btnNewBooking, btnAbout, btnDrawerLogout, btnSyncNow);
         setupSyncBus();
         setupNetworkCallback();
 
@@ -148,15 +164,23 @@ public class HomeActivity extends AppCompatActivity {
         observeBookings(false);
     }
 
-    private void setupButtons(Button btnNewBooking, Button btnLogout, Button btnSyncNow) {
+    private void setupButtons(Button btnNewBooking, Button btnAbout, Button btnDrawerLogout, Button btnSyncNow) {
         btnNewBooking.setOnClickListener(v ->
                 startActivity(new Intent(this, CreateBookingActivity.class))
         );
 
-        btnLogout.setOnClickListener(v -> {
+        btnAbout.setOnClickListener(v -> new AlertDialog.Builder(this)
+                .setTitle("About")
+                .setMessage("P2P Room Booking\n\nManage bookings, sync peers, and access your account from the profile panel.")
+                .setPositiveButton("OK", null)
+                .show());
+
+        View.OnClickListener logoutClickListener = v -> {
             session.logout();
             goToAuthAndClearBackstack();
-        });
+        };
+
+        btnDrawerLogout.setOnClickListener(logoutClickListener);
 
         btnSyncNow.setOnClickListener(v -> {
             meshManager.syncNow();
@@ -245,5 +269,14 @@ public class HomeActivity extends AppCompatActivity {
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(i);
         finish();
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (drawerLayout != null && drawerLayout.isDrawerOpen(GravityCompat.END)) {
+            drawerLayout.closeDrawer(GravityCompat.END);
+            return;
+        }
+        super.onBackPressed();
     }
 }
