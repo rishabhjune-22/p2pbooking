@@ -5,21 +5,33 @@
     android:id="@+id/drawerLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fitsSystemWindows="true"
     tools:openDrawer="end">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
+        <View
+            android:id="@+id/statusBarBackground"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="#F27038"
+            app:layout_constraintBottom_toTopOf="@id/tvTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="0dp"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
             android:background="#F27038"
             android:gravity="center_vertical"
             android:paddingStart="16dp"
             android:paddingEnd="72dp"
+            android:paddingTop="65dp"
+            android:paddingBottom="8dp"
             android:text="Secure Booking - Home"
             android:textColor="#F9DAC7"
             android:textSize="18sp"
@@ -36,10 +48,12 @@
             android:background="@drawable/icons8_profile_96"
             android:contentDescription="Open profile"
             android:padding="8dp"
+            android:layout_marginTop="40dp"
             android:scaleType="centerInside"
             app:layout_constraintBottom_toBottomOf="@id/tvTitle"
             app:layout_constraintEnd_toEndOf="@id/tvTitle"
-            app:layout_constraintTop_toTopOf="@id/tvTitle" />
+            app:layout_constraintTop_toTopOf="@id/tvTitle"
+            app:layout_constraintVertical_bias="0.8" />
 
         <TextView
             android:id="@+id/tvUserInfo"
@@ -160,6 +174,7 @@
         android:layout_width="300dp"
         android:layout_height="match_parent"
         android:layout_gravity="end"
+        android:layout_marginTop="50dp"
         android:background="@android:color/white"
         android:elevation="12dp"
         android:orientation="vertical"
