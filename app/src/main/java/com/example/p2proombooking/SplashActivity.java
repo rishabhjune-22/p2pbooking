@@ -9,23 +9,22 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
+    private static final long SPLASH_DELAY = 900;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        SessionManager session = new SessionManager(this);
-        session.getOrCreateDeviceId(); // ensures device identity exists
-
-        String userId = session.getActiveUserId();
+        SessionManager sessionManager = new SessionManager(this);
 
         new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            if (userId != null) {
-                startActivity(new Intent(this, HomeActivity.class));
+            if (sessionManager.isLoggedIn()) {
+                startActivity(new Intent(SplashActivity.this, HomeActivity.class));
             } else {
-                startActivity(new Intent(this, AuthActivity.class));
+                startActivity(new Intent(SplashActivity.this, AuthActivity.class));
             }
             finish();
-        }, 900); // keep short
+        }, SPLASH_DELAY);
     }
 }

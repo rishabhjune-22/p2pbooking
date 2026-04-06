@@ -20,7 +20,6 @@
             android:layout_marginBottom="16dp" />
 
         <TextView
-            android:id="@+id/tvRoomLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Select Room"
@@ -34,10 +33,99 @@
             android:layout_marginBottom="16dp" />
 
         <TextView
-            android:id="@+id/tvStartLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start Date &amp; Time"
+            android:text="Visitor Name *"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etVisitorName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter visitor name"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visitor Contact"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etVisitorContact"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter visitor contact"
+            android:inputType="phone"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visitor Designation"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etVisitorDesignation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter designation"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visitor Organization"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etVisitorOrganization"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter organization"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visitor Gender"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <Spinner
+            android:id="@+id/spVisitorGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Visitor Address"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etVisitorAddress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter address"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:gravity="top|start"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Arrival Date &amp; Time *"
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
 
@@ -49,15 +137,13 @@
             android:clickable="true"
             android:cursorVisible="false"
             android:inputType="none"
-            android:hint="Select start date and time"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp" />
+            android:hint="Select arrival date and time"
+            android:layout_marginBottom="12dp" />
 
         <TextView
-            android:id="@+id/tvEndLabel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="End Date &amp; Time"
+            android:text="Departure Date &amp; Time *"
             android:textStyle="bold"
             android:layout_marginBottom="6dp" />
 
@@ -69,9 +155,132 @@
             android:clickable="true"
             android:cursorVisible="false"
             android:inputType="none"
-            android:hint="Select end date and time"
-            android:padding="12dp"
-            android:layout_marginBottom="20dp" />
+            android:hint="Select departure date and time"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Purpose of Visit"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etPurpose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter purpose"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:gravity="top|start"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coordinator Name *"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etCoordinatorName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter coordinator name"
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coordinator Designation"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etCoordinatorDesignation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter designation"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coordinator Department"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etCoordinatorDepartment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter department"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Coordinator Mobile"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etCoordinatorMobile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter mobile"
+            android:inputType="phone"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logistics Name / Designation"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etLogisticsNameDesignation"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter logistics name/designation"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logistics Mobile"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etLogisticsMobile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter logistics mobile"
+            android:inputType="phone"
+            android:layout_marginBottom="12dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remarks"
+            android:textStyle="bold"
+            android:layout_marginBottom="6dp" />
+
+        <EditText
+            android:id="@+id/etRemarks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Enter remarks"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:gravity="top|start"
+            android:layout_marginBottom="16dp" />
 
         <Button
             android:id="@+id/btnUpdate"

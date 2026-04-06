@@ -1,19 +1,13 @@
 package com.example.p2proombooking;
-
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-
 import androidx.appcompat.app.AppCompatActivity;
-
-import java.util.UUID;
-
 public class AuthActivity extends AppCompatActivity {
 
-    private EditText etName, etUser, etPass;
+    private EditText etEmail, etUser, etPass;
     private Button btnPrimary;
     private TextView tvToggle, tvMsg;
 
@@ -24,13 +18,12 @@ public class AuthActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_auth);
 
-        etName = findViewById(R.id.etName);
+        etEmail = findViewById(R.id.etEmail);
         etUser = findViewById(R.id.etUser);
         etPass = findViewById(R.id.etPass);
         btnPrimary = findViewById(R.id.btnPrimary);
         tvToggle = findViewById(R.id.tvToggle);
         tvMsg = findViewById(R.id.tvMsg);
-
         btnPrimary.setOnClickListener(v -> onPrimary());
         tvToggle.setOnClickListener(v -> toggleMode());
 
@@ -41,88 +34,67 @@ public class AuthActivity extends AppCompatActivity {
         isSignup = !isSignup;
         renderMode();
         tvMsg.setText("");
+        clearInputs();
     }
 
     private void renderMode() {
-        etName.setVisibility(isSignup ? View.VISIBLE : View.GONE);
+        etEmail.setVisibility(isSignup ? android.view.View.VISIBLE : android.view.View.GONE);
         btnPrimary.setText(isSignup ? "Signup" : "Login");
         tvToggle.setText(isSignup ? "Already have an account? Login" : "No account? Signup");
     }
 
+    private void clearInputs() {
+        etEmail.setText("");
+        etUser.setText("");
+        etPass.setText("");
+    }
+
     private void onPrimary() {
-
-        AppDatabase db = AppDatabase.getInstance(this);
-
         String username = etUser.getText().toString().trim().toLowerCase();
-        String pass = etPass.getText().toString();
+        String password = etPass.getText().toString().trim();
 
-        if (username.isEmpty() || pass.isEmpty()) {
+        if (TextUtils.isEmpty(username) || TextUtils.isEmpty(password)) {
             tvMsg.setText("Fill all required fields.");
             return;
         }
 
-        SessionManager session = new SessionManager(this);
-
         if (isSignup) {
+            String email = etEmail.getText().toString().trim();
 
-            String displayName = etName.getText().toString().trim();
-            if (displayName.isEmpty()) {
-                tvMsg.setText("Enter your name.");
+            if (TextUtils.isEmpty(email)) {
+                tvMsg.setText("Enter email.");
                 return;
             }
 
-            if (db.userDao().getByUsername(username) != null) {
-                tvMsg.setText("User already exists.");
-                return;
-            }
-
-            byte[] salt = PasswordUtils.generateSalt();
-            byte[] hash = PasswordUtils.hashPassword(pass.toCharArray(), salt);
-
-            UserEntity user = new UserEntity();
-            user.userId = UUID.randomUUID().toString(); // immutable internal ID (UUID)
-            user.username = username;
-            user.displayName = displayName;
-            user.passwordHash = hash;
-            user.salt = salt;
-            user.createdAt = System.currentTimeMillis();
-
-            db.userDao().insert(user);
-
-            // session
-            session.setLoggedIn(true);
-            session.setActiveUserId(user.userId);
-            session.setDisplayName(user.displayName); // optional cache for UI
-
-            goToHome();
-
+            doSignup(username, email, password);
         } else {
-
-            UserEntity user = db.userDao().getByUsername(username);
-            if (user == null) {
-                tvMsg.setText("User not found.");
-                return;
-            }
-
-            byte[] inputHash = PasswordUtils.hashPassword(pass.toCharArray(), user.salt);
-            if (!PasswordUtils.verify(user.passwordHash, inputHash)) {
-                tvMsg.setText("Wrong password.");
-                return;
-            }
-
-            // session
-            session.setLoggedIn(true);
-            session.setActiveUserId(user.userId);
-            session.setDisplayName(user.displayName); // optional cache
-
-            goToHome();
+            doLogin(username, password);
         }
     }
 
-    private void goToHome() {
-        Intent i = new Intent(this, HomeActivity.class);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(i);
-        finish();
+    private void doSignup(String username, String email, String password) {
+        setLoading(true);
+        tvMsg.setText("");
+
+
     }
+
+    private void doLogin(String username, String password) {
+        setLoading(true);
+        tvMsg.setText("");
+
+
+    }
+
+    private void setLoading(boolean loading) {
+        btnPrimary.setEnabled(!loading);
+        tvToggle.setEnabled(!loading);
+        etEmail.setEnabled(!loading);
+        etUser.setEnabled(!loading);
+        etPass.setEnabled(!loading);
+
+        btnPrimary.setText(loading ? "Please wait..." : (isSignup ? "Signup" : "Login"));
+    }
+
+
 }

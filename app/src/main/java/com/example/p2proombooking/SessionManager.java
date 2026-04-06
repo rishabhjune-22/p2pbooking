@@ -3,16 +3,15 @@ package com.example.p2proombooking;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import java.util.UUID;
-
 public class SessionManager {
 
-    private static final String PREF = "p2proombooking_prefs";
+    private static final String PREF = "room_booking_prefs";
 
-    private static final String KEY_DEVICE_ID = "device_id";
-    private static final String KEY_DISPLAY_NAME = "display_name";
+    private static final String KEY_ACCESS_TOKEN = "access_token";
+    private static final String KEY_REFRESH_TOKEN = "refresh_token";
+    private static final String KEY_USERNAME = "username";
+    private static final String KEY_EMAIL = "email";
     private static final String KEY_LOGGED_IN = "logged_in";
-    private static final String KEY_ACTIVE_USER_ID = "active_user_id";
 
     private final SharedPreferences sp;
 
@@ -21,55 +20,83 @@ public class SessionManager {
     }
 
     // -----------------------------
-    // DEVICE ID (immutable per install)
+    // TOKENS
     // -----------------------------
-    public String getOrCreateDeviceId() {
-        String id = sp.getString(KEY_DEVICE_ID, null);
-        if (id == null) {
-            id = UUID.randomUUID().toString();
-            sp.edit().putString(KEY_DEVICE_ID, id).apply();
-        }
-        return id;
+    public void saveTokens(String accessToken, String refreshToken) {
+        SharedPreferences.Editor editor = sp.edit();
+        editor.putString(KEY_ACCESS_TOKEN, accessToken);
+        editor.putString(KEY_REFRESH_TOKEN, refreshToken);
+        editor.putBoolean(KEY_LOGGED_IN, hasText(accessToken));
+        editor.apply();
+    }
+
+    public String getAccessToken() {
+        return sp.getString(KEY_ACCESS_TOKEN, null);
+    }
+
+    public String getRefreshToken() {
+        return sp.getString(KEY_REFRESH_TOKEN, null);
+    }
+
+    public void updateAccessToken(String newAccessToken) {
+        sp.edit()
+                .putString(KEY_ACCESS_TOKEN, newAccessToken)
+                .putBoolean(KEY_LOGGED_IN, hasText(newAccessToken))
+                .apply();
+    }
+
+    public void updateRefreshToken(String newRefreshToken) {
+        sp.edit().putString(KEY_REFRESH_TOKEN, newRefreshToken).apply();
+    }
+
+    public boolean hasAccessToken() {
+        return hasText(getAccessToken());
+    }
+
+    public boolean hasRefreshToken() {
+        return hasText(getRefreshToken());
     }
 
     // -----------------------------
-    // DISPLAY NAME (user chosen, cached)
+    // USER INFO (optional cache)
     // -----------------------------
-    public void setDisplayName(String name) {
-        sp.edit().putString(KEY_DISPLAY_NAME, name).apply();
+    public void saveUserInfo(String username, String email) {
+        sp.edit()
+                .putString(KEY_USERNAME, username)
+                .putString(KEY_EMAIL, email)
+                .apply();
     }
 
-    public String getDisplayName() {
-        return sp.getString(KEY_DISPLAY_NAME, "Unknown");
+    public String getUsername() {
+        return sp.getString(KEY_USERNAME, null);
     }
 
-    // -----------------------------
-    // ACTIVE USER (DB userId UUID)
-    // -----------------------------
-    public void setActiveUserId(String userId) {
-        sp.edit().putString(KEY_ACTIVE_USER_ID, userId).apply();
-    }
-
-    public String getActiveUserId() {
-        return sp.getString(KEY_ACTIVE_USER_ID, null);
+    public String getEmail() {
+        return sp.getString(KEY_EMAIL, null);
     }
 
     // -----------------------------
     // LOGIN STATE
     // -----------------------------
-    public void setLoggedIn(boolean loggedIn) {
-        sp.edit().putBoolean(KEY_LOGGED_IN, loggedIn).apply();
-    }
-
     public boolean isLoggedIn() {
-        return sp.getBoolean(KEY_LOGGED_IN, false)
-                && getActiveUserId() != null;
+        return hasText(getAccessToken());
     }
 
     public void logout() {
         sp.edit()
+                .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
+                .remove(KEY_USERNAME)
+                .remove(KEY_EMAIL)
                 .putBoolean(KEY_LOGGED_IN, false)
-                .remove(KEY_ACTIVE_USER_ID)
                 .apply();
+    }
+
+    public void clearSession() {
+        sp.edit().clear().apply();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }
