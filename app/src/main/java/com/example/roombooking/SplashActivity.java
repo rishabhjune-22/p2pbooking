@@ -1,4 +1,4 @@
-package com.example.p2proombooking;
+package com.example.roombooking;
 
 import android.content.Intent;
 import android.os.Bundle;
