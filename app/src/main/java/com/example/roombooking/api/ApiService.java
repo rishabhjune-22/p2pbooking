@@ -2,7 +2,11 @@ package com.example.roombooking.api;
 
 import com.example.roombooking.BookingCancelRequest;
 import com.example.roombooking.BookingCancelResponse;
+import com.example.roombooking.BookingCreateRequest;
+import com.example.roombooking.BookingCreateResponse;
 import com.example.roombooking.BookingListResponse;
+import com.example.roombooking.BookingUpdateRequest;
+import com.example.roombooking.BookingUpdateResponse;
 import com.example.roombooking.LoginRequest;
 import com.example.roombooking.LogoutRequest;
 import com.example.roombooking.RefreshRequest;
@@ -14,6 +18,7 @@ import com.example.roombooking.TokenResponse;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
+import retrofit2.http.PATCH;
 import retrofit2.http.POST;
 import retrofit2.http.Query;
 
@@ -35,5 +40,14 @@ public interface ApiService {
     Call<BookingCancelResponse> cancelBooking(
             @retrofit2.http.Path("pk") int bookingId,
             @Body BookingCancelRequest request
+    );
+
+    @POST("api/bookings/create/")
+    Call<BookingCreateResponse> createBooking(@Body BookingCreateRequest request);
+
+    @PATCH("api/bookings/{pk}/edit/")
+    Call<BookingUpdateResponse> updateBooking(
+            @retrofit2.http.Path("pk") int bookingId,
+            @Body BookingUpdateRequest request
     );
 }

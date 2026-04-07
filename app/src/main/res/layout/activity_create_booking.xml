@@ -2,16 +2,14 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:orientation="vertical">
 
         <TextView
-            android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Create Booking"
@@ -19,282 +17,141 @@
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Room"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <Spinner
-            android:id="@+id/spRooms"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Name *"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
         <EditText
             android:id="@+id/etVisitorName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter visitor name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Contact"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <EditText
-            android:id="@+id/etVisitorContact"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Enter visitor contact"
-            android:inputType="phone"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Designation"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Visitor Name" />
 
         <EditText
             android:id="@+id/etVisitorDesignation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter designation"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Organization"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Visitor Designation" />
 
         <EditText
-            android:id="@+id/etVisitorOrganization"
+            android:id="@+id/etVisitorOrganisation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter organization"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
+            android:hint="Visitor Organisation" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Gender"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
-
-        <Spinner
-            android:id="@+id/spVisitorGender"
+        <EditText
+            android:id="@+id/etVisitorGender"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Address"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Visitor Gender" />
 
         <EditText
             android:id="@+id/etVisitorAddress"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter address"
-            android:inputType="textMultiLine"
-            android:minLines="2"
-            android:gravity="top|start"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Arrival Date &amp; Time *"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Visitor Address" />
 
         <EditText
-            android:id="@+id/etStartDateTime"
+            android:id="@+id/etVisitorMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select arrival date and time"
-            android:focusable="false"
-            android:clickable="true"
-            android:cursorVisible="false"
-            android:inputType="none"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Departure Date &amp; Time *"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Visitor Mobile"
+            android:inputType="phone" />
 
         <EditText
-            android:id="@+id/etEndDateTime"
+            android:id="@+id/etVisitorEmail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Select departure date and time"
+            android:hint="Visitor Email"
+            android:inputType="textEmailAddress" />
+
+
+
+        <EditText
+            android:id="@+id/etArrivalDT"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Arrival Date &amp; Time"
             android:focusable="false"
             android:clickable="true"
-            android:cursorVisible="false"
-            android:inputType="none"
-            android:layout_marginBottom="12dp" />
+            android:inputType="none"/>
 
-        <TextView
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/etDepartureDT"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Purpose of Visit"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Departure Date &amp; Time"
+            android:focusable="false"
+            android:clickable="true"
+            android:inputType="none"/>
 
         <EditText
             android:id="@+id/etPurpose"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter purpose"
-            android:inputType="textMultiLine"
-            android:minLines="2"
-            android:gravity="top|start"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Coordinator Name *"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Purpose of Visit" />
 
         <EditText
-            android:id="@+id/etCoordinatorName"
+            android:id="@+id/etRequesteeName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter coordinator name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Coordinator Designation"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Requestee Name" />
 
         <EditText
-            android:id="@+id/etCoordinatorDesignation"
+            android:id="@+id/etRequesteeDesignation"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter designation"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Coordinator Department"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Requestee Designation" />
 
         <EditText
-            android:id="@+id/etCoordinatorDepartment"
+            android:id="@+id/etRequesteeDepartment"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter department"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Coordinator Mobile"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Requestee Department" />
 
         <EditText
-            android:id="@+id/etCoordinatorMobile"
+            android:id="@+id/etRequesteeMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter mobile"
-            android:inputType="phone"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Logistics Name / Designation"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Requestee Mobile"
+            android:inputType="phone" />
 
         <EditText
-            android:id="@+id/etLogisticsNameDesignation"
+            android:id="@+id/etLogisticsName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter logistics name/designation"
-            android:inputType="text"
-            android:layout_marginBottom="12dp" />
+            android:hint="Logistics Name" />
 
-        <TextView
-            android:layout_width="wrap_content"
+        <EditText
+            android:id="@+id/etLogisticsDesignation"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Logistics Mobile"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Logistics Designation" />
 
         <EditText
             android:id="@+id/etLogisticsMobile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter logistics mobile"
-            android:inputType="phone"
-            android:layout_marginBottom="12dp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Remarks"
-            android:textStyle="bold"
-            android:layout_marginBottom="6dp" />
+            android:hint="Logistics Mobile"
+            android:inputType="phone" />
 
         <EditText
-            android:id="@+id/etRemarks"
+            android:id="@+id/etRoomId"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Enter remarks"
-            android:inputType="textMultiLine"
-            android:minLines="2"
-            android:gravity="top|start"
-            android:layout_marginBottom="16dp" />
-
-        <Button
-            android:id="@+id/btnSave"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save Booking"
-            android:layout_marginBottom="12dp" />
+            android:hint="Room ID"
+            android:inputType="number" />
 
         <TextView
-            android:id="@+id/tvMsg"
+            android:id="@+id/tvMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="14sp" />
+            android:textColor="@android:color/holo_red_dark"
+            android:layout_marginTop="12dp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnCreateBooking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Create Booking"
+            android:layout_marginTop="16dp" />
 
     </LinearLayout>
 </ScrollView>

@@ -33,7 +33,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
-
+    private Button btnCreateBooking;
     private int currentPage = 1;
     private boolean isLoading = false;
     private boolean isLastPage = false;
@@ -93,6 +93,15 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         loadBookings(1);
+
+
+
+        btnCreateBooking = findViewById(R.id.btnCreateBooking);
+
+        btnCreateBooking.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
+            createBookingLauncher.launch(intent);
+        });
     }
     private void refreshBookings() {
         currentPage = 1;
@@ -279,6 +288,17 @@ public class HomeActivity extends AppCompatActivity {
 
                     if (bookingId != -1 && updatedStatus != null) {
                         bookingAdapter.updateBookingStatusById(bookingId, updatedStatus);
+                    }
+                }
+            });
+
+
+    private final ActivityResultLauncher<Intent> createBookingLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    boolean bookingCreated = result.getData().getBooleanExtra("booking_created", false);
+                    if (bookingCreated) {
+                        refreshBookings();
                     }
                 }
             });

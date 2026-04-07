@@ -6,13 +6,25 @@
     android:orientation="vertical"
     android:padding="12dp">
 
-    <Button
-        android:id="@+id/btnLogout"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Logout"
-        android:layout_gravity="end"
-        android:layout_marginBottom="8dp" />
+        android:orientation="horizontal"
+        android:gravity="end">
+
+        <Button
+            android:id="@+id/btnCreateBooking"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Create Booking"
+            android:layout_marginEnd="8dp" />
+
+        <Button
+            android:id="@+id/btnLogout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Logout" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvTitle"

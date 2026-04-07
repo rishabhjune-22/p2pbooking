@@ -20,7 +20,7 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private TextView tvDetails;
     private Button btnCancelBooking;
-
+    private Button btnEditBooking;
     private BookingItem bookingItem;
 
     @Override
@@ -30,9 +30,9 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         tvDetails = findViewById(R.id.tvDetails);
         btnCancelBooking = findViewById(R.id.btnCancelBooking);
-
+        btnEditBooking = findViewById(R.id.btnEditBooking);
         bookingItem = (BookingItem) getIntent().getSerializableExtra("booking_data");
-
+        btnEditBooking.setOnClickListener(v -> openEditScreen());
         if (bookingItem != null) {
             renderBookingDetails();
             updateCancelButtonState();
@@ -43,6 +43,12 @@ public class BookingDetailActivity extends AppCompatActivity {
             btnCancelBooking.setEnabled(false);
         }
     }
+    private void openEditScreen() {
+        Intent intent = new Intent(this, EditBookingActivity.class);
+        intent.putExtra("booking_data", bookingItem);
+        startActivityForResult(intent, 1001);
+    }
+
 
     private void renderBookingDetails() {
         String details =

@@ -31,7 +31,11 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Cancel Booking" />
-
+        <Button
+            android:id="@+id/btnEditBooking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Booking"/>
     </LinearLayout>
 
 </ScrollView>
