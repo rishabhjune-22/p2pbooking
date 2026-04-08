@@ -1,20 +1,18 @@
 package com.example.roombooking.api;
-
-import com.example.roombooking.BookingCancelRequest;
-import com.example.roombooking.BookingCancelResponse;
-import com.example.roombooking.BookingCreateRequest;
-import com.example.roombooking.BookingCreateResponse;
-import com.example.roombooking.BookingListResponse;
-import com.example.roombooking.BookingUpdateRequest;
-import com.example.roombooking.BookingUpdateResponse;
-import com.example.roombooking.LoginRequest;
-import com.example.roombooking.LogoutRequest;
-import com.example.roombooking.RefreshRequest;
-import com.example.roombooking.RefreshResponse;
-import com.example.roombooking.SignupRequest;
-import com.example.roombooking.SignupResponse;
-import com.example.roombooking.TokenResponse;
-
+import com.example.roombooking.booking.BookingCancelRequest;
+import com.example.roombooking.booking.BookingCancelResponse;
+import com.example.roombooking.booking.BookingCreateRequest;
+import com.example.roombooking.booking.BookingCreateResponse;
+import com.example.roombooking.booking.BookingListResponse;
+import com.example.roombooking.booking.BookingUpdateRequest;
+import com.example.roombooking.booking.BookingUpdateResponse;
+import com.example.roombooking.auth.LoginRequest;
+import com.example.roombooking.auth.LogoutRequest;
+import com.example.roombooking.auth.RefreshRequest;
+import com.example.roombooking.auth.RefreshResponse;
+import com.example.roombooking.auth.SignupRequest;
+import com.example.roombooking.auth.SignupResponse;
+import com.example.roombooking.auth.TokenResponse;
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
@@ -33,7 +31,7 @@ public interface ApiService {
 
     @GET("api/bookings/")
     Call<BookingListResponse> getBookings(@Query("page") int page);
-    @POST("api/logout/")
+    @POST("/api/accounts/logout/")
     Call<Void> logout(@Body LogoutRequest request);
 
     @POST("api/bookings/{pk}/cancel/")

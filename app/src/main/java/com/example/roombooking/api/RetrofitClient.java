@@ -2,9 +2,6 @@ package com.example.roombooking.api;
 
 import android.content.Context;
 
-import com.example.roombooking.AuthInterceptor;
-import com.example.roombooking.TokenAuthenticator;
-
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;

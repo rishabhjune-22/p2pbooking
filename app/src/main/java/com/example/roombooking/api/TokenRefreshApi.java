@@ -1,7 +1,7 @@
 package com.example.roombooking.api;
 
-import com.example.roombooking.RefreshRequest;
-import com.example.roombooking.RefreshResponse;
+import com.example.roombooking.auth.RefreshRequest;
+import com.example.roombooking.auth.RefreshResponse;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
