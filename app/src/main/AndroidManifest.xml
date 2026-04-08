@@ -18,6 +18,7 @@
         android:usesCleartextTraffic="true"
 
         >
+        <activity android:name=".EditBookingActivity" />
         <activity android:name=".CreateBookingActivity" />
         <activity android:name=".HomeActivity" />
 

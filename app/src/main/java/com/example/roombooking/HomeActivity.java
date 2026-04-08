@@ -283,14 +283,35 @@ public class HomeActivity extends AppCompatActivity {
     private final ActivityResultLauncher<Intent> bookingDetailLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    int bookingId = result.getData().getIntExtra("updated_booking_id", -1);
-                    String updatedStatus = result.getData().getStringExtra("updated_status");
+                    Intent data = result.getData();
 
-                    if (bookingId != -1 && updatedStatus != null) {
-                        bookingAdapter.updateBookingStatusById(bookingId, updatedStatus);
+                    int bookingId = data.getIntExtra("updated_booking_id", -1);
+                    String updatedStatus = data.getStringExtra("updated_status");
+                    String visitorName = data.getStringExtra("visitor_name");
+                    String visitorMobile = data.getStringExtra("visitor_mobile");
+                    String purpose = data.getStringExtra("purpose_of_visit");
+                    String arrivalDate = data.getStringExtra("arrival_date");
+                    String arrivalTime = data.getStringExtra("arrival_time");
+                    String departureDate = data.getStringExtra("departure_date");
+                    String departureTime = data.getStringExtra("departure_time");
+
+                    if (bookingId != -1) {
+                        bookingAdapter.updateBookingById(
+                                bookingId,
+                                updatedStatus,
+                                visitorName,
+                                visitorMobile,
+                                purpose,
+                                arrivalDate,
+                                arrivalTime,
+                                departureDate,
+                                departureTime
+                        );
                     }
                 }
             });
+
+
 
 
     private final ActivityResultLauncher<Intent> createBookingLauncher =

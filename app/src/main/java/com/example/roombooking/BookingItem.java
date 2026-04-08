@@ -56,4 +56,32 @@ public class BookingItem implements Serializable {
     public void setStatus(String status) {
         this.status = status;
     }
+
+    public void setVisitor_name(String visitor_name) {
+        this.visitor_name = visitor_name;
+    }
+
+    public void setVisitor_mobile(String visitor_mobile) {
+        this.visitor_mobile = visitor_mobile;
+    }
+
+    public void setPurpose_of_visit(String purpose_of_visit) {
+        this.purpose_of_visit = purpose_of_visit;
+    }
+
+    public void setArrival_date(String arrival_date) {
+        this.arrival_date = arrival_date;
+    }
+
+    public void setArrival_time(String arrival_time) {
+        this.arrival_time = arrival_time;
+    }
+
+    public void setDeparture_date(String departure_date) {
+        this.departure_date = departure_date;
+    }
+
+    public void setDeparture_time(String departure_time) {
+        this.departure_time = departure_time;
+    }
 }

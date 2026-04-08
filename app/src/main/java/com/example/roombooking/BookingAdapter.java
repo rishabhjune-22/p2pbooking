@@ -188,4 +188,48 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             }
         }
     }
+    public void updateBookingById(int bookingId,
+                                  String updatedStatus,
+                                  String visitorName,
+                                  String visitorMobile,
+                                  String purpose,
+                                  String arrivalDate,
+                                  String arrivalTime,
+                                  String departureDate,
+                                  String departureTime) {
+        for (int i = 0; i < items.size(); i++) {
+            BookingItem item = items.get(i);
+
+            if (item.getId() == bookingId) {
+                if (updatedStatus != null) {
+                    item.setStatus(updatedStatus);
+                }
+                if (visitorName != null) {
+                    item.setVisitor_name(visitorName);
+                }
+                if (visitorMobile != null) {
+                    item.setVisitor_mobile(visitorMobile);
+                }
+                if (purpose != null) {
+                    item.setPurpose_of_visit(purpose);
+                }
+                if (arrivalDate != null) {
+                    item.setArrival_date(arrivalDate);
+                }
+                if (arrivalTime != null) {
+                    item.setArrival_time(arrivalTime);
+                }
+                if (departureDate != null) {
+                    item.setDeparture_date(departureDate);
+                }
+                if (departureTime != null) {
+                    item.setDeparture_time(departureTime);
+                }
+
+                notifyItemChanged(i);
+                break;
+            }
+        }
+    }
+
 }

@@ -8,6 +8,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.api.RetrofitClient;
@@ -21,7 +23,41 @@ public class BookingDetailActivity extends AppCompatActivity {
     private TextView tvDetails;
     private Button btnCancelBooking;
     private Button btnEditBooking;
+
     private BookingItem bookingItem;
+
+    private final ActivityResultLauncher<Intent> editBookingLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK
+                        && result.getData() != null
+                        && bookingItem != null) {
+
+                    Intent data = result.getData();
+
+                    bookingItem.setVisitor_name(data.getStringExtra("visitor_name"));
+                    bookingItem.setVisitor_mobile(data.getStringExtra("visitor_mobile"));
+                    bookingItem.setPurpose_of_visit(data.getStringExtra("purpose_of_visit"));
+                    bookingItem.setArrival_date(data.getStringExtra("arrival_date"));
+                    bookingItem.setArrival_time(data.getStringExtra("arrival_time"));
+                    bookingItem.setDeparture_date(data.getStringExtra("departure_date"));
+                    bookingItem.setDeparture_time(data.getStringExtra("departure_time"));
+
+                    renderBookingDetails();
+
+                    Intent resultIntent = new Intent();
+                    resultIntent.putExtra("updated_booking_id", bookingItem.getId());
+                    resultIntent.putExtra("updated_status", bookingItem.getStatus());
+                    resultIntent.putExtra("visitor_name", bookingItem.getVisitor_name());
+                    resultIntent.putExtra("visitor_mobile", bookingItem.getVisitor_mobile());
+                    resultIntent.putExtra("purpose_of_visit", bookingItem.getPurpose_of_visit());
+                    resultIntent.putExtra("arrival_date", bookingItem.getArrival_date());
+                    resultIntent.putExtra("arrival_time", bookingItem.getArrival_time());
+                    resultIntent.putExtra("departure_date", bookingItem.getDeparture_date());
+                    resultIntent.putExtra("departure_time", bookingItem.getDeparture_time());
+                    setResult(RESULT_OK, resultIntent);
+                    Toast.makeText(this, "Booking updated successfully", Toast.LENGTH_SHORT).show();
+                }
+            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,24 +67,34 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvDetails = findViewById(R.id.tvDetails);
         btnCancelBooking = findViewById(R.id.btnCancelBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
+
         bookingItem = (BookingItem) getIntent().getSerializableExtra("booking_data");
-        btnEditBooking.setOnClickListener(v -> openEditScreen());
+
         if (bookingItem != null) {
             renderBookingDetails();
             updateCancelButtonState();
 
+            btnEditBooking.setOnClickListener(v -> openEditScreen());
             btnCancelBooking.setOnClickListener(v -> showCancelDialog());
         } else {
             tvDetails.setText("No booking details found.");
             btnCancelBooking.setEnabled(false);
+            btnEditBooking.setEnabled(false);
         }
     }
+
     private void openEditScreen() {
+        if (bookingItem == null) return;
+
+        if ("cancelled".equalsIgnoreCase(bookingItem.getStatus())) {
+            Toast.makeText(this, "Cancelled booking cannot be edited", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
         Intent intent = new Intent(this, EditBookingActivity.class);
         intent.putExtra("booking_data", bookingItem);
-        startActivityForResult(intent, 1001);
+        editBookingLauncher.launch(intent);
     }
-
 
     private void renderBookingDetails() {
         String details =
@@ -89,6 +135,9 @@ public class BookingDetailActivity extends AppCompatActivity {
         boolean alreadyCancelled = "cancelled".equalsIgnoreCase(bookingItem.getStatus());
         btnCancelBooking.setEnabled(!alreadyCancelled);
         btnCancelBooking.setText(alreadyCancelled ? "Already Cancelled" : "Cancel Booking");
+
+        btnEditBooking.setEnabled(!alreadyCancelled);
+        btnEditBooking.setText(alreadyCancelled ? "Edit Disabled" : "Edit Booking");
     }
 
     private void showCancelDialog() {
