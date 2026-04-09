@@ -2,92 +2,121 @@ package com.example.roombooking.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
-import com.example.roombooking.booking.BookingAdapter;
-import com.example.roombooking.booking.BookingCancelRequest;
-import com.example.roombooking.booking.BookingCancelResponse;
-import com.example.roombooking.booking.BookingDetailActivity;
-import com.example.roombooking.booking.BookingItem;
-import com.example.roombooking.booking.BookingListResponse;
-import com.example.roombooking.booking.CreateBookingActivity;
-import com.example.roombooking.R;
-import com.example.roombooking.api.RetrofitClient;
-import com.example.roombooking.auth.AuthActivity;
-import com.example.roombooking.auth.LogoutRequest;
-import com.example.roombooking.auth.SessionManager;
-
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthActivity;
+import com.example.roombooking.auth.AuthRepository;
+import com.example.roombooking.auth.SessionManager;
+import com.example.roombooking.booking.BookingAdapter;
+import com.example.roombooking.booking.BookingDetailActivity;
+import com.example.roombooking.booking.BookingRepository;
+import com.example.roombooking.model.booking.BookingItem;
 
 public class HomeActivity extends AppCompatActivity {
+
+    private static final String EXTRA_BOOKING_DATA = "booking_data";
+    private static final String EXTRA_UPDATED_BOOKING_ID = "updated_booking_id";
+    private static final String EXTRA_UPDATED_STATUS = "updated_status";
+    private static final String EXTRA_VISITOR_NAME = "visitor_name";
+    private static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
+    private static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    private static final String EXTRA_ARRIVAL_DATE = "arrival_date";
+    private static final String EXTRA_ARRIVAL_TIME = "arrival_time";
+    private static final String EXTRA_DEPARTURE_DATE = "departure_date";
+    private static final String EXTRA_DEPARTURE_TIME = "departure_time";
+    private static final String EXTRA_BOOKING_CREATED = "booking_created";
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvMessage;
+    private SwipeRefreshLayout swipeRefreshLayout;
+    private Button btnCreateBooking;
+    private Button btnLogout;
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
-    private Button btnCreateBooking;
-    private int currentPage = 1;
-    private boolean isLoading = false;
-    private boolean isLastPage = false;
-    private boolean isFirstLoad = true;
-    private SwipeRefreshLayout swipeRefreshLayout;
-    private Button btnLogout;
+
+    private HomeViewModel viewModel;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        initViews();
+        initViewModel();
+        setupRecyclerView();
+        setupListeners();
+        observeViewModel();
+
+        viewModel.loadInitialBookings();
+    }
+
+    private void initViews() {
         recyclerView = findViewById(R.id.recyclerViewBookings);
         progressBar = findViewById(R.id.progressBar);
         tvMessage = findViewById(R.id.tvMessage);
+        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        btnCreateBooking = findViewById(R.id.btnCreateBooking);
+        btnLogout = findViewById(R.id.btnLogout);
+    }
 
+    private void initViewModel() {
+        BookingRepository bookingRepository = new BookingRepository(getApplicationContext());
+        AuthRepository authRepository = new AuthRepository(getApplicationContext());
+        SessionManager sessionManager = new SessionManager(getApplicationContext());
+
+        HomeViewModelFactory factory = new HomeViewModelFactory(
+                bookingRepository,
+                authRepository,
+                sessionManager
+        );
+
+        viewModel = new ViewModelProvider(this, factory).get(HomeViewModel.class);
+    }
+
+    private void setupRecyclerView() {
         bookingAdapter = new BookingAdapter(this, new BookingAdapter.OnBookingClickListener() {
             @Override
             public void onBookingClick(BookingItem bookingItem) {
                 Intent intent = new Intent(HomeActivity.this, BookingDetailActivity.class);
-                intent.putExtra("booking_data", bookingItem);
+                intent.putExtra(EXTRA_BOOKING_DATA, (Parcelable) bookingItem);
                 bookingDetailLauncher.launch(intent);
             }
 
             @Override
             public void onBookingLongClick(BookingItem bookingItem, int position) {
-                showCancelBookingDialog(bookingItem, position);
+                showCancelBookingDialog(bookingItem);
             }
         });
-        layoutManager = new LinearLayoutManager(this);
-        swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
+        layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setHasFixedSize(true);
         recyclerView.setAdapter(bookingAdapter);
-        btnLogout = findViewById(R.id.btnLogout);
-        swipeRefreshLayout.setOnRefreshListener(this::refreshBookings);
-        btnLogout.setOnClickListener(v -> performLogout());
+
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
                 if (dy <= 0) return;
-                if (isLoading || isLastPage) return;
+                if (viewModel.isLoading() || viewModel.isLastPage()) return;
 
                 int visibleItemCount = layoutManager.getChildCount();
                 int totalItemCount = layoutManager.getItemCount();
@@ -98,139 +127,84 @@ public class HomeActivity extends AppCompatActivity {
                                 && firstVisibleItemPosition >= 0;
 
                 if (shouldLoadMore) {
-                    loadBookings(currentPage + 1);
+                    viewModel.loadNextPage();
                 }
             }
         });
+    }
 
-        loadBookings(1);
+    private void setupListeners() {
+        swipeRefreshLayout.setOnRefreshListener(() -> viewModel.refreshBookings());
+
+        btnLogout.setOnClickListener(v -> viewModel.performLogout());
 
 
+    }
 
-        btnCreateBooking = findViewById(R.id.btnCreateBooking);
-
-        btnCreateBooking.setOnClickListener(v -> {
-            Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
-            createBookingLauncher.launch(intent);
+    private void observeViewModel() {
+        viewModel.getBookingsLiveData().observe(this, bookingItems -> {
+            bookingAdapter.setItems(bookingItems);
         });
-    }
-    private void refreshBookings() {
-        currentPage = 1;
-        isLastPage = false;
-        isLoading = false;
-        isFirstLoad = false;
 
-        tvMessage.setVisibility(View.GONE);
-        bookingAdapter.clearItems();
+        viewModel.getFullScreenLoadingLiveData().observe(this, isLoading -> {
+            progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE);
+        });
 
-        loadBookings(1);
-    }
-    private void loadBookings(int page) {
-        isLoading = true;
+        viewModel.getPaginationLoadingLiveData().observe(this, isLoading -> {
+            if (Boolean.TRUE.equals(isLoading)) {
+                bookingAdapter.showPaginationLoader();
+            } else {
+                bookingAdapter.hidePaginationLoader();
+            }
+        });
 
-        if (page == 1) {
-            if (isFirstLoad) {
-                progressBar.setVisibility(View.VISIBLE);
+        viewModel.getSwipeRefreshingLiveData().observe(this, isRefreshing -> {
+            swipeRefreshLayout.setRefreshing(Boolean.TRUE.equals(isRefreshing));
+        });
+
+        viewModel.getMessageLiveData().observe(this, message -> {
+            if (message == null || message.trim().isEmpty()) {
                 tvMessage.setVisibility(View.GONE);
+            } else {
+                tvMessage.setVisibility(View.VISIBLE);
+                tvMessage.setText(message);
             }
-        } else {
-            bookingAdapter.showPaginationLoader();
-        }
+        });
 
-        RetrofitClient.getApiService(this).getBookings(page).enqueue(new Callback<BookingListResponse>() {
-            @Override
-            public void onResponse(Call<BookingListResponse> call, Response<BookingListResponse> response) {
-                isLoading = false;
-                progressBar.setVisibility(View.GONE);
-                swipeRefreshLayout.setRefreshing(false);
-                bookingAdapter.hidePaginationLoader();
-                isFirstLoad = false;
-
-                if (response.isSuccessful() && response.body() != null) {
-                    BookingListResponse body = response.body();
-                    java.util.List<BookingItem> results = body.getResults();
-
-                    if (page == 1) {
-                        if (results == null || results.isEmpty()) {
-                            bookingAdapter.clearItems();
-                            tvMessage.setVisibility(View.VISIBLE);
-                            tvMessage.setText("No bookings found.");
-                            return;
-                        }
-                        bookingAdapter.setItems(results);
-                    } else {
-                        bookingAdapter.addItems(results);
-                    }
-
-                    currentPage = page;
-                    isLastPage = body.getNext() == null;
-                    tvMessage.setVisibility(View.GONE);
-
-                } else if (response.code() == 401) {
-                    SessionManager sessionManager = new SessionManager(HomeActivity.this);
-                    sessionManager.logout();
-
-                    tvMessage.setVisibility(View.VISIBLE);
-                    tvMessage.setText("Session expired. Please login again.");
-
-                    startActivity(new Intent(HomeActivity.this, AuthActivity.class));
-                    finish();
-
-                } else {
-                    if (page == 1) {
-                        tvMessage.setVisibility(View.VISIBLE);
-                        tvMessage.setText("Failed to load bookings. Code: " + response.code());
-                    }
-                }
+        viewModel.getToastLiveData().observe(this, message -> {
+            if (message != null && !message.trim().isEmpty()) {
+                android.widget.Toast.makeText(this, message, android.widget.Toast.LENGTH_SHORT).show();
             }
+        });
 
-            @Override
-            public void onFailure(Call<BookingListResponse> call, Throwable t) {
-                isLoading = false;
-                progressBar.setVisibility(View.GONE);
-                swipeRefreshLayout.setRefreshing(false);
-                bookingAdapter.hidePaginationLoader();
-                isFirstLoad = false;
-
-                if (page == 1) {
-                    tvMessage.setVisibility(View.VISIBLE);
-                    tvMessage.setText("Network error: " + t.getMessage());
-                }
+        viewModel.getLogoutEventLiveData().observe(this, shouldLogout -> {
+            if (Boolean.TRUE.equals(shouldLogout)) {
+                goToLogin();
             }
         });
     }
 
-    private void performLogout() {
-
-        SessionManager sessionManager = new SessionManager(this);
-        String refreshToken = sessionManager.getRefreshToken();
-
-        if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            sessionManager.logout();
-            goToLogin();
+    private void showCancelBookingDialog(BookingItem bookingItem) {
+        if ("cancelled".equalsIgnoreCase(bookingItem.getStatus())) {
+            android.widget.Toast.makeText(this, "Booking is already cancelled", android.widget.Toast.LENGTH_SHORT).show();
             return;
         }
 
-        LogoutRequest request = new LogoutRequest(refreshToken);
+        EditText input = new EditText(this);
+        input.setHint("Enter cancellation reason (optional)");
+        int margin = (int) (16 * getResources().getDisplayMetrics().density);
+        input.setPadding(margin, margin, margin, margin);
 
-        RetrofitClient.getApiService(this).logout(request)
-                .enqueue(new retrofit2.Callback<Void>() {
-                    @Override
-                    public void onResponse(retrofit2.Call<Void> call,
-                                           retrofit2.Response<Void> response) {
-
-                        // Whether success or failure → clear session anyway
-                        sessionManager.logout();
-                        goToLogin();
-                    }
-
-                    @Override
-                    public void onFailure(retrofit2.Call<Void> call, Throwable t) {
-                        // Network fail → still logout locally
-                        sessionManager.logout();
-                        goToLogin();
-                    }
-                });
+        new AlertDialog.Builder(this)
+                .setTitle("Cancel Booking")
+                .setMessage("Do you want to cancel booking for " + bookingItem.getVisitorName() + "?")
+                .setView(input)
+                .setPositiveButton("Cancel Booking", (dialog, which) -> {
+                    String reason = input.getText().toString().trim();
+                    viewModel.cancelBooking(bookingItem, reason);
+                })
+                .setNegativeButton("Close", null)
+                .show();
     }
 
     private void goToLogin() {
@@ -240,74 +214,23 @@ public class HomeActivity extends AppCompatActivity {
         finish();
     }
 
-    private void showCancelBookingDialog(BookingItem bookingItem, int position) {
-        if ("cancelled".equalsIgnoreCase(bookingItem.getStatus())) {
-            Toast.makeText(this, "Booking is already cancelled", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        EditText input = new EditText(this);
-        input.setHint("Enter cancellation reason (optional)");
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Cancel Booking")
-                .setMessage("Do you want to cancel booking for " + bookingItem.getVisitor_name() + "?")
-                .setView(input)
-                .setPositiveButton("Cancel Booking", (dialog, which) -> {
-                    String reason = input.getText().toString().trim();
-                    cancelBooking(bookingItem, position, reason);
-                })
-                .setNegativeButton("Close", null)
-                .show();
-    }private void cancelBooking(BookingItem bookingItem, int position, String reason) {
-        BookingCancelRequest request = new BookingCancelRequest(reason);
-
-        RetrofitClient.getApiService(this)
-                .cancelBooking(bookingItem.getId(), request)
-                .enqueue(new Callback<BookingCancelResponse>() {
-                    @Override
-                    public void onResponse(Call<BookingCancelResponse> call, Response<BookingCancelResponse> response) {
-                        if (response.isSuccessful() && response.body() != null) {
-                            BookingCancelResponse body = response.body();
-                            bookingAdapter.updateBookingStatus(position, body.getStatus());
-                            Toast.makeText(HomeActivity.this, body.getMessage(), Toast.LENGTH_SHORT).show();
-                        } else if (response.code() == 400) {
-                            Toast.makeText(HomeActivity.this, "Booking is already cancelled or invalid request", Toast.LENGTH_SHORT).show();
-                        } else if (response.code() == 403) {
-                            Toast.makeText(HomeActivity.this, "You can cancel only your own booking", Toast.LENGTH_SHORT).show();
-                        } else if (response.code() == 404) {
-                            Toast.makeText(HomeActivity.this, "Booking not found", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Toast.makeText(HomeActivity.this, "Cancel failed. Code: " + response.code(), Toast.LENGTH_SHORT).show();
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(Call<BookingCancelResponse> call, Throwable t) {
-                        Toast.makeText(HomeActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
-                    }
-                });
-    }
-
     private final ActivityResultLauncher<Intent> bookingDetailLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                     Intent data = result.getData();
 
-                    int bookingId = data.getIntExtra("updated_booking_id", -1);
-                    String updatedStatus = data.getStringExtra("updated_status");
-                    String visitorName = data.getStringExtra("visitor_name");
-                    String visitorMobile = data.getStringExtra("visitor_mobile");
-                    String purpose = data.getStringExtra("purpose_of_visit");
-                    String arrivalDate = data.getStringExtra("arrival_date");
-                    String arrivalTime = data.getStringExtra("arrival_time");
-                    String departureDate = data.getStringExtra("departure_date");
-                    String departureTime = data.getStringExtra("departure_time");
+                    int bookingId = data.getIntExtra(EXTRA_UPDATED_BOOKING_ID, -1);
+                    String updatedStatus = data.getStringExtra(EXTRA_UPDATED_STATUS);
+                    String visitorName = data.getStringExtra(EXTRA_VISITOR_NAME);
+                    String visitorMobile = data.getStringExtra(EXTRA_VISITOR_MOBILE);
+                    String purpose = data.getStringExtra(EXTRA_PURPOSE_OF_VISIT);
+                    String arrivalDate = data.getStringExtra(EXTRA_ARRIVAL_DATE);
+                    String arrivalTime = data.getStringExtra(EXTRA_ARRIVAL_TIME);
+                    String departureDate = data.getStringExtra(EXTRA_DEPARTURE_DATE);
+                    String departureTime = data.getStringExtra(EXTRA_DEPARTURE_TIME);
 
                     if (bookingId != -1) {
-                        bookingAdapter.updateBookingById(
+                        viewModel.updateBookingById(
                                 bookingId,
                                 updatedStatus,
                                 visitorName,
@@ -322,15 +245,12 @@ public class HomeActivity extends AppCompatActivity {
                 }
             });
 
-
-
-
     private final ActivityResultLauncher<Intent> createBookingLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    boolean bookingCreated = result.getData().getBooleanExtra("booking_created", false);
+                    boolean bookingCreated = result.getData().getBooleanExtra(EXTRA_BOOKING_CREATED, false);
                     if (bookingCreated) {
-                        refreshBookings();
+                        viewModel.refreshBookings();
                     }
                 }
             });

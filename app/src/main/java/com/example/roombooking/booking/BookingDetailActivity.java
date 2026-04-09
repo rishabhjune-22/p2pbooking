@@ -7,13 +7,17 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import com.example.roombooking.model.booking.BookingActionData;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.common.ApiResponse;
+import com.google.gson.Gson;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,11 +25,23 @@ import retrofit2.Response;
 
 public class BookingDetailActivity extends AppCompatActivity {
 
+    private static final String EXTRA_BOOKING_DATA = "booking_data";
+    private static final String EXTRA_UPDATED_BOOKING_ID = "updated_booking_id";
+    private static final String EXTRA_UPDATED_STATUS = "updated_status";
+    private static final String EXTRA_VISITOR_NAME = "visitor_name";
+    private static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
+    private static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    private static final String EXTRA_ARRIVAL_DATE = "arrival_date";
+    private static final String EXTRA_ARRIVAL_TIME = "arrival_time";
+    private static final String EXTRA_DEPARTURE_DATE = "departure_date";
+    private static final String EXTRA_DEPARTURE_TIME = "departure_time";
+
     private TextView tvDetails;
     private Button btnCancelBooking;
     private Button btnEditBooking;
 
     private BookingItem bookingItem;
+    private final Gson gson = new Gson();
 
     private final ActivityResultLauncher<Intent> editBookingLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -35,27 +51,28 @@ public class BookingDetailActivity extends AppCompatActivity {
 
                     Intent data = result.getData();
 
-                    bookingItem.setVisitor_name(data.getStringExtra("visitor_name"));
-                    bookingItem.setVisitor_mobile(data.getStringExtra("visitor_mobile"));
-                    bookingItem.setPurpose_of_visit(data.getStringExtra("purpose_of_visit"));
-                    bookingItem.setArrival_date(data.getStringExtra("arrival_date"));
-                    bookingItem.setArrival_time(data.getStringExtra("arrival_time"));
-                    bookingItem.setDeparture_date(data.getStringExtra("departure_date"));
-                    bookingItem.setDeparture_time(data.getStringExtra("departure_time"));
+                    bookingItem.setVisitorName(data.getStringExtra(EXTRA_VISITOR_NAME));
+                    bookingItem.setVisitorMobile(data.getStringExtra(EXTRA_VISITOR_MOBILE));
+                    bookingItem.setPurposeOfVisit(data.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
+                    bookingItem.setArrivalDate(data.getStringExtra(EXTRA_ARRIVAL_DATE));
+                    bookingItem.setArrivalTime(data.getStringExtra(EXTRA_ARRIVAL_TIME));
+                    bookingItem.setDepartureDate(data.getStringExtra(EXTRA_DEPARTURE_DATE));
+                    bookingItem.setDepartureTime(data.getStringExtra(EXTRA_DEPARTURE_TIME));
 
                     renderBookingDetails();
 
                     Intent resultIntent = new Intent();
-                    resultIntent.putExtra("updated_booking_id", bookingItem.getId());
-                    resultIntent.putExtra("updated_status", bookingItem.getStatus());
-                    resultIntent.putExtra("visitor_name", bookingItem.getVisitor_name());
-                    resultIntent.putExtra("visitor_mobile", bookingItem.getVisitor_mobile());
-                    resultIntent.putExtra("purpose_of_visit", bookingItem.getPurpose_of_visit());
-                    resultIntent.putExtra("arrival_date", bookingItem.getArrival_date());
-                    resultIntent.putExtra("arrival_time", bookingItem.getArrival_time());
-                    resultIntent.putExtra("departure_date", bookingItem.getDeparture_date());
-                    resultIntent.putExtra("departure_time", bookingItem.getDeparture_time());
+                    resultIntent.putExtra(EXTRA_UPDATED_BOOKING_ID, bookingItem.getId());
+                    resultIntent.putExtra(EXTRA_UPDATED_STATUS, bookingItem.getStatus());
+                    resultIntent.putExtra(EXTRA_VISITOR_NAME, bookingItem.getVisitorName());
+                    resultIntent.putExtra(EXTRA_VISITOR_MOBILE, bookingItem.getVisitorMobile());
+                    resultIntent.putExtra(EXTRA_PURPOSE_OF_VISIT, bookingItem.getPurposeOfVisit());
+                    resultIntent.putExtra(EXTRA_ARRIVAL_DATE, bookingItem.getArrivalDate());
+                    resultIntent.putExtra(EXTRA_ARRIVAL_TIME, bookingItem.getArrivalTime());
+                    resultIntent.putExtra(EXTRA_DEPARTURE_DATE, bookingItem.getDepartureDate());
+                    resultIntent.putExtra(EXTRA_DEPARTURE_TIME, bookingItem.getDepartureTime());
                     setResult(RESULT_OK, resultIntent);
+
                     Toast.makeText(this, "Booking updated successfully", Toast.LENGTH_SHORT).show();
                 }
             });
@@ -69,13 +86,13 @@ public class BookingDetailActivity extends AppCompatActivity {
         btnCancelBooking = findViewById(R.id.btnCancelBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
 
-        bookingItem = (BookingItem) getIntent().getSerializableExtra("booking_data");
+        bookingItem = (BookingItem) getIntent().getSerializableExtra(EXTRA_BOOKING_DATA);
 
         if (bookingItem != null) {
             renderBookingDetails();
-            updateCancelButtonState();
+            updateButtonState();
 
-            btnEditBooking.setOnClickListener(v -> openEditScreen());
+
             btnCancelBooking.setOnClickListener(v -> showCancelDialog());
         } else {
             tvDetails.setText("No booking details found.");
@@ -84,56 +101,46 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
     }
 
-    private void openEditScreen() {
-        if (bookingItem == null) return;
 
-        if ("cancelled".equalsIgnoreCase(bookingItem.getStatus())) {
-            Toast.makeText(this, "Cancelled booking cannot be edited", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Intent intent = new Intent(this, EditBookingActivity.class);
-        intent.putExtra("booking_data", bookingItem);
-        editBookingLauncher.launch(intent);
-    }
 
     private void renderBookingDetails() {
         String details =
                 "Booking ID: " + bookingItem.getId() + "\n\n" +
-                        "Room Name: " + safe(bookingItem.getRoom_name()) + "\n" +
-                        "Created By: " + safe(bookingItem.getCreated_by_username()) + "\n\n" +
+                        "Room Name: " + safe(bookingItem.getRoomName()) + "\n" +
+                        "Created By: " + safe(bookingItem.getCreatedByUsername()) + "\n\n" +
 
-                        "Visitor Name: " + safe(bookingItem.getVisitor_name()) + "\n" +
-                        "Visitor Designation: " + safe(bookingItem.getVisitor_designation()) + "\n" +
-                        "Visitor Organisation: " + safe(bookingItem.getVisitor_organisation()) + "\n" +
-                        "Visitor Gender: " + safe(bookingItem.getVisitor_gender()) + "\n" +
-                        "Visitor Address: " + safe(bookingItem.getVisitor_address()) + "\n" +
-                        "Visitor Mobile: " + safe(bookingItem.getVisitor_mobile()) + "\n" +
-                        "Visitor Email: " + safe(bookingItem.getVisitor_email()) + "\n\n" +
+                        "Visitor Name: " + safe(bookingItem.getVisitorName()) + "\n" +
+                        "Visitor Designation: " + safe(bookingItem.getVisitorDesignation()) + "\n" +
+                        "Visitor Organisation: " + safe(bookingItem.getVisitorOrganisation()) + "\n" +
+                        "Visitor Gender: " + safe(bookingItem.getVisitorGender()) + "\n" +
+                        "Visitor Address: " + safe(bookingItem.getVisitorAddress()) + "\n" +
+                        "Visitor Mobile: " + safe(bookingItem.getVisitorMobile()) + "\n" +
+                        "Visitor Email: " + safe(bookingItem.getVisitorEmail()) + "\n\n" +
 
-                        "Arrival Date: " + safe(bookingItem.getArrival_date()) + "\n" +
-                        "Arrival Time: " + safe(bookingItem.getArrival_time()) + "\n" +
-                        "Departure Date: " + safe(bookingItem.getDeparture_date()) + "\n" +
-                        "Departure Time: " + safe(bookingItem.getDeparture_time()) + "\n\n" +
+                        "Arrival Date: " + safe(bookingItem.getArrivalDate()) + "\n" +
+                        "Arrival Time: " + safe(bookingItem.getArrivalTime()) + "\n" +
+                        "Departure Date: " + safe(bookingItem.getDepartureDate()) + "\n" +
+                        "Departure Time: " + safe(bookingItem.getDepartureTime()) + "\n\n" +
 
-                        "Purpose: " + safe(bookingItem.getPurpose_of_visit()) + "\n\n" +
+                        "Purpose: " + safe(bookingItem.getPurposeOfVisit()) + "\n\n" +
 
-                        "Requestee Name: " + safe(bookingItem.getRequestee_name()) + "\n" +
-                        "Requestee Designation: " + safe(bookingItem.getRequestee_designation()) + "\n" +
-                        "Requestee Department: " + safe(bookingItem.getRequestee_department()) + "\n" +
-                        "Requestee Mobile: " + safe(bookingItem.getRequestee_mobile()) + "\n\n" +
+                        "Requestee Name: " + safe(bookingItem.getRequesteeName()) + "\n" +
+                        "Requestee Designation: " + safe(bookingItem.getRequesteeDesignation()) + "\n" +
+                        "Requestee Department: " + safe(bookingItem.getRequesteeDepartment()) + "\n" +
+                        "Requestee Mobile: " + safe(bookingItem.getRequesteeMobile()) + "\n\n" +
 
-                        "Logistics Name: " + safe(bookingItem.getLogistics_name()) + "\n" +
-                        "Logistics Designation: " + safe(bookingItem.getLogistics_designation()) + "\n" +
-                        "Logistics Mobile: " + safe(bookingItem.getLogistics_mobile()) + "\n\n" +
+                        "Logistics Name: " + safe(bookingItem.getLogisticsName()) + "\n" +
+                        "Logistics Designation: " + safe(bookingItem.getLogisticsDesignation()) + "\n" +
+                        "Logistics Mobile: " + safe(bookingItem.getLogisticsMobile()) + "\n\n" +
 
                         "Status: " + safe(bookingItem.getStatus());
 
         tvDetails.setText(details);
     }
 
-    private void updateCancelButtonState() {
-        boolean alreadyCancelled = "cancelled".equalsIgnoreCase(bookingItem.getStatus());
+    private void updateButtonState() {
+        boolean alreadyCancelled = isCancelled();
+
         btnCancelBooking.setEnabled(!alreadyCancelled);
         btnCancelBooking.setText(alreadyCancelled ? "Already Cancelled" : "Cancel Booking");
 
@@ -142,10 +149,12 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private void showCancelDialog() {
-        if (bookingItem == null) return;
+        if (bookingItem == null) {
+            return;
+        }
 
-        if ("cancelled".equalsIgnoreCase(bookingItem.getStatus())) {
-            Toast.makeText(this, "Booking is already cancelled", Toast.LENGTH_SHORT).show();
+        if (isCancelled()) {
+            showToast("Booking is already cancelled");
             return;
         }
 
@@ -172,55 +181,92 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         RetrofitClient.getApiService(this)
                 .cancelBooking(bookingItem.getId(), request)
-                .enqueue(new Callback<BookingCancelResponse>() {
+                .enqueue(new Callback<ApiResponse<BookingActionData>>() {
                     @Override
-                    public void onResponse(Call<BookingCancelResponse> call, Response<BookingCancelResponse> response) {
+                    public void onResponse(
+                            @NonNull Call<ApiResponse<BookingActionData>> call,
+                            @NonNull Response<ApiResponse<BookingActionData>> response
+                    ) {
                         if (response.isSuccessful() && response.body() != null) {
-                            BookingCancelResponse body = response.body();
+                            ApiResponse<BookingActionData> apiResponse = response.body();
 
-                            bookingItem.setStatus(body.getStatus());
+                            if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
+                                resetCancelButton();
+                                showToast(apiResponse.getFirstErrorMessage());
+                                return;
+                            }
+
+                            BookingActionData data = apiResponse.getData();
+                            bookingItem.setStatus(data.getStatus());
+
                             renderBookingDetails();
-                            updateCancelButtonState();
-
-                            Toast.makeText(BookingDetailActivity.this, body.getMessage(), Toast.LENGTH_SHORT).show();
+                            updateButtonState();
 
                             Intent resultIntent = new Intent();
-                            resultIntent.putExtra("updated_booking_id", bookingItem.getId());
-                            resultIntent.putExtra("updated_status", body.getStatus());
+                            resultIntent.putExtra(EXTRA_UPDATED_BOOKING_ID, bookingItem.getId());
+                            resultIntent.putExtra(EXTRA_UPDATED_STATUS, bookingItem.getStatus());
                             setResult(RESULT_OK, resultIntent);
 
-                        } else if (response.code() == 400) {
-                            btnCancelBooking.setEnabled(true);
-                            btnCancelBooking.setText("Cancel Booking");
-                            Toast.makeText(BookingDetailActivity.this, "Booking is already cancelled or invalid request", Toast.LENGTH_SHORT).show();
-
-                        } else if (response.code() == 403) {
-                            btnCancelBooking.setEnabled(true);
-                            btnCancelBooking.setText("Cancel Booking");
-                            Toast.makeText(BookingDetailActivity.this, "You can cancel only your own booking", Toast.LENGTH_SHORT).show();
-
-                        } else if (response.code() == 404) {
-                            btnCancelBooking.setEnabled(true);
-                            btnCancelBooking.setText("Cancel Booking");
-                            Toast.makeText(BookingDetailActivity.this, "Booking not found", Toast.LENGTH_SHORT).show();
-
-                        } else {
-                            btnCancelBooking.setEnabled(true);
-                            btnCancelBooking.setText("Cancel Booking");
-                            Toast.makeText(BookingDetailActivity.this, "Cancel failed. Code: " + response.code(), Toast.LENGTH_SHORT).show();
+                            showToast(apiResponse.getMessage());
+                            return;
                         }
+
+                        resetCancelButton();
+                        showToast(extractErrorMessage(response));
                     }
 
                     @Override
-                    public void onFailure(Call<BookingCancelResponse> call, Throwable t) {
-                        btnCancelBooking.setEnabled(true);
-                        btnCancelBooking.setText("Cancel Booking");
-                        Toast.makeText(BookingDetailActivity.this, "Network error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                    public void onFailure(
+                            @NonNull Call<ApiResponse<BookingActionData>> call,
+                            @NonNull Throwable t
+                    ) {
+                        resetCancelButton();
+                        showToast(getNetworkErrorMessage(t));
                     }
                 });
     }
 
+    private boolean isCancelled() {
+        return bookingItem != null && "cancelled".equalsIgnoreCase(bookingItem.getStatus());
+    }
+
+    private void resetCancelButton() {
+        btnCancelBooking.setEnabled(true);
+        btnCancelBooking.setText("Cancel Booking");
+    }
+
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private String getNetworkErrorMessage(Throwable throwable) {
+        return "Please check your internet connection.";
+    }
+
+    private <T> String extractErrorMessage(Response<ApiResponse<T>> response) {
+        try {
+            if (response.errorBody() != null) {
+                String errorJson = response.errorBody().string();
+                ApiResponse<?> errorResponse = gson.fromJson(errorJson, ApiResponse.class);
+
+                if (errorResponse != null) {
+                    String firstError = errorResponse.getFirstErrorMessage();
+                    if (firstError != null && !firstError.trim().isEmpty()) {
+                        return firstError;
+                    }
+
+                    if (errorResponse.getMessage() != null && !errorResponse.getMessage().trim().isEmpty()) {
+                        return errorResponse.getMessage();
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return "Request failed. Code: " + response.code();
     }
 }

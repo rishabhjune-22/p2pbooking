@@ -1,8 +1,14 @@
 package com.example.roombooking.auth;
 
+import com.google.gson.annotations.SerializedName;
+
 public class LoginRequest {
-    private String username;
-    private String password;
+
+    @SerializedName("username")
+    private final String username;
+
+    @SerializedName("password")
+    private final String password;
 
     public LoginRequest(String username, String password) {
         this.username = username;

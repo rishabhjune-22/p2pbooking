@@ -1,5 +1,7 @@
 package com.example.roombooking.booking;
 
+import com.example.roombooking.model.booking.BookingItem;
+
 import java.util.List;
 
 public class BookingListResponse {

@@ -6,29 +6,40 @@ import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class RetrofitClient {
+public final class RetrofitClient {
 
-    private static final String BASE_URL = "http://10.50.26.74:8000/";
-    private static Retrofit retrofit;
+    private static volatile ApiService apiService;
+
+    private RetrofitClient() {
+    }
 
     public static ApiService getApiService(Context context) {
-
-        if (retrofit == null) {
-
-            Context appContext = context.getApplicationContext();
-
-            OkHttpClient client = new OkHttpClient.Builder()
-                    .addInterceptor(new AuthInterceptor(appContext))
-                    .authenticator(new TokenAuthenticator(appContext))
-                    .build();
-
-            retrofit = new Retrofit.Builder()
-                    .baseUrl(BASE_URL)
-                    .client(client)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
+        if (apiService == null) {
+            synchronized (RetrofitClient.class) {
+                if (apiService == null) {
+                    apiService = createRetrofit(context.getApplicationContext()).create(ApiService.class);
+                }
+            }
         }
+        return apiService;
+    }
 
-        return retrofit.create(ApiService.class);
+    private static Retrofit createRetrofit(Context context) {
+        return new Retrofit.Builder()
+                .baseUrl(ApiConstants.BASE_URL)
+                .client(createOkHttpClient(context))
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+    }
+
+    private static OkHttpClient createOkHttpClient(Context context) {
+        return new OkHttpClient.Builder()
+                .addInterceptor(new AuthInterceptor(context))
+                .authenticator(new TokenAuthenticator(context))
+                .build();
+    }
+
+    public static void reset() {
+        apiService = null;
     }
 }

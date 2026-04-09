@@ -11,6 +11,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.roombooking.R;
 import com.example.roombooking.auth.SessionManager;
+import com.example.roombooking.model.booking.BookingItem;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -112,21 +113,21 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             BookingItem item = items.get(position);
             BookingViewHolder bookingHolder = (BookingViewHolder) holder;
 
-            bookingHolder.tvVisitorName.setText(item.getVisitor_name());
-            bookingHolder.tvRoomName.setText("Room: " + safe(item.getRoom_name()));
-            bookingHolder.tvOrganisation.setText("Organisation: " + safe(item.getVisitor_organisation()));
-            bookingHolder.tvArrival.setText("Arrival: " + safe(item.getArrival_date()) + " " + safe(item.getArrival_time()));
-            bookingHolder.tvDeparture.setText("Departure: " + safe(item.getDeparture_date()) + " " + safe(item.getDeparture_time()));
-            bookingHolder.tvPurpose.setText("Purpose: " + safe(item.getPurpose_of_visit()));
+            bookingHolder.tvVisitorName.setText(item.getVisitorName());
+            bookingHolder.tvRoomName.setText("Room: " + safe(item.getRoomName()));
+            bookingHolder.tvOrganisation.setText("Organisation: " + safe(item.getVisitorOrganisation()));
+            bookingHolder.tvArrival.setText("Arrival: " + safe(item.getArrivalDate()) + " " + safe(item.getArrivalTime()));
+            bookingHolder.tvDeparture.setText("Departure: " + safe(item.getDepartureDate()) + " " + safe(item.getDepartureTime()));
+            bookingHolder.tvPurpose.setText("Purpose: " + safe(item.getPurposeOfVisit()));
             bookingHolder.tvStatus.setText("Status: " + safe(item.getStatus()));
-            bookingHolder.tvCreatedBy.setText("Created By: " + safe(item.getCreated_by_username()));
+            bookingHolder.tvCreatedBy.setText("Created By: " + safe(item.getCreatedByUsername()));
             String currentUser = sessionManager.getUsername();
 
-            if (currentUser != null && currentUser.equalsIgnoreCase(item.getCreated_by_username())) {
+            if (currentUser != null && currentUser.equalsIgnoreCase(item.getCreatedByUsername())) {
                 bookingHolder.tvCreatedBy.setText("Created By: You");
             }
 
-            if (currentUser != null && currentUser.equalsIgnoreCase(item.getCreated_by_username())) {
+            if (currentUser != null && currentUser.equalsIgnoreCase(item.getCreatedByUsername())) {
                 bookingHolder.itemView.setAlpha(1f);
             } else {
                 bookingHolder.itemView.setAlpha(0.9f);
@@ -208,25 +209,25 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                     item.setStatus(updatedStatus);
                 }
                 if (visitorName != null) {
-                    item.setVisitor_name(visitorName);
+                    item.setVisitorName(visitorName);
                 }
                 if (visitorMobile != null) {
-                    item.setVisitor_mobile(visitorMobile);
+                    item.setVisitorMobile(visitorMobile);
                 }
                 if (purpose != null) {
-                    item.setPurpose_of_visit(purpose);
+                    item.setPurposeOfVisit(purpose);
                 }
                 if (arrivalDate != null) {
-                    item.setArrival_date(arrivalDate);
+                    item.setArrivalDate(arrivalDate);
                 }
                 if (arrivalTime != null) {
-                    item.setArrival_time(arrivalTime);
+                    item.setArrivalTime(arrivalTime);
                 }
                 if (departureDate != null) {
-                    item.setDeparture_date(departureDate);
+                    item.setDepartureDate(departureDate);
                 }
                 if (departureTime != null) {
-                    item.setDeparture_time(departureTime);
+                    item.setDepartureTime(departureTime);
                 }
 
                 notifyItemChanged(i);

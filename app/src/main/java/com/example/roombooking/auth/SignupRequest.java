@@ -1,9 +1,17 @@
 package com.example.roombooking.auth;
 
+import com.google.gson.annotations.SerializedName;
+
 public class SignupRequest {
-    private String username;
-    private String email;
-    private String password;
+
+    @SerializedName("username")
+    private final String username;
+
+    @SerializedName("email")
+    private final String email;
+
+    @SerializedName("password")
+    private final String password;
 
     public SignupRequest(String username, String email, String password) {
         this.username = username;

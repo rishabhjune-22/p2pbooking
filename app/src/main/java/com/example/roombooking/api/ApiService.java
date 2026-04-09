@@ -1,51 +1,57 @@
 package com.example.roombooking.api;
-import com.example.roombooking.booking.BookingCancelRequest;
-import com.example.roombooking.booking.BookingCancelResponse;
-import com.example.roombooking.booking.BookingCreateRequest;
-import com.example.roombooking.booking.BookingCreateResponse;
-import com.example.roombooking.booking.BookingListResponse;
-import com.example.roombooking.booking.BookingUpdateRequest;
-import com.example.roombooking.booking.BookingUpdateResponse;
+
+import com.example.roombooking.auth.SignupRequest;
+import com.example.roombooking.model.auth.LoginData;
 import com.example.roombooking.auth.LoginRequest;
 import com.example.roombooking.auth.LogoutRequest;
 import com.example.roombooking.auth.RefreshRequest;
-import com.example.roombooking.auth.RefreshResponse;
-import com.example.roombooking.auth.SignupRequest;
-import com.example.roombooking.auth.SignupResponse;
-import com.example.roombooking.auth.TokenResponse;
+import com.example.roombooking.model.auth.RefreshTokenData;
+import com.example.roombooking.model.auth.SignupData;
+import com.example.roombooking.model.booking.BookingActionData;
+import com.example.roombooking.booking.BookingCancelRequest;
+import com.example.roombooking.booking.BookingCreateRequest;
+import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.booking.BookingUpdateRequest;
+import com.example.roombooking.model.common.ApiResponse;
+import com.example.roombooking.model.common.PaginatedData;
+
 import retrofit2.Call;
 import retrofit2.http.Body;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
+import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
 
     @POST("api/token/")
-    Call<TokenResponse> login(@Body LoginRequest request);
+    Call<ApiResponse<LoginData>> login(@Body LoginRequest request);
+
     @POST("api/accounts/signup/")
-    Call<SignupResponse> signup(@Body SignupRequest request);
+    Call<ApiResponse<SignupData>> signup(@Body SignupRequest request);
+
     @POST("api/token/refresh/")
-    Call<RefreshResponse> refreshToken(@Body RefreshRequest request);
+    Call<ApiResponse<RefreshTokenData>> refreshToken(@Body RefreshRequest request);
 
     @GET("api/bookings/")
-    Call<BookingListResponse> getBookings(@Query("page") int page);
-    @POST("/api/accounts/logout/")
-    Call<Void> logout(@Body LogoutRequest request);
+    Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(@Query("page") int page);
+
+    @POST("api/accounts/logout/")
+    Call<ApiResponse<Object>> logout(@Body LogoutRequest request);
 
     @POST("api/bookings/{pk}/cancel/")
-    Call<BookingCancelResponse> cancelBooking(
-            @retrofit2.http.Path("pk") int bookingId,
+    Call<ApiResponse<BookingActionData>> cancelBooking(
+            @Path("pk") int bookingId,
             @Body BookingCancelRequest request
     );
 
     @POST("api/bookings/create/")
-    Call<BookingCreateResponse> createBooking(@Body BookingCreateRequest request);
+    Call<ApiResponse<BookingActionData>> createBooking(@Body BookingCreateRequest request);
 
     @PATCH("api/bookings/{pk}/edit/")
-    Call<BookingUpdateResponse> updateBooking(
-            @retrofit2.http.Path("pk") int bookingId,
+    Call<ApiResponse<BookingActionData>> updateBooking(
+            @Path("pk") int bookingId,
             @Body BookingUpdateRequest request
     );
 }
