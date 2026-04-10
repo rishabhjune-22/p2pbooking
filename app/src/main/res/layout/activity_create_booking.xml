@@ -35,11 +35,17 @@
             android:layout_height="wrap_content"
             android:hint="Visitor Organisation" />
 
-        <EditText
-            android:id="@+id/etVisitorGender"
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:hint="Visitor Gender" />
+            android:text="Visitor Gender"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp" />
+
+        <Spinner
+            android:id="@+id/spinnerGender"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
 
         <EditText
             android:id="@+id/etVisitorAddress"
@@ -130,14 +136,17 @@
             android:layout_height="wrap_content"
             android:hint="Logistics Mobile"
             android:inputType="phone" />
-
-        <EditText
-            android:id="@+id/etRoomId"
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Select Room"
+            android:textStyle="bold"
+            android:layout_marginTop="12dp" />
+        <Spinner
+            android:id="@+id/spinnerRoom"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Room ID"
-            android:inputType="number" />
-
+            android:layout_marginTop="8dp" />
         <TextView
             android:id="@+id/tvMessage"
             android:layout_width="match_parent"

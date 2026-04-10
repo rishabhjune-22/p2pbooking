@@ -25,6 +25,7 @@ import com.example.roombooking.auth.SessionManager;
 import com.example.roombooking.booking.BookingAdapter;
 import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingRepository;
+import com.example.roombooking.booking.CreateBookingActivity;
 import com.example.roombooking.model.booking.BookingItem;
 
 public class HomeActivity extends AppCompatActivity {
@@ -138,7 +139,10 @@ public class HomeActivity extends AppCompatActivity {
 
         btnLogout.setOnClickListener(v -> viewModel.performLogout());
 
-
+        btnCreateBooking.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
+            createBookingLauncher.launch(intent);
+        });
     }
 
     private void observeViewModel() {

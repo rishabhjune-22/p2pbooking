@@ -18,7 +18,8 @@
         android:usesCleartextTraffic="true"
 
         >
-
+<!--        <activity android:name=".booking.EditBookingActivity" />-->
+        <activity android:name=".booking.CreateBookingActivity" />
         <activity android:name=".home.HomeActivity" />
 
         <activity android:name=".auth.AuthActivity" />

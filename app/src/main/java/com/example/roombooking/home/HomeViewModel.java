@@ -14,6 +14,7 @@ import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.room.RoomCache;
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
@@ -230,6 +231,8 @@ public class HomeViewModel extends ViewModel {
 
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
             sessionManager.logout();
+            RoomCache.clear();
+
             logoutEventLiveData.setValue(true);
             return;
         }
@@ -242,6 +245,8 @@ public class HomeViewModel extends ViewModel {
                             @NonNull Response<ApiResponse<Object>> response
                     ) {
                         sessionManager.logout();
+                        RoomCache.clear();
+
                         logoutEventLiveData.setValue(true);
                     }
 
@@ -251,6 +256,8 @@ public class HomeViewModel extends ViewModel {
                             @NonNull Throwable t
                     ) {
                         sessionManager.logout();
+                        RoomCache.clear();
+
                         logoutEventLiveData.setValue(true);
                     }
                 });

@@ -14,6 +14,7 @@ import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.booking.BookingUpdateRequest;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.model.room.RoomItem;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
@@ -54,4 +55,8 @@ public interface ApiService {
             @Path("pk") int bookingId,
             @Body BookingUpdateRequest request
     );
+
+
+    @GET("api/rooms/")
+    Call<ApiResponse<PaginatedData<RoomItem>>> getRooms(@Query("page") int page);
 }
