@@ -14,19 +14,20 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.model.auth.LoginData;
 import com.example.roombooking.model.auth.RefreshTokenData;
 import com.example.roombooking.model.auth.SignupData;
 import com.example.roombooking.model.auth.UserData;
 import com.example.roombooking.model.common.ApiResponse;
-import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.room.RoomCache;
 import com.example.roombooking.security.CryptoManager;
 import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
 import com.example.roombooking.security.UnlockCryptoActivity;
 import com.google.gson.Gson;
-import com.example.roombooking.auth.SignupRequest;
+
 import java.io.IOException;
+import java.util.Arrays;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -62,11 +63,10 @@ public class AuthActivity extends AppCompatActivity {
         etEmail = findViewById(R.id.etEmail);
         etUser = findViewById(R.id.etUser);
         etPass = findViewById(R.id.etPass);
+        etPassphrase = findViewById(R.id.etPassphrase);
         btnPrimary = findViewById(R.id.btnPrimary);
         tvToggle = findViewById(R.id.tvToggle);
         tvMsg = findViewById(R.id.tvMsg);
-        etPassphrase = findViewById(R.id.etPassphrase);
-
     }
 
     private void initObjects() {
@@ -82,6 +82,7 @@ public class AuthActivity extends AppCompatActivity {
                 showMessage("Failed to initialize encryption.");
             }
         });
+
         tvToggle.setOnClickListener(v -> toggleMode());
     }
 
@@ -94,8 +95,10 @@ public class AuthActivity extends AppCompatActivity {
 
     private void renderMode() {
         etEmail.setVisibility(isSignup ? View.VISIBLE : View.GONE);
-        Log.d("signup value", String.valueOf(isSignup));
         etPassphrase.setVisibility(isSignup ? View.VISIBLE : View.GONE);
+
+        Log.d("signup value", String.valueOf(isSignup));
+
         btnPrimary.setText(isSignup ? "Signup" : "Login");
         tvToggle.setText(isSignup ? "Already have an account? Login" : "No account? Signup");
     }
@@ -111,7 +114,6 @@ public class AuthActivity extends AppCompatActivity {
         String username = getTrimmedText(etUser).toLowerCase();
         String password = getTrimmedText(etPass);
         String passphrase = getTrimmedText(etPassphrase);
-
 
         if (TextUtils.isEmpty(username)) {
             showMessage("Enter username.");
@@ -136,8 +138,9 @@ public class AuthActivity extends AppCompatActivity {
                 return;
             }
 
-            doSignup(username, email, password,passphrase);
+            doSignup(username, email, password, passphrase);
         } else {
+            clearCryptoState();
             doLogin(username, password);
         }
     }
@@ -149,50 +152,56 @@ public class AuthActivity extends AppCompatActivity {
         CryptoManager cryptoManager = new CryptoManager();
         char[] passphraseChars = passphrase.toCharArray();
 
-        CryptoManager.WrappedDekResult wrappedDekResult =
-                cryptoManager.createAndWrapDek(passphraseChars);
-        SignupRequest request = new SignupRequest(
-                username,
-                email,
-                password,
-                wrappedDekResult.getEncryptedDekBase64(),
-                wrappedDekResult.getDekWrapNonceBase64(),
-                wrappedDekResult.getKdfMetadata()
-        );
+        try {
+            CryptoManager.WrappedDekResult wrappedDekResult =
+                    cryptoManager.createAndWrapDek(passphraseChars);
 
-        AuthRepository repo = new AuthRepository(this);
-        repo.signup(request).enqueue(new Callback<ApiResponse<SignupData>>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<SignupData>> call,
-                            @NonNull Response<ApiResponse<SignupData>> response
-                    ) {
-                        setLoading(false);
+            SignupRequest request = new SignupRequest(
+                    username,
+                    email,
+                    password,
+                    wrappedDekResult.getEncryptedDekBase64(),
+                    wrappedDekResult.getDekWrapNonceBase64(),
+                    wrappedDekResult.getKdfMetadata()
+            );
 
-                        if (response.isSuccessful() && response.body() != null) {
-                            ApiResponse<SignupData> apiResponse = response.body();
+            AuthRepository repo = new AuthRepository(this);
+            repo.signup(request).enqueue(new Callback<ApiResponse<SignupData>>() {
+                @Override
+                public void onResponse(
+                        @NonNull Call<ApiResponse<SignupData>> call,
+                        @NonNull Response<ApiResponse<SignupData>> response
+                ) {
+                    setLoading(false);
 
-                            if (apiResponse.isSuccess()) {
-                                showMessage("Signup successful. Logging in...");
-                                doLogin(username, password);
-                            } else {
-                                showMessage(apiResponse.getFirstErrorMessage());
-                            }
-                            return;
+                    if (response.isSuccessful() && response.body() != null) {
+                        ApiResponse<SignupData> apiResponse = response.body();
+
+                        if (apiResponse.isSuccess()) {
+                            clearCryptoState();
+                            showMessage("Signup successful. Logging in...");
+                            doLogin(username, password);
+                        } else {
+                            showMessage(apiResponse.getFirstErrorMessage());
                         }
-
-                        showMessage(extractErrorMessage(response));
+                        return;
                     }
 
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<SignupData>> call,
-                            @NonNull Throwable t
-                    ) {
-                        setLoading(false);
-                        showMessage(getNetworkErrorMessage(t));
-                    }
-                });
+                    showMessage(extractErrorMessage(response));
+                }
+
+                @Override
+                public void onFailure(
+                        @NonNull Call<ApiResponse<SignupData>> call,
+                        @NonNull Throwable t
+                ) {
+                    setLoading(false);
+                    showMessage(getNetworkErrorMessage(t));
+                }
+            });
+        } finally {
+            Arrays.fill(passphraseChars, '\0');
+        }
     }
 
     private void doLogin(String username, String password) {
@@ -200,65 +209,65 @@ public class AuthActivity extends AppCompatActivity {
         showMessage("");
 
         LoginRequest request = new LoginRequest(username, password);
-
         AuthRepository repo = new AuthRepository(this);
 
-               repo.login(request).enqueue(new Callback<ApiResponse<LoginData>>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<LoginData>> call,
-                            @NonNull Response<ApiResponse<LoginData>> response
-                    ) {
-                        setLoading(false);
+        repo.login(request).enqueue(new Callback<ApiResponse<LoginData>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<LoginData>> call,
+                    @NonNull Response<ApiResponse<LoginData>> response
+            ) {
+                setLoading(false);
 
-                        if (response.isSuccessful() && response.body() != null) {
-                            ApiResponse<LoginData> apiResponse = response.body();
+                if (response.isSuccessful() && response.body() != null) {
+                    ApiResponse<LoginData> apiResponse = response.body();
 
-                            if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                                showMessage(apiResponse.getFirstErrorMessage());
-                                return;
-                            }
-
-                            LoginData loginData = apiResponse.getData();
-                            String accessToken = loginData.getAccessToken();
-                            String refreshToken = loginData.getRefreshToken();
-                            UserData userData = loginData.getUser();
-
-                            if (TextUtils.isEmpty(accessToken) || TextUtils.isEmpty(refreshToken)) {
-                                showMessage("Login failed: token missing.");
-                                return;
-                            }
-
-                            sessionManager.saveSession(
-                                    accessToken,
-                                    refreshToken,
-                                    userData != null ? userData.getUsername() : username,
-                                    userData != null ? userData.getEmail() : null
-                            );
-
-                            showMessage(apiResponse.getMessage());
-                            goToNextScreenAfterLogin();
-                            return;
-                        }
-
-                        showMessage(extractErrorMessage(response));
+                    if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
+                        showMessage(apiResponse.getFirstErrorMessage());
+                        return;
                     }
 
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<LoginData>> call,
-                            @NonNull Throwable t
-                    ) {
-                        setLoading(false);
-                        showMessage(getNetworkErrorMessage(t));
+                    LoginData loginData = apiResponse.getData();
+                    String accessToken = loginData.getAccessToken();
+                    String refreshToken = loginData.getRefreshToken();
+                    UserData userData = loginData.getUser();
+
+                    if (TextUtils.isEmpty(accessToken) || TextUtils.isEmpty(refreshToken)) {
+                        showMessage("Login failed: token missing.");
+                        return;
                     }
-                });
+
+                    sessionManager.saveSession(
+                            accessToken,
+                            refreshToken,
+                            userData != null ? userData.getUsername() : username,
+                            userData != null ? userData.getEmail() : null
+                    );
+
+                    showMessage(apiResponse.getMessage());
+                    goToNextScreenAfterLogin();
+                    return;
+                }
+
+                showMessage(extractErrorMessage(response));
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<LoginData>> call,
+                    @NonNull Throwable t
+            ) {
+                setLoading(false);
+                showMessage(getNetworkErrorMessage(t));
+            }
+        });
     }
 
     private void refreshAccessToken() {
         String refreshToken = sessionManager.getRefreshToken();
 
         if (TextUtils.isEmpty(refreshToken)) {
+            clearCryptoState();
             showMessage("Session expired. Please login again.");
             return;
         }
@@ -287,12 +296,8 @@ public class AuthActivity extends AppCompatActivity {
                             }
                         }
 
-                        sessionManager.logout();
+                        clearCryptoState();
                         showMessage("Session expired. Please login again.");
-                        RoomCache.clear();
-                        KeystoreBackedCryptoSessionManager
-                                .getInstance(getApplicationContext())
-                                .clearAll();
                     }
 
                     @Override
@@ -304,7 +309,6 @@ public class AuthActivity extends AppCompatActivity {
                     }
                 });
     }
-
 
     private void goToNextScreenAfterLogin() {
         boolean restored = KeystoreBackedCryptoSessionManager
@@ -323,7 +327,12 @@ public class AuthActivity extends AppCompatActivity {
         finish();
     }
 
-
+    private void clearCryptoState() {
+        RoomCache.clear();
+        KeystoreBackedCryptoSessionManager
+                .getInstance(getApplicationContext())
+                .clearAll();
+    }
 
     private void setLoading(boolean loading) {
         btnPrimary.setEnabled(!loading);

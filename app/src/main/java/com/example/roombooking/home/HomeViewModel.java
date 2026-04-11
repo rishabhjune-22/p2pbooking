@@ -243,8 +243,8 @@ public class HomeViewModel extends ViewModel {
                             @NonNull Call<ApiResponse<Object>> call,
                             @NonNull Response<ApiResponse<Object>> response
                     ) {
-                        sessionManager.logout();
-                        RoomCache.clear();
+                        clearLocalSession();
+
                         logoutEventLiveData.setValue(true);
                     }
 
@@ -253,8 +253,7 @@ public class HomeViewModel extends ViewModel {
                             @NonNull Call<ApiResponse<Object>> call,
                             @NonNull Throwable t
                     ) {
-                        sessionManager.logout();
-                        RoomCache.clear();
+                        clearLocalSession();
                         logoutEventLiveData.setValue(true);
                     }
                 });
@@ -321,7 +320,8 @@ public class HomeViewModel extends ViewModel {
 
     private <T> void handleApiError(Response<ApiResponse<T>> response) {
         if (response.code() == 401) {
-            sessionManager.logout();
+            clearLocalSession();
+
             messageLiveData.setValue("Session expired. Please login again.");
             logoutEventLiveData.setValue(true);
             return;

@@ -23,7 +23,10 @@
             android:layout_height="wrap_content"
             android:hint="Email (Signup only)"
             android:inputType="textEmailAddress"
-            android:visibility="gone" />
+            android:autofillHints="emailAddress"
+            android:visibility="gone"
+            android:importantForAutofill="no"
+            />
 
         <EditText
             android:id="@+id/etUser"
@@ -31,6 +34,8 @@
             android:layout_height="wrap_content"
             android:hint="Username"
             android:inputType="text"
+            android:autofillHints="username"
+            android:importantForAutofill="yes"
             android:layout_marginTop="10dp" />
 
         <EditText
@@ -39,6 +44,8 @@
             android:layout_height="wrap_content"
             android:hint="Password"
             android:inputType="textPassword"
+            android:autofillHints="password"
+            android:importantForAutofill="yes"
             android:layout_marginTop="10dp" />
         <EditText
             android:id="@+id/etPassphrase"
@@ -47,7 +54,10 @@
             android:hint="Passphrase"
             android:inputType="textPassword"
             android:layout_marginTop="10dp"
-            android:visibility="gone"/>
+            android:visibility="gone"
+            android:autofillHints="password"
+            android:importantForAutofill="no"
+            />
 
         <Button
             android:id="@+id/btnPrimary"
