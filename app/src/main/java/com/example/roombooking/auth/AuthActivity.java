@@ -3,6 +3,7 @@ package com.example.roombooking.auth;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +20,10 @@ import com.example.roombooking.model.auth.SignupData;
 import com.example.roombooking.model.auth.UserData;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.home.HomeActivity;
+import com.example.roombooking.room.RoomCache;
+import com.example.roombooking.security.CryptoManager;
+import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
+import com.example.roombooking.security.UnlockCryptoActivity;
 import com.google.gson.Gson;
 import com.example.roombooking.auth.SignupRequest;
 import java.io.IOException;
@@ -32,6 +37,7 @@ public class AuthActivity extends AppCompatActivity {
     private EditText etEmail;
     private EditText etUser;
     private EditText etPass;
+    private EditText etPassphrase;
     private Button btnPrimary;
     private TextView tvToggle;
     private TextView tvMsg;
@@ -59,6 +65,8 @@ public class AuthActivity extends AppCompatActivity {
         btnPrimary = findViewById(R.id.btnPrimary);
         tvToggle = findViewById(R.id.tvToggle);
         tvMsg = findViewById(R.id.tvMsg);
+        etPassphrase = findViewById(R.id.etPassphrase);
+
     }
 
     private void initObjects() {
@@ -67,7 +75,13 @@ public class AuthActivity extends AppCompatActivity {
     }
 
     private void setListeners() {
-        btnPrimary.setOnClickListener(v -> onPrimaryClicked());
+        btnPrimary.setOnClickListener(v -> {
+            try {
+                onPrimaryClicked();
+            } catch (Exception e) {
+                showMessage("Failed to initialize encryption.");
+            }
+        });
         tvToggle.setOnClickListener(v -> toggleMode());
     }
 
@@ -80,6 +94,8 @@ public class AuthActivity extends AppCompatActivity {
 
     private void renderMode() {
         etEmail.setVisibility(isSignup ? View.VISIBLE : View.GONE);
+        Log.d("signup value", String.valueOf(isSignup));
+        etPassphrase.setVisibility(isSignup ? View.VISIBLE : View.GONE);
         btnPrimary.setText(isSignup ? "Signup" : "Login");
         tvToggle.setText(isSignup ? "Already have an account? Login" : "No account? Signup");
     }
@@ -88,11 +104,14 @@ public class AuthActivity extends AppCompatActivity {
         etEmail.setText("");
         etUser.setText("");
         etPass.setText("");
+        etPassphrase.setText("");
     }
 
-    private void onPrimaryClicked() {
+    private void onPrimaryClicked() throws Exception {
         String username = getTrimmedText(etUser).toLowerCase();
         String password = getTrimmedText(etPass);
+        String passphrase = getTrimmedText(etPassphrase);
+
 
         if (TextUtils.isEmpty(username)) {
             showMessage("Enter username.");
@@ -112,17 +131,34 @@ public class AuthActivity extends AppCompatActivity {
                 return;
             }
 
-            doSignup(username, email, password);
+            if (passphrase.length() < 8) {
+                showMessage("Passphrase must be at least 8 characters.");
+                return;
+            }
+
+            doSignup(username, email, password,passphrase);
         } else {
             doLogin(username, password);
         }
     }
 
-    private void doSignup(String username, String email, String password) {
+    private void doSignup(String username, String email, String password, String passphrase) throws Exception {
         setLoading(true);
         showMessage("");
 
-        SignupRequest request = new SignupRequest(username, email, password);
+        CryptoManager cryptoManager = new CryptoManager();
+        char[] passphraseChars = passphrase.toCharArray();
+
+        CryptoManager.WrappedDekResult wrappedDekResult =
+                cryptoManager.createAndWrapDek(passphraseChars);
+        SignupRequest request = new SignupRequest(
+                username,
+                email,
+                password,
+                wrappedDekResult.getEncryptedDekBase64(),
+                wrappedDekResult.getDekWrapNonceBase64(),
+                wrappedDekResult.getKdfMetadata()
+        );
 
         AuthRepository repo = new AuthRepository(this);
         repo.signup(request).enqueue(new Callback<ApiResponse<SignupData>>() {
@@ -201,7 +237,7 @@ public class AuthActivity extends AppCompatActivity {
                             );
 
                             showMessage(apiResponse.getMessage());
-                            navigateToHome();
+                            goToNextScreenAfterLogin();
                             return;
                         }
 
@@ -253,6 +289,10 @@ public class AuthActivity extends AppCompatActivity {
 
                         sessionManager.logout();
                         showMessage("Session expired. Please login again.");
+                        RoomCache.clear();
+                        KeystoreBackedCryptoSessionManager
+                                .getInstance(getApplicationContext())
+                                .clearAll();
                     }
 
                     @Override
@@ -265,11 +305,25 @@ public class AuthActivity extends AppCompatActivity {
                 });
     }
 
-    private void navigateToHome() {
-        Intent intent = new Intent(AuthActivity.this, HomeActivity.class);
+
+    private void goToNextScreenAfterLogin() {
+        boolean restored = KeystoreBackedCryptoSessionManager
+                .getInstance(getApplicationContext())
+                .restoreDekFromLocalStore();
+
+        Intent intent;
+        if (restored) {
+            intent = new Intent(AuthActivity.this, HomeActivity.class);
+        } else {
+            intent = new Intent(AuthActivity.this, UnlockCryptoActivity.class);
+        }
+
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }
+
+
 
     private void setLoading(boolean loading) {
         btnPrimary.setEnabled(!loading);
@@ -277,7 +331,7 @@ public class AuthActivity extends AppCompatActivity {
         etEmail.setEnabled(!loading);
         etUser.setEnabled(!loading);
         etPass.setEnabled(!loading);
-
+        etPassphrase.setEnabled(!loading);
         btnPrimary.setText(loading ? "Please wait..." : (isSignup ? "Signup" : "Login"));
     }
 

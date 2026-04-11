@@ -161,6 +161,11 @@
             android:layout_height="wrap_content"
             android:text="Create Booking"
             android:layout_marginTop="16dp" />
-
+        <Button
+            android:id="@+id/btnFillDummy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Fill Dummy Data (Dev Only)"
+            android:layout_marginTop="8dp"/>
     </LinearLayout>
 </ScrollView>

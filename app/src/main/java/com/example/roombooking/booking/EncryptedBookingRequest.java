@@ -2,7 +2,7 @@ package com.example.roombooking.booking;
 
 import com.google.gson.annotations.SerializedName;
 
-public class BookingUpdateRequest {
+public class EncryptedBookingRequest {
 
     @SerializedName("room")
     private final Integer room;
@@ -43,7 +43,7 @@ public class BookingUpdateRequest {
     @SerializedName("logistics_mobile")
     private final String logisticsMobile;
 
-    public BookingUpdateRequest(
+    public EncryptedBookingRequest(
             Integer room,
             String arrivalAt,
             String departureAt,

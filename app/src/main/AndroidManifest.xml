@@ -21,6 +21,7 @@
 <!--        <activity android:name=".booking.EditBookingActivity" />-->
         <activity android:name=".booking.CreateBookingActivity" />
         <activity android:name=".home.HomeActivity" />
+        <activity android:name=".booking.EditBookingActivity"></activity>
 
         <activity android:name=".auth.AuthActivity" />
         <activity android:name=".booking.BookingDetailActivity" />
@@ -32,7 +33,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity android:name=".security.UnlockCryptoActivity" />
 
 
     </application>

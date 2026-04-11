@@ -59,4 +59,7 @@ public interface ApiService {
 
     @GET("api/rooms/")
     Call<ApiResponse<PaginatedData<RoomItem>>> getRooms(@Query("page") int page);
+
+    @retrofit2.http.GET("api/accounts/encryption-material/")
+    retrofit2.Call<com.example.roombooking.model.common.ApiResponse<com.example.roombooking.security.EncryptionMaterialData>> getEncryptionMaterial();
 }

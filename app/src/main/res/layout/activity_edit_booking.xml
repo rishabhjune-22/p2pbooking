@@ -1,47 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Booking Details"
+            android:text="Edit Booking"
             android:textSize="22sp"
             android:textStyle="bold"
             android:layout_marginBottom="16dp" />
-
-        <TextView
-            android:id="@+id/tvBookingId"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/tvRoomName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
-
-        <TextView
-            android:id="@+id/tvCreatedBy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
 
         <EditText
             android:id="@+id/etVisitorName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Visitor Name"
-            android:enabled="false"
-            android:layout_marginTop="12dp" />
+            android:inputType="textPersonName"
+            android:layout_marginBottom="12dp" />
 
         <EditText
             android:id="@+id/etVisitorMobile"
@@ -49,83 +32,42 @@
             android:layout_height="wrap_content"
             android:hint="Visitor Mobile"
             android:inputType="phone"
-            android:enabled="false"
-            android:layout_marginTop="8dp" />
+            android:maxLength="10"
+            android:layout_marginBottom="12dp" />
 
         <EditText
             android:id="@+id/etPurpose"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Purpose"
-            android:enabled="false"
-            android:layout_marginTop="8dp" />
+            android:hint="Purpose of Visit"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:gravity="top|start"
+            android:layout_marginBottom="12dp" />
 
         <EditText
-            android:id="@+id/etArrivalDT"
+            android:id="@+id/etArrivalAt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Arrival Date &amp; Time"
-            android:enabled="false"
             android:focusable="false"
-            android:clickable="false"
-            android:inputType="none"
-            android:layout_marginTop="8dp" />
+            android:clickable="true"
+            android:layout_marginBottom="12dp" />
 
         <EditText
-            android:id="@+id/etDepartureDT"
+            android:id="@+id/etDepartureAt"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="Departure Date &amp; Time"
-            android:enabled="false"
             android:focusable="false"
-            android:clickable="false"
-            android:inputType="none"
-            android:layout_marginTop="8dp" />
-
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp">
-
-            <Button
-                android:id="@+id/btnEditBooking"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Edit Booking" />
-
-            <Button
-                android:id="@+id/btnSaveChanges"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Save Changes"
-                android:visibility="gone"
-                android:layout_marginStart="8dp" />
-        </LinearLayout>
+            android:clickable="true"
+            android:layout_marginBottom="20dp" />
 
         <Button
-            android:id="@+id/btnCancelEdit"
+            android:id="@+id/btnSaveBooking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Cancel Edit"
-            android:visibility="gone"
-            android:layout_marginTop="8dp" />
-
-        <Button
-            android:id="@+id/btnCancelBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Cancel Booking"
-            android:layout_marginTop="12dp" />
+            android:text="Save Booking" />
 
     </LinearLayout>
-</ScrollView>
+</androidx.core.widget.NestedScrollView>

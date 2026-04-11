@@ -18,42 +18,26 @@ public class BookingItem implements Parcelable {
     @SerializedName("room_name")
     private String roomName;
 
-    @SerializedName("visitor_name")
-    private String visitorName;
+    @SerializedName("arrival_at")
+    private String arrivalAt;
 
-    @SerializedName("visitor_designation")
-    private String visitorDesignation;
+    @SerializedName("departure_at")
+    private String departureAt;
 
-    @SerializedName("visitor_organisation")
-    private String visitorOrganisation;
+    // Encryption fields (ONLY source of sensitive data)
+    @SerializedName("encrypted_payload")
+    private String encryptedPayload;
 
-    @SerializedName("visitor_gender")
-    private String visitorGender;
+    @SerializedName("payload_nonce")
+    private String payloadNonce;
 
-    @SerializedName("visitor_address")
-    private String visitorAddress;
+    @SerializedName("payload_version")
+    private int payloadVersion;
 
-    @SerializedName("visitor_mobile")
-    private String visitorMobile;
+    @SerializedName("can_view_sensitive_details")
+    private boolean canViewSensitiveDetails;
 
-    @SerializedName("visitor_email")
-    private String visitorEmail;
-
-    @SerializedName("arrival_date")
-    private String arrivalDate;
-
-    @SerializedName("arrival_time")
-    private String arrivalTime;
-
-    @SerializedName("departure_date")
-    private String departureDate;
-
-    @SerializedName("departure_time")
-    private String departureTime;
-
-    @SerializedName("purpose_of_visit")
-    private String purposeOfVisit;
-
+    // Visible to all users
     @SerializedName("requestee_name")
     private String requesteeName;
 
@@ -85,18 +69,12 @@ public class BookingItem implements Parcelable {
         id = in.readInt();
         room = in.readInt();
         roomName = in.readString();
-        visitorName = in.readString();
-        visitorDesignation = in.readString();
-        visitorOrganisation = in.readString();
-        visitorGender = in.readString();
-        visitorAddress = in.readString();
-        visitorMobile = in.readString();
-        visitorEmail = in.readString();
-        arrivalDate = in.readString();
-        arrivalTime = in.readString();
-        departureDate = in.readString();
-        departureTime = in.readString();
-        purposeOfVisit = in.readString();
+        arrivalAt = in.readString();
+        departureAt = in.readString();
+        encryptedPayload = in.readString();
+        payloadNonce = in.readString();
+        payloadVersion = in.readInt();
+        canViewSensitiveDetails = in.readByte() != 0;
         requesteeName = in.readString();
         requesteeDesignation = in.readString();
         requesteeDepartment = in.readString();
@@ -120,151 +98,53 @@ public class BookingItem implements Parcelable {
         }
     };
 
+    // Getters
     public int getId() { return id; }
     public int getRoom() { return room; }
     public String getRoomName() { return roomName; }
-    public String getVisitorName() { return visitorName; }
-    public String getVisitorDesignation() { return visitorDesignation; }
-    public String getVisitorOrganisation() { return visitorOrganisation; }
-    public String getVisitorGender() { return visitorGender; }
-    public String getVisitorAddress() { return visitorAddress; }
-    public String getVisitorMobile() { return visitorMobile; }
-    public String getVisitorEmail() { return visitorEmail; }
-    public String getArrivalDate() { return arrivalDate; }
-    public String getArrivalTime() { return arrivalTime; }
-    public String getDepartureDate() { return departureDate; }
-    public String getDepartureTime() { return departureTime; }
-    public String getPurposeOfVisit() { return purposeOfVisit; }
+
+    public String getArrivalAt() { return arrivalAt; }
+    public String getDepartureAt() { return departureAt; }
+
+    public String getEncryptedPayload() { return encryptedPayload; }
+    public String getPayloadNonce() { return payloadNonce; }
+    public int getPayloadVersion() { return payloadVersion; }
+
+    public boolean canDecrypt() { return canViewSensitiveDetails; }
+
     public String getRequesteeName() { return requesteeName; }
     public String getRequesteeDesignation() { return requesteeDesignation; }
     public String getRequesteeDepartment() { return requesteeDepartment; }
     public String getRequesteeMobile() { return requesteeMobile; }
+
     public String getLogisticsName() { return logisticsName; }
     public String getLogisticsDesignation() { return logisticsDesignation; }
     public String getLogisticsMobile() { return logisticsMobile; }
+
     public String getStatus() { return status; }
     public String getCreatedByUsername() { return createdByUsername; }
 
-
-    public void setId(int id) {
-        this.id = id;
+    // Utility
+    public boolean hasEncryptedPayload() {
+        return encryptedPayload != null && !encryptedPayload.trim().isEmpty()
+                && payloadNonce != null && !payloadNonce.trim().isEmpty();
     }
-
-    public void setRoom(int room) {
-        this.room = room;
-    }
-
-    public void setRoomName(String roomName) {
-        this.roomName = roomName;
-    }
-
-    public void setVisitorName(String visitorName) {
-        this.visitorName = visitorName;
-    }
-
-    public void setVisitorDesignation(String visitorDesignation) {
-        this.visitorDesignation = visitorDesignation;
-    }
-
-    public void setVisitorOrganisation(String visitorOrganisation) {
-        this.visitorOrganisation = visitorOrganisation;
-    }
-
-    public void setVisitorGender(String visitorGender) {
-        this.visitorGender = visitorGender;
-    }
-
-    public void setVisitorAddress(String visitorAddress) {
-        this.visitorAddress = visitorAddress;
-    }
-
-    public void setVisitorMobile(String visitorMobile) {
-        this.visitorMobile = visitorMobile;
-    }
-
-    public void setVisitorEmail(String visitorEmail) {
-        this.visitorEmail = visitorEmail;
-    }
-
-    public void setArrivalDate(String arrivalDate) {
-        this.arrivalDate = arrivalDate;
-    }
-
-    public void setArrivalTime(String arrivalTime) {
-        this.arrivalTime = arrivalTime;
-    }
-
-    public void setDepartureDate(String departureDate) {
-        this.departureDate = departureDate;
-    }
-
-    public void setDepartureTime(String departureTime) {
-        this.departureTime = departureTime;
-    }
-
-    public void setPurposeOfVisit(String purposeOfVisit) {
-        this.purposeOfVisit = purposeOfVisit;
-    }
-
-    public void setRequesteeName(String requesteeName) {
-        this.requesteeName = requesteeName;
-    }
-
-    public void setRequesteeDesignation(String requesteeDesignation) {
-        this.requesteeDesignation = requesteeDesignation;
-    }
-
-    public void setRequesteeDepartment(String requesteeDepartment) {
-        this.requesteeDepartment = requesteeDepartment;
-    }
-
-    public void setRequesteeMobile(String requesteeMobile) {
-        this.requesteeMobile = requesteeMobile;
-    }
-
-    public void setLogisticsName(String logisticsName) {
-        this.logisticsName = logisticsName;
-    }
-
-    public void setLogisticsDesignation(String logisticsDesignation) {
-        this.logisticsDesignation = logisticsDesignation;
-    }
-
-    public void setLogisticsMobile(String logisticsMobile) {
-        this.logisticsMobile = logisticsMobile;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public void setCreatedByUsername(String createdByUsername) {
-        this.createdByUsername = createdByUsername;
-    }
-
-
     @Override
     public int describeContents() {
         return 0;
     }
 
     @Override
-    public void writeToParcel(@NonNull Parcel parcel, int i) {
+    public void writeToParcel(@NonNull Parcel parcel, int flags) {
         parcel.writeInt(id);
         parcel.writeInt(room);
         parcel.writeString(roomName);
-        parcel.writeString(visitorName);
-        parcel.writeString(visitorDesignation);
-        parcel.writeString(visitorOrganisation);
-        parcel.writeString(visitorGender);
-        parcel.writeString(visitorAddress);
-        parcel.writeString(visitorMobile);
-        parcel.writeString(visitorEmail);
-        parcel.writeString(arrivalDate);
-        parcel.writeString(arrivalTime);
-        parcel.writeString(departureDate);
-        parcel.writeString(departureTime);
-        parcel.writeString(purposeOfVisit);
+        parcel.writeString(arrivalAt);
+        parcel.writeString(departureAt);
+        parcel.writeString(encryptedPayload);
+        parcel.writeString(payloadNonce);
+        parcel.writeInt(payloadVersion);
+        parcel.writeByte((byte) (canViewSensitiveDetails ? 1 : 0));
         parcel.writeString(requesteeName);
         parcel.writeString(requesteeDesignation);
         parcel.writeString(requesteeDepartment);
@@ -275,4 +155,17 @@ public class BookingItem implements Parcelable {
         parcel.writeString(status);
         parcel.writeString(createdByUsername);
     }
+
+
+
+
+
+
+    public void setStatus(String status) { this.status = status; }
+    public void setArrivalAt(String arrivalAt) { this.arrivalAt = arrivalAt; }
+    public void setDepartureAt(String departureAt) { this.departureAt = departureAt; }
+    public void setEncryptedPayload(String encryptedPayload) { this.encryptedPayload = encryptedPayload; }
+    public void setPayloadNonce(String payloadNonce) { this.payloadNonce = payloadNonce; }
+    public void setPayloadVersion(int payloadVersion) { this.payloadVersion = payloadVersion; }
+
 }
