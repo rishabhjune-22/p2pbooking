@@ -2,7 +2,6 @@ package com.example.roombooking.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -27,20 +26,22 @@ import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.booking.CreateBookingActivity;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.security.CryptoManager;
+import com.example.roombooking.security.EncryptedBookingPayload;
+import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
+import com.google.gson.Gson;
+
+import javax.crypto.SecretKey;
 
 public class HomeActivity extends AppCompatActivity {
 
-    private static final String EXTRA_BOOKING_DATA = "booking_data";
     private static final String EXTRA_UPDATED_BOOKING_ID = "updated_booking_id";
     private static final String EXTRA_UPDATED_STATUS = "updated_status";
-    private static final String EXTRA_VISITOR_NAME = "visitor_name";
-    private static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
-    private static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
-    private static final String EXTRA_ARRIVAL_DATE = "arrival_date";
-    private static final String EXTRA_ARRIVAL_TIME = "arrival_time";
-    private static final String EXTRA_DEPARTURE_DATE = "departure_date";
-    private static final String EXTRA_DEPARTURE_TIME = "departure_time";
+    private static final String EXTRA_ARRIVAL_AT = "arrival_at";
+    private static final String EXTRA_DEPARTURE_AT = "departure_at";
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
+
+    private static final String MASK = "****";
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
@@ -53,6 +54,7 @@ public class HomeActivity extends AppCompatActivity {
     private LinearLayoutManager layoutManager;
 
     private HomeViewModel viewModel;
+    private final Gson gson = new Gson();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,9 +85,11 @@ public class HomeActivity extends AppCompatActivity {
         SessionManager sessionManager = new SessionManager(getApplicationContext());
 
         HomeViewModelFactory factory = new HomeViewModelFactory(
+                getApplicationContext(),
                 bookingRepository,
                 authRepository,
                 sessionManager
+
         );
 
         viewModel = new ViewModelProvider(this, factory).get(HomeViewModel.class);
@@ -96,7 +100,7 @@ public class HomeActivity extends AppCompatActivity {
             @Override
             public void onBookingClick(BookingItem bookingItem) {
                 Intent intent = new Intent(HomeActivity.this, BookingDetailActivity.class);
-                intent.putExtra(EXTRA_BOOKING_DATA, (Parcelable) bookingItem);
+                intent.putExtra(BookingDetailActivity.EXTRA_BOOKING_DATA, bookingItem);
                 bookingDetailLauncher.launch(intent);
             }
 
@@ -116,8 +120,12 @@ public class HomeActivity extends AppCompatActivity {
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);
 
-                if (dy <= 0) return;
-                if (viewModel.isLoading() || viewModel.isLastPage()) return;
+                if (dy <= 0) {
+                    return;
+                }
+                if (viewModel.isLoading() || viewModel.isLastPage()) {
+                    return;
+                }
 
                 int visibleItemCount = layoutManager.getChildCount();
                 int totalItemCount = layoutManager.getItemCount();
@@ -146,13 +154,11 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void observeViewModel() {
-        viewModel.getBookingsLiveData().observe(this, bookingItems -> {
-            bookingAdapter.setItems(bookingItems);
-        });
+        viewModel.getBookingsLiveData().observe(this, bookingItems -> bookingAdapter.setItems(bookingItems));
 
-        viewModel.getFullScreenLoadingLiveData().observe(this, isLoading -> {
-            progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE);
-        });
+        viewModel.getFullScreenLoadingLiveData().observe(this, isLoading ->
+                progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE)
+        );
 
         viewModel.getPaginationLoadingLiveData().observe(this, isLoading -> {
             if (Boolean.TRUE.equals(isLoading)) {
@@ -162,9 +168,9 @@ public class HomeActivity extends AppCompatActivity {
             }
         });
 
-        viewModel.getSwipeRefreshingLiveData().observe(this, isRefreshing -> {
-            swipeRefreshLayout.setRefreshing(Boolean.TRUE.equals(isRefreshing));
-        });
+        viewModel.getSwipeRefreshingLiveData().observe(this, isRefreshing ->
+                swipeRefreshLayout.setRefreshing(Boolean.TRUE.equals(isRefreshing))
+        );
 
         viewModel.getMessageLiveData().observe(this, message -> {
             if (message == null || message.trim().isEmpty()) {
@@ -194,6 +200,8 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
+        String displayName = getVisitorNameForDisplay(bookingItem);
+
         EditText input = new EditText(this);
         input.setHint("Enter cancellation reason (optional)");
         int margin = (int) (16 * getResources().getDisplayMetrics().density);
@@ -201,7 +209,7 @@ public class HomeActivity extends AppCompatActivity {
 
         new AlertDialog.Builder(this)
                 .setTitle("Cancel Booking")
-                .setMessage("Do you want to cancel booking for " + bookingItem.getVisitorName() + "?")
+                .setMessage("Do you want to cancel booking for " + displayName + "?")
                 .setView(input)
                 .setPositiveButton("Cancel Booking", (dialog, which) -> {
                     String reason = input.getText().toString().trim();
@@ -209,6 +217,46 @@ public class HomeActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Close", null)
                 .show();
+    }
+
+    private String getVisitorNameForDisplay(BookingItem bookingItem) {
+        if (bookingItem == null) {
+            return "this booking";
+        }
+
+        if (!bookingItem.canDecrypt() || !bookingItem.hasEncryptedPayload()) {
+            return "this booking";
+        }
+
+        try {
+            KeystoreBackedCryptoSessionManager sessionManager =
+                    KeystoreBackedCryptoSessionManager.getInstance(getApplicationContext());
+
+            SecretKey dek = sessionManager.getDek();
+            if (dek == null) {
+                return "this booking";
+            }
+
+            CryptoManager cryptoManager = new CryptoManager();
+            String decryptedJson = cryptoManager.decryptPayload(
+                    bookingItem.getEncryptedPayload(),
+                    bookingItem.getPayloadNonce(),
+                    dek
+            );
+
+            EncryptedBookingPayload payload =
+                    EncryptedBookingPayload.fromJson(decryptedJson, gson);
+
+            if (payload != null) {
+                String name = payload.getVisitorName();
+                if (name != null && !name.trim().isEmpty()) {
+                    return name;
+                }
+            }
+        } catch (Exception ignored) {
+        }
+
+        return "this booking";
     }
 
     private void goToLogin() {
@@ -225,25 +273,18 @@ public class HomeActivity extends AppCompatActivity {
 
                     int bookingId = data.getIntExtra(EXTRA_UPDATED_BOOKING_ID, -1);
                     String updatedStatus = data.getStringExtra(EXTRA_UPDATED_STATUS);
-                    String visitorName = data.getStringExtra(EXTRA_VISITOR_NAME);
-                    String visitorMobile = data.getStringExtra(EXTRA_VISITOR_MOBILE);
-                    String purpose = data.getStringExtra(EXTRA_PURPOSE_OF_VISIT);
-                    String arrivalDate = data.getStringExtra(EXTRA_ARRIVAL_DATE);
-                    String arrivalTime = data.getStringExtra(EXTRA_ARRIVAL_TIME);
-                    String departureDate = data.getStringExtra(EXTRA_DEPARTURE_DATE);
-                    String departureTime = data.getStringExtra(EXTRA_DEPARTURE_TIME);
+                    String arrivalAt = data.getStringExtra(EXTRA_ARRIVAL_AT);
+                    String departureAt = data.getStringExtra(EXTRA_DEPARTURE_AT);
 
                     if (bookingId != -1) {
                         viewModel.updateBookingById(
                                 bookingId,
                                 updatedStatus,
-                                visitorName,
-                                visitorMobile,
-                                purpose,
-                                arrivalDate,
-                                arrivalTime,
-                                departureDate,
-                                departureTime
+                                null,
+                                null,
+                                null,
+                                arrivalAt,
+                                departureAt
                         );
                     }
                 }

@@ -26,16 +26,79 @@
             android:lineSpacingExtra="4dp"
             android:layout_marginBottom="20dp" />
 
+        <!-- Edit Fields (Hidden by default) -->
+        <EditText
+            android:id="@+id/etVisitorName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Visitor Name"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etVisitorMobile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Visitor Mobile"
+            android:inputType="phone"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etPurpose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Purpose of Visit"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etArrivalAt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Arrival At"
+            android:focusable="false"
+            android:clickable="true"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/etDepartureAt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Departure At"
+            android:focusable="false"
+            android:clickable="true"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnSaveBooking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnCancelEdit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Cancel Edit"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnEditBooking"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Edit Booking"
+            android:layout_marginTop="8dp" />
+
         <Button
             android:id="@+id/btnCancelBooking"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Cancel Booking" />
-        <Button
-            android:id="@+id/btnEditBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Edit Booking"/>
+
     </LinearLayout>
 
 </ScrollView>

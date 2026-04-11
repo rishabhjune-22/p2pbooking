@@ -1,105 +1,75 @@
 package com.example.roombooking.booking;
 
+import com.google.gson.annotations.SerializedName;
+
 public class BookingUpdateRequest {
 
-    private String visitor_name;
-    private String visitor_designation;
-    private String visitor_organisation;
-    private String visitor_gender;
-    private String visitor_address;
-    private String visitor_mobile;
-    private String visitor_email;
-    private String arrival_date;
-    private String arrival_time;
-    private String departure_date;
-    private String departure_time;
-    private String purpose_of_visit;
-    private String requestee_name;
-    private String requestee_designation;
-    private String requestee_department;
-    private String requestee_mobile;
-    private String logistics_name;
-    private String logistics_designation;
-    private String logistics_mobile;
-    private Integer room;
+    @SerializedName("room")
+    private final Integer room;
 
-    public void setVisitor_name(String visitor_name) {
-        this.visitor_name = visitor_name;
-    }
+    @SerializedName("arrival_at")
+    private final String arrivalAt;
 
-    public void setVisitor_designation(String visitor_designation) {
-        this.visitor_designation = visitor_designation;
-    }
+    @SerializedName("departure_at")
+    private final String departureAt;
 
-    public void setVisitor_organisation(String visitor_organisation) {
-        this.visitor_organisation = visitor_organisation;
-    }
+    @SerializedName("encrypted_payload")
+    private final String encryptedPayload;
 
-    public void setVisitor_gender(String visitor_gender) {
-        this.visitor_gender = visitor_gender;
-    }
+    @SerializedName("payload_nonce")
+    private final String payloadNonce;
 
-    public void setVisitor_address(String visitor_address) {
-        this.visitor_address = visitor_address;
-    }
+    @SerializedName("payload_version")
+    private final int payloadVersion;
 
-    public void setVisitor_mobile(String visitor_mobile) {
-        this.visitor_mobile = visitor_mobile;
-    }
+    @SerializedName("requestee_name")
+    private final String requesteeName;
 
-    public void setVisitor_email(String visitor_email) {
-        this.visitor_email = visitor_email;
-    }
+    @SerializedName("requestee_designation")
+    private final String requesteeDesignation;
 
-    public void setArrival_date(String arrival_date) {
-        this.arrival_date = arrival_date;
-    }
+    @SerializedName("requestee_department")
+    private final String requesteeDepartment;
 
-    public void setArrival_time(String arrival_time) {
-        this.arrival_time = arrival_time;
-    }
+    @SerializedName("requestee_mobile")
+    private final String requesteeMobile;
 
-    public void setDeparture_date(String departure_date) {
-        this.departure_date = departure_date;
-    }
+    @SerializedName("logistics_name")
+    private final String logisticsName;
 
-    public void setDeparture_time(String departure_time) {
-        this.departure_time = departure_time;
-    }
+    @SerializedName("logistics_designation")
+    private final String logisticsDesignation;
 
-    public void setPurpose_of_visit(String purpose_of_visit) {
-        this.purpose_of_visit = purpose_of_visit;
-    }
+    @SerializedName("logistics_mobile")
+    private final String logisticsMobile;
 
-    public void setRequestee_name(String requestee_name) {
-        this.requestee_name = requestee_name;
-    }
-
-    public void setRequestee_designation(String requestee_designation) {
-        this.requestee_designation = requestee_designation;
-    }
-
-    public void setRequestee_department(String requestee_department) {
-        this.requestee_department = requestee_department;
-    }
-
-    public void setRequestee_mobile(String requestee_mobile) {
-        this.requestee_mobile = requestee_mobile;
-    }
-
-    public void setLogistics_name(String logistics_name) {
-        this.logistics_name = logistics_name;
-    }
-
-    public void setLogistics_designation(String logistics_designation) {
-        this.logistics_designation = logistics_designation;
-    }
-
-    public void setLogistics_mobile(String logistics_mobile) {
-        this.logistics_mobile = logistics_mobile;
-    }
-
-    public void setRoom(Integer room) {
+    public BookingUpdateRequest(
+            Integer room,
+            String arrivalAt,
+            String departureAt,
+            String encryptedPayload,
+            String payloadNonce,
+            int payloadVersion,
+            String requesteeName,
+            String requesteeDesignation,
+            String requesteeDepartment,
+            String requesteeMobile,
+            String logisticsName,
+            String logisticsDesignation,
+            String logisticsMobile
+    ) {
         this.room = room;
+        this.arrivalAt = arrivalAt;
+        this.departureAt = departureAt;
+        this.encryptedPayload = encryptedPayload;
+        this.payloadNonce = payloadNonce;
+        this.payloadVersion = payloadVersion;
+        this.requesteeName = requesteeName;
+        this.requesteeDesignation = requesteeDesignation;
+        this.requesteeDepartment = requesteeDepartment;
+        this.requesteeMobile = requesteeMobile;
+        this.logisticsName = logisticsName;
+        this.logisticsDesignation = logisticsDesignation;
+        this.logisticsMobile = logisticsMobile;
     }
 }

@@ -40,6 +40,14 @@
             android:hint="Password"
             android:inputType="textPassword"
             android:layout_marginTop="10dp" />
+        <EditText
+            android:id="@+id/etPassphrase"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Passphrase"
+            android:inputType="textPassword"
+            android:layout_marginTop="10dp"
+            android:visibility="gone"/>
 
         <Button
             android:id="@+id/btnPrimary"

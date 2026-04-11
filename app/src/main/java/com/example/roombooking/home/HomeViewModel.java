@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
+import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
 import com.example.roombooking.auth.LogoutRequest;
 import com.example.roombooking.auth.AuthRepository;
 import com.example.roombooking.auth.SessionManager;
@@ -16,7 +16,7 @@ import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.room.RoomCache;
 import com.google.gson.Gson;
-
+import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +30,7 @@ public class HomeViewModel extends ViewModel {
     private final AuthRepository authRepository;
     private final SessionManager sessionManager;
     private final Gson gson = new Gson();
-
+    private final Context appContext;
     private final MutableLiveData<List<BookingItem>> bookingsLiveData = new MutableLiveData<>(new ArrayList<>());
     private final MutableLiveData<Boolean> fullScreenLoadingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<Boolean> paginationLoadingLiveData = new MutableLiveData<>(false);
@@ -43,12 +43,13 @@ public class HomeViewModel extends ViewModel {
     private boolean isLoading = false;
     private boolean isLastPage = false;
     private boolean isFirstLoad = true;
-
     public HomeViewModel(
+            Context context,
             BookingRepository bookingRepository,
             AuthRepository authRepository,
             SessionManager sessionManager
     ) {
+        this.appContext = context.getApplicationContext();
         this.bookingRepository = bookingRepository;
         this.authRepository = authRepository;
         this.sessionManager = sessionManager;
@@ -230,9 +231,7 @@ public class HomeViewModel extends ViewModel {
         String refreshToken = sessionManager.getRefreshToken();
 
         if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            sessionManager.logout();
-            RoomCache.clear();
-
+            clearLocalSession();
             logoutEventLiveData.setValue(true);
             return;
         }
@@ -246,7 +245,6 @@ public class HomeViewModel extends ViewModel {
                     ) {
                         sessionManager.logout();
                         RoomCache.clear();
-
                         logoutEventLiveData.setValue(true);
                     }
 
@@ -257,7 +255,6 @@ public class HomeViewModel extends ViewModel {
                     ) {
                         sessionManager.logout();
                         RoomCache.clear();
-
                         logoutEventLiveData.setValue(true);
                     }
                 });
@@ -266,13 +263,11 @@ public class HomeViewModel extends ViewModel {
     public void updateBookingById(
             int bookingId,
             String updatedStatus,
-            String visitorName,
-            String visitorMobile,
-            String purpose,
-            String arrivalDate,
-            String arrivalTime,
-            String departureDate,
-            String departureTime
+            String visitorName,   // ignored now
+            String visitorMobile, // ignored now
+            String purpose,       // ignored now
+            String arrivalAt,
+            String departureAt
     ) {
         List<BookingItem> currentList = bookingsLiveData.getValue();
         if (currentList == null || currentList.isEmpty()) return;
@@ -281,15 +276,25 @@ public class HomeViewModel extends ViewModel {
 
         for (int i = 0; i < updatedList.size(); i++) {
             BookingItem item = updatedList.get(i);
+
             if (item.getId() == bookingId) {
-                item.setStatus(updatedStatus);
-                item.setVisitorName(visitorName);
-                item.setVisitorMobile(visitorMobile);
-                item.setPurposeOfVisit(purpose);
-                item.setArrivalDate(arrivalDate);
-                item.setArrivalTime(arrivalTime);
-                item.setDepartureDate(departureDate);
-                item.setDepartureTime(departureTime);
+
+                // ✅ Only safe fields to update locally
+                if (updatedStatus != null) {
+                    item.setStatus(updatedStatus);
+                }
+
+                if (arrivalAt != null) {
+                    item.setArrivalAt(arrivalAt);
+                }
+
+                if (departureAt != null) {
+                    item.setDepartureAt(departureAt);
+                }
+
+                // ❌ DO NOT touch encrypted data here
+                // visitorName, mobile, purpose → encrypted → ignore
+
                 break;
             }
         }
@@ -350,5 +355,13 @@ public class HomeViewModel extends ViewModel {
 
     private String getNetworkErrorMessage(Throwable throwable) {
         return "Please check your internet connection.";
+    }
+
+    private void clearLocalSession() {
+        sessionManager.logout();
+        RoomCache.clear();
+        KeystoreBackedCryptoSessionManager
+                .getInstance(appContext)
+                .clearAll();
     }
 }
