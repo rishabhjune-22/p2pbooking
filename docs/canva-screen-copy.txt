@@ -1,0 +1,56 @@
+P2P ROOM BOOKING - SCREEN COPY
+
+1. Splash
+Title: P2P Room Booking
+Subtitle: Book rooms fast. Sync bookings securely.
+Footer: Secure campus-ready booking
+
+2. Login
+Title: Welcome Back
+Subtitle: Login to manage bookings and sync your rooms
+Fields: User ID or Username, Password
+Primary CTA: Login
+Secondary CTA: No account? Sign up
+
+3. Signup
+Title: Create Your Account
+Subtitle: Start booking and syncing room schedules
+Fields: Display Name, Username, Password, Confirm Password
+Primary CTA: Sign Up
+Secondary CTA: Already have an account? Login
+
+4. Home
+Greeting: Hello, Akash
+Subtitle: Manage bookings, sync status, and room availability
+Primary CTA: Create New Booking
+Toggle: Show canceled bookings
+
+5. Profile Drawer
+Title: Your Profile
+Subtitle: Account details and quick actions
+Buttons: About, Logout
+
+6. Create Booking
+Title: Create Booking
+Fields: Select Room, Start Date and Time, End Date and Time
+Primary CTA: Save Booking
+
+7. Edit Booking
+Title: Edit Booking
+Primary CTA: Update Booking
+Secondary CTA: Discard
+
+8. Conflict Resolution
+Title: Resolve Conflict
+Message: Two booking versions were found
+Primary CTA: Keep Local
+Secondary CTA: Accept Remote
+
+9. Empty State
+Title: No bookings yet
+Subtitle: Create your first booking to start managing room schedules
+CTA: Create Booking
+
+10. Offline State
+Badge: Offline
+Message: Your changes will sync when network is back

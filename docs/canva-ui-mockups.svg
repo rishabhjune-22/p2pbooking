@@ -1,0 +1,243 @@
+<svg width="2200" height="5200" viewBox="0 0 2200 5200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="2200" y2="5200" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF8F3"/>
+      <stop offset="1" stop-color="#FFE7D8"/>
+    </linearGradient>
+    <linearGradient id="hero" x1="0" y1="0" x2="0" y2="360" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF9B5C"/>
+      <stop offset="1" stop-color="#E16628"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#D7A285" flood-opacity="0.28"/>
+    </filter>
+    <style>
+      .title { font: 700 34px 'Poppins', Arial, sans-serif; fill: #102A43; }
+      .subtitle { font: 500 18px 'Poppins', Arial, sans-serif; fill: #5C6B7A; }
+      .small { font: 500 16px 'Poppins', Arial, sans-serif; fill: #5C6B7A; }
+      .label { font: 700 24px 'Poppins', Arial, sans-serif; fill: #102A43; }
+      .buttonText { font: 700 20px 'Poppins', Arial, sans-serif; fill: #F9DAC7; }
+      .darkBtnText { font: 700 20px 'Poppins', Arial, sans-serif; fill: #102A43; }
+      .screenName { font: 700 30px 'Poppins', Arial, sans-serif; fill: #E16628; }
+      .status { font: 700 14px 'Poppins', Arial, sans-serif; fill: white; }
+    </style>
+  </defs>
+
+  <rect width="2200" height="5200" fill="url(#bg)"/>
+
+  <text x="1100" y="90" text-anchor="middle" class="screenName">P2P Room Booking - Canva Mockup Screens</text>
+
+  <!-- reusable positions -->
+  <!-- Screen 1 -->
+  <g transform="translate(110,150)" filter="url(#shadow)">
+    <rect width="820" height="900" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="#FFFDFB"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="url(#bg)"/>
+    <circle cx="635" cy="150" r="130" fill="#FFD9C3"/>
+    <circle cx="165" cy="740" r="170" fill="#FFE9DD"/>
+    <rect x="272" y="225" width="230" height="230" rx="64" fill="#FFF3EB"/>
+    <rect x="325" y="270" width="90" height="145" rx="24" fill="#E16628"/>
+    <rect x="342" y="286" width="56" height="112" rx="14" fill="#FFF7F2"/>
+    <rect x="410" y="305" width="72" height="88" rx="20" fill="#102A43"/>
+    <path d="M446 287C446 269 460 255 478 255C496 255 510 269 510 287V305" stroke="#102A43" stroke-width="10" stroke-linecap="round"/>
+    <text x="412" y="530" text-anchor="middle" class="title">P2P Room Booking</text>
+    <text x="412" y="570" text-anchor="middle" class="subtitle">Book rooms fast. Sync bookings securely.</text>
+    <text x="412" y="805" text-anchor="middle" class="small">Secure campus-ready booking</text>
+  </g>
+  <text x="520" y="1090" text-anchor="middle" class="screenName">1. Splash</text>
+
+  <!-- Screen 2 Login -->
+  <g transform="translate(1270,150)" filter="url(#shadow)">
+    <rect width="820" height="900" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="#FFFDFB"/>
+    <path d="M22 22H798V280C710 335 604 360 410 350C220 340 120 300 22 230V22Z" fill="url(#hero)"/>
+    <circle cx="410" cy="170" r="64" fill="#FFF3EB"/>
+    <rect x="385" y="140" width="26" height="52" rx="10" fill="#E16628"/>
+    <rect x="430" y="150" width="36" height="44" rx="11" fill="#102A43"/>
+    <path d="M445 140C445 131 452 124 461 124C470 124 477 131 477 140V150" stroke="#102A43" stroke-width="6"/>
+    <rect x="84" y="355" width="652" height="70" rx="22" fill="white"/>
+    <rect x="84" y="450" width="652" height="70" rx="22" fill="white"/>
+    <rect x="84" y="570" width="652" height="74" rx="26" fill="#F27038"/>
+    <rect x="560" y="305" width="152" height="42" rx="20" fill="#FFF3EB"/>
+    <text x="410" y="298" text-anchor="middle" class="title">Welcome Back</text>
+    <text x="410" y="332" text-anchor="middle" class="subtitle">Login to manage bookings and sync your rooms</text>
+    <text x="130" y="398" class="small">User ID or Username</text>
+    <text x="130" y="493" class="small">Password</text>
+    <text x="637" y="332" text-anchor="middle" class="small">How it works</text>
+    <text x="410" y="615" text-anchor="middle" class="buttonText">Login</text>
+    <text x="410" y="705" text-anchor="middle" class="label">No account? Sign up</text>
+    <text x="410" y="770" text-anchor="middle" class="small">Your booking data stays linked to your account</text>
+  </g>
+  <text x="1680" y="1090" text-anchor="middle" class="screenName">2. Login</text>
+
+  <!-- Screen 3 Signup -->
+  <g transform="translate(110,1150)" filter="url(#shadow)">
+    <rect width="820" height="1020" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="976" rx="42" fill="#FFFDFB"/>
+    <path d="M22 22H798V240C702 286 610 300 410 290C220 281 118 255 22 210V22Z" fill="url(#hero)"/>
+    <text x="410" y="305" text-anchor="middle" class="title">Create Your Account</text>
+    <text x="410" y="340" text-anchor="middle" class="subtitle">Start booking and syncing room schedules</text>
+    <rect x="84" y="382" width="652" height="68" rx="22" fill="white"/>
+    <rect x="84" y="470" width="652" height="68" rx="22" fill="white"/>
+    <rect x="84" y="558" width="652" height="68" rx="22" fill="white"/>
+    <rect x="84" y="646" width="652" height="68" rx="22" fill="white"/>
+    <rect x="84" y="760" width="652" height="74" rx="26" fill="#F27038"/>
+    <text x="130" y="424" class="small">Display Name</text>
+    <text x="130" y="512" class="small">Username</text>
+    <text x="130" y="600" class="small">Password</text>
+    <text x="130" y="688" class="small">Confirm Password</text>
+    <text x="410" y="807" text-anchor="middle" class="buttonText">Sign Up</text>
+    <text x="410" y="895" text-anchor="middle" class="label">Already have an account? Login</text>
+  </g>
+  <text x="520" y="2220" text-anchor="middle" class="screenName">3. Signup</text>
+
+  <!-- Screen 4 Home -->
+  <g transform="translate(1270,1150)" filter="url(#shadow)">
+    <rect width="820" height="1020" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="976" rx="42" fill="#FFFDFB"/>
+    <rect x="22" y="22" width="776" height="88" rx="42" fill="#F27038"/>
+    <circle cx="710" cy="66" r="22" fill="#102A43"/>
+    <text x="84" y="76" class="label" fill="#F9DAC7">P2P Room Booking</text>
+    <rect x="56" y="138" width="708" height="120" rx="30" fill="#FFF3EB"/>
+    <text x="90" y="184" class="title">Hello, Akash</text>
+    <text x="90" y="222" class="subtitle">Manage bookings, sync status, and room availability</text>
+    <rect x="56" y="284" width="708" height="220" rx="28" fill="#F8FAFC"/>
+    <text x="88" y="326" class="label">Sync Status</text>
+    <text x="88" y="366" class="small">Network: Available</text>
+    <text x="88" y="400" class="small">Signalling: Connected</text>
+    <text x="88" y="434" class="small">WebRTC: Active</text>
+    <text x="88" y="468" class="small">DataChannel: Open</text>
+    <rect x="88" y="524" width="260" height="64" rx="24" fill="#F27038"/>
+    <text x="218" y="565" text-anchor="middle" class="buttonText">Create New Booking</text>
+    <rect x="56" y="610" width="708" height="54" rx="18" fill="#FFF7F2"/>
+    <circle cx="100" cy="637" r="14" fill="#F27038"/>
+    <text x="130" y="645" class="small">Show canceled bookings</text>
+    <rect x="56" y="692" width="708" height="116" rx="26" fill="white"/>
+    <text x="88" y="732" class="label">Delta 101A</text>
+    <text x="88" y="766" class="small">01 Apr 2026, 10:00 AM - 11:00 AM</text>
+    <text x="88" y="796" class="small">Created by Rahul on Device-03</text>
+    <rect x="600" y="718" width="110" height="34" rx="17" fill="#E7F6EC"/>
+    <text x="655" y="741" text-anchor="middle" class="small" fill="#2E7D32">Active</text>
+    <rect x="56" y="826" width="708" height="116" rx="26" fill="white"/>
+    <text x="88" y="866" class="label">Nova Hall</text>
+    <text x="88" y="900" class="small">01 Apr 2026, 12:30 PM - 01:30 PM</text>
+    <text x="88" y="930" class="small">Created by Akash on Device-01</text>
+  </g>
+  <text x="1680" y="2220" text-anchor="middle" class="screenName">4. Home</text>
+
+  <!-- Screen 5 Profile Drawer -->
+  <g transform="translate(110,2300)" filter="url(#shadow)">
+    <rect width="820" height="900" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="#FFFDFB"/>
+    <rect x="338" y="22" width="460" height="856" rx="42" fill="white"/>
+    <rect x="338" y="22" width="460" height="200" rx="42" fill="#FFF3EB"/>
+    <circle cx="700" cy="104" r="34" fill="#EAF3FF"/>
+    <circle cx="700" cy="104" r="16" fill="#102A43"/>
+    <text x="380" y="280" class="title">Your Profile</text>
+    <text x="380" y="318" class="subtitle">Account details and quick actions</text>
+    <rect x="380" y="360" width="376" height="160" rx="24" fill="#F4F7FB"/>
+    <text x="410" y="410" class="small">Name: Akash</text>
+    <text x="410" y="448" class="small">User ID: usr_1098</text>
+    <text x="410" y="486" class="small">Device ID: Device-01</text>
+    <rect x="380" y="560" width="376" height="68" rx="24" fill="#FDE1D0"/>
+    <rect x="380" y="648" width="376" height="68" rx="24" fill="#D85A1A"/>
+    <text x="568" y="603" text-anchor="middle" class="darkBtnText">About</text>
+    <text x="568" y="691" text-anchor="middle" class="buttonText">Logout</text>
+  </g>
+  <text x="520" y="3240" text-anchor="middle" class="screenName">5. Profile Drawer</text>
+
+  <!-- Screen 6 Create Booking -->
+  <g transform="translate(1270,2300)" filter="url(#shadow)">
+    <rect width="820" height="900" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="#FFFDFB"/>
+    <text x="84" y="108" class="title">Create Booking</text>
+    <rect x="72" y="158" width="676" height="68" rx="22" fill="white"/>
+    <rect x="72" y="266" width="676" height="68" rx="22" fill="white"/>
+    <rect x="72" y="374" width="676" height="68" rx="22" fill="white"/>
+    <text x="92" y="148" class="small">Room</text>
+    <text x="92" y="200" class="small">Select Room</text>
+    <text x="92" y="256" class="small">Start Date &amp; Time</text>
+    <text x="92" y="308" class="small">01 Apr 2026, 10:00 AM</text>
+    <text x="92" y="364" class="small">End Date &amp; Time</text>
+    <text x="92" y="416" class="small">01 Apr 2026, 11:00 AM</text>
+    <text x="92" y="488" class="subtitle">Available slot detected for selected room</text>
+    <rect x="72" y="548" width="676" height="74" rx="26" fill="#F27038"/>
+    <text x="410" y="595" text-anchor="middle" class="buttonText">Save Booking</text>
+    <rect x="72" y="660" width="676" height="60" rx="20" fill="#E7F6EC"/>
+    <text x="410" y="698" text-anchor="middle" class="small" fill="#2E7D32">Booking will sync after creation</text>
+  </g>
+  <text x="1680" y="3240" text-anchor="middle" class="screenName">6. Create Booking</text>
+
+  <!-- Screen 7 Edit Booking -->
+  <g transform="translate(110,3350)" filter="url(#shadow)">
+    <rect width="820" height="900" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="856" rx="42" fill="#FFFDFB"/>
+    <text x="84" y="108" class="title">Edit Booking</text>
+    <rect x="72" y="158" width="676" height="68" rx="22" fill="white"/>
+    <rect x="72" y="266" width="676" height="68" rx="22" fill="white"/>
+    <rect x="72" y="374" width="676" height="68" rx="22" fill="white"/>
+    <text x="92" y="200" class="small">Delta 101A</text>
+    <text x="92" y="308" class="small">01 Apr 2026, 10:00 AM</text>
+    <text x="92" y="416" class="small">01 Apr 2026, 11:30 AM</text>
+    <rect x="72" y="532" width="676" height="74" rx="26" fill="#F27038"/>
+    <rect x="72" y="626" width="676" height="60" rx="20" fill="#FFF3EB"/>
+    <text x="410" y="579" text-anchor="middle" class="buttonText">Update Booking</text>
+    <text x="410" y="664" text-anchor="middle" class="darkBtnText">Discard</text>
+  </g>
+  <text x="520" y="4290" text-anchor="middle" class="screenName">7. Edit Booking</text>
+
+  <!-- Screen 8 Conflict -->
+  <g transform="translate(1270,3350)" filter="url(#shadow)">
+    <rect width="820" height="980" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="936" rx="42" fill="#FFFDFB"/>
+    <text x="84" y="108" class="title">Resolve Conflict</text>
+    <rect x="72" y="142" width="676" height="64" rx="22" fill="#FFF3CD"/>
+    <text x="410" y="183" text-anchor="middle" class="small" fill="#8A6D1D">Two booking versions were found</text>
+    <rect x="72" y="236" width="676" height="214" rx="28" fill="#F8FAFC" stroke="#2E7D32" stroke-width="3"/>
+    <rect x="72" y="476" width="676" height="214" rx="28" fill="#F8FAFC" stroke="#D32F2F" stroke-width="3"/>
+    <text x="100" y="284" class="label">Local Version</text>
+    <text x="100" y="330" class="small">Room: Delta 101A</text>
+    <text x="100" y="364" class="small">Time: 10:00 AM - 11:00 AM</text>
+    <text x="100" y="398" class="small">Updated from Device-01</text>
+    <text x="100" y="524" class="label">Remote Version</text>
+    <text x="100" y="570" class="small">Room: Delta 101A</text>
+    <text x="100" y="604" class="small">Time: 10:30 AM - 11:30 AM</text>
+    <text x="100" y="638" class="small">Updated from Device-03</text>
+    <rect x="72" y="742" width="676" height="74" rx="26" fill="#FFF3EB"/>
+    <rect x="72" y="834" width="676" height="74" rx="26" fill="#F27038"/>
+    <text x="410" y="788" text-anchor="middle" class="darkBtnText">Keep Local</text>
+    <text x="410" y="881" text-anchor="middle" class="buttonText">Accept Remote</text>
+  </g>
+  <text x="1680" y="4370" text-anchor="middle" class="screenName">8. Conflict Resolution</text>
+
+  <!-- Screen 9 Empty -->
+  <g transform="translate(110,4400)" filter="url(#shadow)">
+    <rect width="820" height="700" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="656" rx="42" fill="#FFFDFB"/>
+    <circle cx="410" cy="230" r="88" fill="#FFF3EB"/>
+    <rect x="360" y="185" width="100" height="78" rx="18" fill="#FDE1D0"/>
+    <rect x="372" y="205" width="76" height="46" rx="10" fill="white"/>
+    <path d="M410 160V182" stroke="#F27038" stroke-width="10" stroke-linecap="round"/>
+    <text x="410" y="370" text-anchor="middle" class="title">No bookings yet</text>
+    <text x="410" y="410" text-anchor="middle" class="subtitle">Create your first booking to start managing room schedules</text>
+    <rect x="178" y="470" width="464" height="74" rx="26" fill="#F27038"/>
+    <text x="410" y="517" text-anchor="middle" class="buttonText">Create Booking</text>
+  </g>
+  <text x="520" y="5140" text-anchor="middle" class="screenName">9. Empty State</text>
+
+  <!-- Screen 10 Offline -->
+  <g transform="translate(1270,4400)" filter="url(#shadow)">
+    <rect width="820" height="700" rx="54" fill="#1C1C1C"/>
+    <rect x="22" y="22" width="776" height="656" rx="42" fill="#FFFDFB"/>
+    <text x="84" y="118" class="title">Sync Status</text>
+    <rect x="72" y="188" width="676" height="150" rx="28" fill="#FFF8E1"/>
+    <rect x="102" y="220" width="124" height="38" rx="19" fill="#F9A825"/>
+    <text x="164" y="244" text-anchor="middle" class="status">Offline</text>
+    <text x="102" y="286" class="subtitle">Your changes will sync when network is back</text>
+    <rect x="72" y="374" width="676" height="118" rx="28" fill="#F8FAFC"/>
+    <rect x="102" y="406" width="136" height="38" rx="19" fill="#2E7D32"/>
+    <text x="170" y="430" text-anchor="middle" class="status">Connected</text>
+    <text x="102" y="472" class="subtitle">Connected to peers successfully</text>
+  </g>
+  <text x="1680" y="5140" text-anchor="middle" class="screenName">10. Offline / Sync State</text>
+</svg>
