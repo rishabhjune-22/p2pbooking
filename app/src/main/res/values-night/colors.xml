@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Theme Colors -->
+    <color name="card_background">#1E1E1E</color>
+    <color name="text_primary">#F5F5F5</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="edittext_background">#2C2C2C</color>
+    <color name="edittext_hint">#757575</color>
+
+    <color name="blue_link">#64B5F6</color>
+</resources>

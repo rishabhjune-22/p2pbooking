@@ -1,75 +1,145 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
+    android:padding="20dp"
+    android:background="@drawable/bg_gradient">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
 
+        <!-- App Title -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Login / Signup"
-            android:textSize="22sp"
+            android:text="Hostel Finder"
+            android:textSize="26sp"
             android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="20dp"/>
 
-        <EditText
-            android:id="@+id/etEmail"
+        <!-- Card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Email (Signup only)"
-            android:inputType="textEmailAddress"
-            android:visibility="gone" />
+            android:orientation="vertical"
+            android:padding="20dp"
+            android:background="@drawable/card_bg">
 
-        <EditText
-            android:id="@+id/etUser"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Username"
-            android:inputType="text"
-            android:layout_marginTop="10dp" />
+            <TextView
+                android:id="@+id/tvCardTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Login"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary"
+                android:layout_marginBottom="20dp"/>
 
-        <EditText
-            android:id="@+id/etPass"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Password"
-            android:inputType="textPassword"
-            android:layout_marginTop="10dp" />
-        <EditText
-            android:id="@+id/etPassphrase"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Passphrase"
-            android:inputType="textPassword"
-            android:layout_marginTop="10dp"
-            android:visibility="gone"/>
+            <!-- Email -->
+            <EditText
+                android:id="@+id/etEmail"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Email"
+                android:inputType="textEmailAddress"
+                android:background="@drawable/edittext_bg"
+                android:padding="12dp"
+                android:drawableStart="@drawable/mail_02"
+                android:drawablePadding="12dp"
+                android:drawableTint="@color/text_secondary"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/edittext_hint"
+                android:visibility="gone"
+                android:layout_marginBottom="10dp"/>
 
-        <Button
-            android:id="@+id/btnPrimary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Login"
-            android:layout_marginTop="14dp" />
+            <!-- Username -->
+            <EditText
+                android:id="@+id/etUser"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Username"
+                android:background="@drawable/edittext_bg"
+                android:padding="12dp"
+                android:drawableStart="@drawable/user_02"
+                android:drawablePadding="12dp"
+                android:drawableTint="@color/text_secondary"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/edittext_hint"
+                android:layout_marginBottom="10dp"/>
 
-        <TextView
-            android:id="@+id/tvToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="No account? Signup"
-            android:textSize="14sp"
-            android:layout_marginTop="14dp" />
+            <!-- Password -->
+            <EditText
+                android:id="@+id/etPass"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Password"
+                android:inputType="textPassword"
+                android:background="@drawable/edittext_bg"
+                android:padding="12dp"
+                android:drawableStart="@drawable/lock_01"
+                android:drawableEnd="@drawable/eye_password_hide_svgrepo_com"
+                android:drawablePadding="12dp"
+                android:drawableTint="@color/text_secondary"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/edittext_hint"
+                android:layout_marginBottom="10dp"/>
 
-        <TextView
-            android:id="@+id/tvMsg"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text=""
-            android:layout_marginTop="12dp" />
+            <!-- Passphrase -->
+            <EditText
+                android:id="@+id/etPassphrase"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:hint="Passphrase"
+                android:inputType="textPassword"
+                android:background="@drawable/edittext_bg"
+                android:padding="12dp"
+                android:drawableStart="@drawable/password_svgrepo_com"
+                android:drawableEnd="@drawable/eye_password_hide_svgrepo_com"
+                android:drawablePadding="12dp"
+                android:drawableTint="@color/text_secondary"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/edittext_hint"
+                android:visibility="gone"
+                android:layout_marginBottom="15dp"/>
+
+            <!-- Button -->
+            <androidx.appcompat.widget.AppCompatButton
+                android:id="@+id/btnPrimary"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:text="Login"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:background="@drawable/btn_bg"/>
+
+            <!-- Toggle -->
+            <TextView
+                android:id="@+id/tvToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="No account? Signup"
+                android:textSize="14sp"
+                android:textColor="@color/blue_link"
+                android:layout_marginTop="15dp"/>
+
+            <!-- Message -->
+            <TextView
+                android:id="@+id/tvMsg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textColor="#FF5252"
+                android:layout_marginTop="10dp"/>
+
+        </LinearLayout>
 
     </LinearLayout>
+
 </ScrollView>
