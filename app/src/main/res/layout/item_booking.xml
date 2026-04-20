@@ -3,72 +3,108 @@
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    card_view:cardCornerRadius="10dp"
-    card_view:cardElevation="4dp">
+    android:layout_margin="10dp"
+    card_view:cardCornerRadius="16dp"
+    card_view:cardElevation="6dp"
+    card_view:cardBackgroundColor="#FFFFFF">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:background="@drawable/input_glass"
+        android:padding="16dp">
 
-        <TextView
-            android:id="@+id/tvVisitorName"
-            android:layout_width="wrap_content"
+        <!-- Top Row (Name + Status) -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Visitor Name"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
+            <TextView
+                android:id="@+id/tvVisitorName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Visitor Name"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#222222" />
+
+            <TextView
+                android:id="@+id/tvStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Approved"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:padding="6dp"
+                android:background="@drawable/bg_status" />
+        </LinearLayout>
+
+        <!-- Room -->
         <TextView
             android:id="@+id/tvRoomName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Room" />
+            android:text="Room: A-101"
+            android:textColor="#555555"
+            android:layout_marginTop="8dp" />
 
+        <!-- Organisation -->
         <TextView
             android:id="@+id/tvOrganisation"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Organisation" />
+            android:text="Organisation: IIT"
+            android:textColor="#555555"
+            android:layout_marginTop="4dp" />
 
-        <TextView
-            android:id="@+id/tvArrival"
-            android:layout_width="wrap_content"
+        <!-- Dates -->
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Arrival" />
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
 
-        <TextView
-            android:id="@+id/tvDeparture"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Departure" />
+            <TextView
+                android:id="@+id/tvArrival"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Arrival: 20 Apr"
+                android:textColor="#777777" />
 
+            <TextView
+                android:id="@+id/tvDeparture"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Departure: 22 Apr"
+                android:textColor="#777777" />
+        </LinearLayout>
+
+        <!-- Purpose -->
         <TextView
             android:id="@+id/tvPurpose"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:text="Purpose" />
+            android:text="Purpose: Meeting"
+            android:textColor="#555555"
+            android:layout_marginTop="6dp" />
+
+        <!-- Created By -->
         <TextView
             android:id="@+id/tvCreatedBy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Created By: "
+            android:text="Created By: Admin"
             android:textStyle="italic"
-            android:layout_marginTop="4dp"/>
-        <TextView
-            android:id="@+id/tvStatus"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Status"
-            android:textStyle="bold" />
+            android:textColor="#888888"
+            android:layout_marginTop="6dp" />
+
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>

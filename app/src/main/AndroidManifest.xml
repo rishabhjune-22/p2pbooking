@@ -15,27 +15,27 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.P2PRoomBooking"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="true">
 
-        >
-<!--        <activity android:name=".booking.EditBookingActivity" />-->
         <activity android:name=".booking.CreateBookingActivity" />
-        <activity android:name=".home.HomeActivity" />
-        <activity android:name=".booking.EditBookingActivity"></activity>
 
-        <activity android:name=".auth.AuthActivity" />
-        <activity android:name=".booking.BookingDetailActivity" />
-        <activity
-            android:name=".common.SplashActivity"
+        <!-- HomeActivity ko Launcher bna diya -->
+        <activity android:name=".home.HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".booking.EditBookingActivity" />
+        <activity android:name=".auth.AuthActivity" />
+        <activity android:name=".booking.BookingDetailActivity" />
+
+        <!-- SplashActivity se intent-filter hta diya -->
+        <activity android:name=".common.SplashActivity" />
+
         <activity android:name=".security.UnlockCryptoActivity" />
 
-
     </application>
-
 </manifest>

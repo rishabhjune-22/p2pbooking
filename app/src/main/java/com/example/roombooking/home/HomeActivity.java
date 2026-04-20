@@ -2,16 +2,19 @@ package com.example.roombooking.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -41,14 +44,10 @@ public class HomeActivity extends AppCompatActivity {
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
 
-    private static final String MASK = "****";
-
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvMessage;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private Button btnCreateBooking;
-    private Button btnLogout;
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
@@ -71,12 +70,16 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void initViews() {
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
         recyclerView = findViewById(R.id.recyclerViewBookings);
         progressBar = findViewById(R.id.progressBar);
         tvMessage = findViewById(R.id.tvMessage);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
-        btnCreateBooking = findViewById(R.id.btnCreateBooking);
-        btnLogout = findViewById(R.id.btnLogout);
     }
 
     private void initViewModel() {
@@ -144,13 +147,26 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(() -> viewModel.refreshBookings());
+    }
 
-        btnLogout.setOnClickListener(v -> viewModel.performLogout());
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.home_menu, menu);
+        return true;
+    }
 
-        btnCreateBooking.setOnClickListener(v -> {
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_create_booking) {
             Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
             createBookingLauncher.launch(intent);
-        });
+            return true;
+        } else if (id == R.id.action_logout) {
+            viewModel.performLogout();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void observeViewModel() {
