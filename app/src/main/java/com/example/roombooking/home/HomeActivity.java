@@ -60,7 +60,7 @@ public class HomeActivity extends AppCompatActivity {
     private final Gson gson = new Gson();
 
     private List<BookingItem> allBookings = new ArrayList<>();
-    private boolean showCancelled = false;
+    private boolean showCancelledOnly = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -169,14 +169,14 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         btnToggleCancelled.setOnClickListener(v -> {
-            showCancelled = !showCancelled;
+            showCancelledOnly = !showCancelledOnly;
             updateToggleIcon();
             applyFilter(allBookings);
         });
     }
 
     private void updateToggleIcon() {
-        if (showCancelled) {
+        if (showCancelledOnly) {
             btnToggleCancelled.setImageResource(R.drawable.switch_on_svgrepo_com);
         } else {
             btnToggleCancelled.setImageResource(R.drawable.switch_off_svgrepo_com);
@@ -233,12 +233,15 @@ public class HomeActivity extends AppCompatActivity {
         List<BookingItem> filteredList = new ArrayList<>();
         
         for (BookingItem item : list) {
-            if (showCancelled) {
-                // Show everything
-                filteredList.add(item);
+            boolean isCancelled = "cancelled".equalsIgnoreCase(item.getStatus());
+            if (showCancelledOnly) {
+                // Show only cancelled
+                if (isCancelled) {
+                    filteredList.add(item);
+                }
             } else {
-                // Only show non-cancelled
-                if (!"cancelled".equalsIgnoreCase(item.getStatus())) {
+                // Show only active
+                if (!isCancelled) {
                     filteredList.add(item);
                 }
             }
@@ -248,7 +251,7 @@ public class HomeActivity extends AppCompatActivity {
         
         if (filteredList.isEmpty()) {
             tvMessage.setVisibility(View.VISIBLE);
-            tvMessage.setText(showCancelled ? "No bookings found." : "No active bookings. Tap toggle to see cancelled.");
+            tvMessage.setText(showCancelledOnly ? "No cancelled bookings found." : "No active bookings.");
         } else {
             tvMessage.setVisibility(View.GONE);
         }

@@ -86,11 +86,11 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:background="@drawable/bg_section_icon_visitor"
                         android:padding="5dp"
-                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:src="@drawable/user_02"
                         android:tint="#FFFFFF" />
 
                     <TextView
@@ -116,7 +116,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawableStart="@drawable/user_02"
                     android:drawablePadding="8dp"
                     android:hint="Visitor Name"
                     android:paddingStart="12dp"
@@ -131,7 +131,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawableStart="@drawable/identification_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Designation"
                     android:paddingStart="12dp"
@@ -146,7 +146,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_agenda"
+                    android:drawableStart="@drawable/organisation_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Organisation"
                     android:paddingStart="12dp"
@@ -180,7 +180,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_mylocation"
+                    android:drawableStart="@drawable/address_location_map_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Address"
                     android:paddingStart="12dp"
@@ -195,7 +195,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawableStart="@drawable/phone_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Mobile Number"
                     android:inputType="phone"
@@ -211,7 +211,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_dialog_email"
+                    android:drawableStart="@drawable/mail_02"
                     android:drawablePadding="8dp"
                     android:hint="Email Address"
                     android:inputType="textEmailAddress"
@@ -229,11 +229,11 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:background="@drawable/bg_section_icon_visit"
                         android:padding="5dp"
-                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:src="@drawable/documents_svgrepo_com"
                         android:tint="#FFFFFF" />
 
                     <TextView
@@ -260,7 +260,7 @@
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_create_booking_input"
                     android:clickable="true"
-                    android:drawableStart="@android:drawable/ic_menu_my_calendar"
+                    android:drawableStart="@drawable/calender_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:focusable="false"
                     android:hint="Arrival Date &amp; Time"
@@ -278,7 +278,7 @@
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
                     android:clickable="true"
-                    android:drawableStart="@android:drawable/ic_menu_my_calendar"
+                    android:drawableStart="@drawable/calender_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:focusable="false"
                     android:hint="Departure Date &amp; Time"
@@ -295,7 +295,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawableStart="@drawable/documents_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Purpose of Visit"
                     android:paddingStart="12dp"
@@ -312,11 +312,11 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:background="@drawable/bg_section_icon_requestee"
                         android:padding="5dp"
-                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:src="@drawable/user_02"
                         android:tint="#FFFFFF" />
 
                     <TextView
@@ -342,7 +342,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawableStart="@drawable/user_02"
                     android:drawablePadding="8dp"
                     android:hint="Requestee Name"
                     android:paddingStart="12dp"
@@ -357,7 +357,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawableStart="@drawable/identification_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Designation"
                     android:paddingStart="12dp"
@@ -372,7 +372,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_manage"
+                    android:drawableStart="@drawable/default_department_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Department"
                     android:paddingStart="12dp"
@@ -387,7 +387,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawableStart="@drawable/phone_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Mobile Number"
                     android:inputType="phone"
@@ -405,11 +405,11 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:background="@drawable/bg_section_icon_logistics"
                         android:padding="5dp"
-                        android:src="@android:drawable/ic_menu_share"
+                        android:src="@drawable/documents_svgrepo_com"
                         android:tint="#FFFFFF" />
 
                     <TextView
@@ -435,7 +435,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="12dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawableStart="@drawable/user_02"
                     android:drawablePadding="8dp"
                     android:hint="Logistics Name"
                     android:paddingStart="12dp"
@@ -450,7 +450,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawableStart="@drawable/identification_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Designation"
                     android:paddingStart="12dp"
@@ -465,7 +465,7 @@
                     android:layout_height="50dp"
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_create_booking_input"
-                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawableStart="@drawable/phone_svgrepo_com"
                     android:drawablePadding="8dp"
                     android:hint="Mobile Number"
                     android:inputType="phone"
@@ -483,8 +483,8 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="30dp"
+                        android:layout_height="30dp"
                         android:background="@drawable/bg_section_icon_room"
                         android:padding="5dp"
                         android:src="@drawable/hostel_svgrepo_com"
@@ -539,7 +539,7 @@
                     android:textSize="12sp"
                     android:visibility="gone" />
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnCreateBooking"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
@@ -551,7 +551,7 @@
                     android:textSize="15sp"
                     android:textStyle="bold" />
 
-                <Button
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnFillDummy"
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
