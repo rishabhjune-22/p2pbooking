@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_auth_gradient">
+    android:background="@drawable/bg22">
 
     <!-- Toolbar with Centered Title -->
     <androidx.appcompat.widget.Toolbar
@@ -38,26 +38,38 @@
 
         <ImageButton
             android:id="@+id/btnCreateBooking"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
-            android:src="@drawable/create_svgrepo_com"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/create_note_svgrepo_com"
+            android:background="@drawable/bg_icon_circle"
             android:scaleType="fitCenter"
-            android:padding="12dp"
-            android:layout_marginEnd="20dp"
+            android:padding="8dp"
             app:tint="#FFFFFF"
+            android:layout_marginEnd="16dp"
             android:contentDescription="Create Booking" />
 
         <ImageButton
             android:id="@+id/btnFilter"
-            android:layout_width="56dp"
-            android:layout_height="56dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:src="@drawable/filter_svgrepo_com"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="@drawable/bg_icon_circle"
             android:scaleType="fitCenter"
-            android:padding="12dp"
+            android:padding="8dp"
             app:tint="#FFFFFF"
+            android:layout_marginEnd="16dp"
             android:contentDescription="Filter" />
+
+        <ImageButton
+            android:id="@+id/btnToggleCancelled"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/switch_off_svgrepo_com"
+            android:background="@drawable/bg_icon_circle"
+            android:scaleType="fitCenter"
+            android:padding="8dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Toggle Cancelled" />
 
     </LinearLayout>
 

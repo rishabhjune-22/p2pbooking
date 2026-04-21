@@ -32,6 +32,9 @@ import com.example.roombooking.security.EncryptedBookingPayload;
 import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
 import com.google.gson.Gson;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.crypto.SecretKey;
 
 public class HomeActivity extends AppCompatActivity {
@@ -48,12 +51,16 @@ public class HomeActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshLayout;
     private ImageButton btnCreateBooking;
     private ImageButton btnFilter;
+    private ImageButton btnToggleCancelled;
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
 
     private HomeViewModel viewModel;
     private final Gson gson = new Gson();
+
+    private List<BookingItem> allBookings = new ArrayList<>();
+    private boolean showCancelled = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,6 +89,7 @@ public class HomeActivity extends AppCompatActivity {
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
         btnFilter = findViewById(R.id.btnFilter);
+        btnToggleCancelled = findViewById(R.id.btnToggleCancelled);
     }
 
     private void initViewModel() {
@@ -159,10 +167,27 @@ public class HomeActivity extends AppCompatActivity {
             Intent intent = new Intent(HomeActivity.this, FilterActivity.class);
             startActivity(intent);
         });
+
+        btnToggleCancelled.setOnClickListener(v -> {
+            showCancelled = !showCancelled;
+            updateToggleIcon();
+            applyFilter(allBookings);
+        });
+    }
+
+    private void updateToggleIcon() {
+        if (showCancelled) {
+            btnToggleCancelled.setImageResource(R.drawable.switch_on_svgrepo_com);
+        } else {
+            btnToggleCancelled.setImageResource(R.drawable.switch_off_svgrepo_com);
+        }
     }
 
     private void observeViewModel() {
-        viewModel.getBookingsLiveData().observe(this, bookingItems -> bookingAdapter.setItems(bookingItems));
+        viewModel.getBookingsLiveData().observe(this, bookingItems -> {
+            allBookings = bookingItems;
+            applyFilter(allBookings);
+        });
 
         viewModel.getFullScreenLoadingLiveData().observe(this, isLoading ->
                 progressBar.setVisibility(Boolean.TRUE.equals(isLoading) ? View.VISIBLE : View.GONE)
@@ -200,6 +225,33 @@ public class HomeActivity extends AppCompatActivity {
                 goToLogin();
             }
         });
+    }
+
+    private void applyFilter(List<BookingItem> list) {
+        if (list == null) return;
+        
+        List<BookingItem> filteredList = new ArrayList<>();
+        
+        for (BookingItem item : list) {
+            if (showCancelled) {
+                // Show everything
+                filteredList.add(item);
+            } else {
+                // Only show non-cancelled
+                if (!"cancelled".equalsIgnoreCase(item.getStatus())) {
+                    filteredList.add(item);
+                }
+            }
+        }
+        
+        bookingAdapter.setItems(filteredList);
+        
+        if (filteredList.isEmpty()) {
+            tvMessage.setVisibility(View.VISIBLE);
+            tvMessage.setText(showCancelled ? "No bookings found." : "No active bookings. Tap toggle to see cancelled.");
+        } else {
+            tvMessage.setVisibility(View.GONE);
+        }
     }
 
     private void showCancelBookingDialog(BookingItem bookingItem) {

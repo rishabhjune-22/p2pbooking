@@ -144,7 +144,6 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if ("cancelled".equalsIgnoreCase(status)) {
             bookingHolder.tvStatus.setText("Status: Cancelled");
             bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
-            bookingHolder.itemView.setAlpha(0.6f);
         } else {
             bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status);
         }
