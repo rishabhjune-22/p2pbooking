@@ -10,22 +10,56 @@
     <androidx.appcompat.widget.Toolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_marginTop="50dp"
+        android:layout_marginTop="20dp"
         android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/transparent"
-        app:popupTheme="@drawable/btn_soft_light">
+        android:background="@android:color/transparent">
 
         <TextView
             android:id="@+id/tvTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Bookings"
-            android:textSize="22sp"
+            android:layout_marginTop="30dp"
+            android:textSize="25sp"
             android:textStyle="bold"
-            android:textColor="#550000"
+            android:textColor="#FFFFFF"
             android:layout_gravity="center" />
 
     </androidx.appcompat.widget.Toolbar>
+
+    <!-- Horizontal Icons Layout -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingBottom="8dp"
+        android:layout_marginTop="10dp"
+        android:gravity="center">
+
+        <ImageButton
+            android:id="@+id/btnCreateBooking"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/create_svgrepo_com"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
+            android:padding="12dp"
+            android:layout_marginEnd="20dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Create Booking" />
+
+        <ImageButton
+            android:id="@+id/btnFilter"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:src="@drawable/filter_svgrepo_com"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:scaleType="fitCenter"
+            android:padding="12dp"
+            app:tint="#FFFFFF"
+            android:contentDescription="Filter" />
+
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvMessage"

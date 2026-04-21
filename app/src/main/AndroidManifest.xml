@@ -31,6 +31,7 @@
         <activity android:name=".booking.EditBookingActivity" />
         <activity android:name=".auth.AuthActivity" />
         <activity android:name=".booking.BookingDetailActivity" />
+        <activity android:name=".home.FilterActivity" />
 
         <!-- SplashActivity se intent-filter hta diya -->
         <activity android:name=".common.SplashActivity" />

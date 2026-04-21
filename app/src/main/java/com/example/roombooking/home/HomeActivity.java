@@ -2,16 +2,14 @@ package com.example.roombooking.home;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -48,6 +46,8 @@ public class HomeActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView tvMessage;
     private SwipeRefreshLayout swipeRefreshLayout;
+    private ImageButton btnCreateBooking;
+    private ImageButton btnFilter;
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
@@ -80,6 +80,8 @@ public class HomeActivity extends AppCompatActivity {
         progressBar = findViewById(R.id.progressBar);
         tvMessage = findViewById(R.id.tvMessage);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
+        btnCreateBooking = findViewById(R.id.btnCreateBooking);
+        btnFilter = findViewById(R.id.btnFilter);
     }
 
     private void initViewModel() {
@@ -147,26 +149,16 @@ public class HomeActivity extends AppCompatActivity {
 
     private void setupListeners() {
         swipeRefreshLayout.setOnRefreshListener(() -> viewModel.refreshBookings());
-    }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.home_menu, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_create_booking) {
+        btnCreateBooking.setOnClickListener(v -> {
             Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
             createBookingLauncher.launch(intent);
-            return true;
-        } else if (id == R.id.action_logout) {
-            viewModel.performLogout();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        });
+
+        btnFilter.setOnClickListener(v -> {
+            Intent intent = new Intent(HomeActivity.this, FilterActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void observeViewModel() {

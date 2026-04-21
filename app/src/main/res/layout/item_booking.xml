@@ -12,7 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="@drawable/input_glass"
+        android:background="@drawable/input_glass1"
         android:padding="16dp">
 
         <!-- Top Row (Name + Status) -->

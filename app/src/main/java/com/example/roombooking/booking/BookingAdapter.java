@@ -126,7 +126,9 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         bookingHolder.tvArrival.setText("Arrival: " + safe(item.getArrivalAt()));
         bookingHolder.tvDeparture.setText("Departure: " + safe(item.getDepartureAt()));
         bookingHolder.tvPurpose.setText("Purpose: " + displayData.purposeOfVisit);
-        bookingHolder.tvStatus.setText("Status: " + safe(item.getStatus()));
+        
+        String status = safe(item.getStatus());
+        bookingHolder.tvStatus.setText("Status: " + status);
 
         if (item.canDecrypt()) {
             bookingHolder.tvCreatedBy.setText("Created By: You");
@@ -139,9 +141,12 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         bookingHolder.tvPurpose.setAlpha(item.canDecrypt() ? 1f : 0.6f);
 
         bookingHolder.itemView.setAlpha(1f);
-        if ("cancelled".equalsIgnoreCase(item.getStatus())) {
+        if ("cancelled".equalsIgnoreCase(status)) {
             bookingHolder.tvStatus.setText("Status: Cancelled");
+            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
             bookingHolder.itemView.setAlpha(0.6f);
+        } else {
+            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status);
         }
 
         bookingHolder.itemView.setOnClickListener(v -> {
