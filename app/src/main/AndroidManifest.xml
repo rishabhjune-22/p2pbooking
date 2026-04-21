@@ -17,7 +17,9 @@
         android:theme="@style/Theme.P2PRoomBooking"
         android:usesCleartextTraffic="true">
 
-        <activity android:name=".booking.CreateBookingActivity" />
+        <activity
+            android:name=".booking.CreateBookingActivity"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
 
         <!-- HomeActivity ko Launcher bna diya -->
         <activity android:name=".home.HomeActivity"
@@ -28,8 +30,12 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".booking.EditBookingActivity" />
-        <activity android:name=".auth.AuthActivity" />
+        <activity
+            android:name=".booking.EditBookingActivity"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
+        <activity
+            android:name=".auth.AuthActivity"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity android:name=".booking.BookingDetailActivity" />
         <activity android:name=".home.FilterActivity" />
 

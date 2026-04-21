@@ -15,10 +15,9 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.roombooking.R;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.common.BaseActivity;
 import com.example.roombooking.model.auth.LoginData;
 import com.example.roombooking.model.auth.RefreshTokenData;
 import com.example.roombooking.model.auth.SignupData;
@@ -36,7 +35,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class AuthActivity extends AppCompatActivity {
+public class AuthActivity extends BaseActivity {
 
     private EditText etEmail;
     private EditText etUser;

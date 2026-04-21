@@ -15,9 +15,9 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
+import com.example.roombooking.common.BaseActivity;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.room.RoomItem;
@@ -40,7 +40,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class CreateBookingActivity extends AppCompatActivity {
+public class CreateBookingActivity extends BaseActivity {
 
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
 

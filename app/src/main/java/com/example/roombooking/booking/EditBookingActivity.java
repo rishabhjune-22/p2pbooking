@@ -11,10 +11,10 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.common.BaseActivity;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.common.ApiResponse;
@@ -33,7 +33,7 @@ import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
-public class EditBookingActivity extends AppCompatActivity {
+public class EditBookingActivity extends BaseActivity {
 
     public static final String EXTRA_BOOKING_DATA = "booking_data";
 

@@ -1,73 +1,113 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:fillViewport="true">
+    android:background="#F5F6FA">
 
-    <LinearLayout
+    <!-- 🔵 TOP GRADIENT -->
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="220dp"
+        android:background="@drawable/bg_top_rounded"/>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit Booking"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+    <!-- CONTENT -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
 
-        <EditText
-            android:id="@+id/etVisitorName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Visitor Name"
-            android:inputType="textPersonName"
-            android:layout_marginBottom="12dp" />
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <EditText
-            android:id="@+id/etVisitorMobile"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Mobile"
-            android:inputType="phone"
-            android:maxLength="10"
-            android:layout_marginBottom="12dp" />
+            <!-- TITLE -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit Booking"
+                android:layout_gravity="center"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="50dp"
+                android:layout_marginBottom="20dp"/>
 
-        <EditText
-            android:id="@+id/etPurpose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Purpose of Visit"
-            android:inputType="textMultiLine"
-            android:minLines="2"
-            android:gravity="top|start"
-            android:layout_marginBottom="12dp" />
+            <!-- CARD -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="8dp"
+                app:cardBackgroundColor="#FFFFFF"
+                xmlns:app="http://schemas.android.com/apk/res-auto">
 
-        <EditText
-            android:id="@+id/etArrivalAt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Arrival Date &amp; Time"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginBottom="12dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-        <EditText
-            android:id="@+id/etDepartureAt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Departure Date &amp; Time"
-            android:focusable="false"
-            android:clickable="true"
-            android:layout_marginBottom="20dp" />
+                    <!-- Visitor Name -->
+                    <EditText
+                        android:id="@+id/etVisitorName"
+                        style="@style/EditTextStyle"
+                        android:hint="Visitor Name"
+                        android:drawableStart="@drawable/user_02"/>
 
-        <Button
-            android:id="@+id/btnSaveBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save Booking" />
+                    <!-- Mobile -->
+                    <EditText
+                        android:id="@+id/etVisitorMobile"
+                        style="@style/EditTextStyle"
+                        android:hint="Visitor Mobile"
+                        android:inputType="phone"
+                        android:drawableStart="@drawable/phone_svgrepo_com"/>
 
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+                    <!-- Purpose -->
+                    <EditText
+                        android:id="@+id/etPurpose"
+                        style="@style/EditTextStyle"
+                        android:hint="Purpose of Visit"
+                        android:drawableStart="@drawable/documents_svgrepo_com"/>
+
+                    <!-- Arrival -->
+                    <EditText
+                        android:id="@+id/etArrivalAt"
+                        style="@style/EditTextStyle"
+                        android:hint="Arrival Date/Time"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:drawableStart="@drawable/calender_svgrepo_com"/>
+
+                    <!-- Departure -->
+                    <EditText
+                        android:id="@+id/etDepartureAt"
+                        style="@style/EditTextStyle"
+                        android:hint="Departure Date/Time"
+                        android:focusable="false"
+                        android:clickable="true"
+                        android:drawableStart="@drawable/calender_svgrepo_com"/>
+
+                    <!-- BUTTON -->
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnSaveBooking"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Save Booking"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold"
+                        android:layout_marginTop="20dp"
+                        android:background="@drawable/bg_button"/>
+
+                </LinearLayout>
+
+            </androidx.cardview.widget.CardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
