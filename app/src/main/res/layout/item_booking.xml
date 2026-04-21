@@ -107,8 +107,8 @@
 
                         <ImageView
                             android:id="@+id/ivRoomIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_agenda"
                             android:tint="#8B8B96" />
 
@@ -178,8 +178,8 @@
 
                         <ImageView
                             android:id="@+id/ivArrivalIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_my_calendar"
                             android:tint="#8B8B96" />
 
@@ -217,8 +217,8 @@
 
                         <ImageView
                             android:id="@+id/ivDepartureIcon"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
                             android:src="@android:drawable/ic_menu_my_calendar"
                             android:tint="#8B8B96" />
 

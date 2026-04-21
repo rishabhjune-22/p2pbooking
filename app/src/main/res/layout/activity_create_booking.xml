@@ -1,172 +1,568 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="#F5F7FF">
 
-    <LinearLayout
+    <View
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="220dp"
+        android:background="@drawable/bg_create_booking_header" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Create Booking"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginTop="50dp"
-            android:layout_marginBottom="16dp" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="24dp">
 
-        <EditText
-            android:id="@+id/etVisitorName"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Visitor Name" />
+            android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/etVisitorDesignation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Designation" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingTop="18dp"
+                android:paddingEnd="12dp">
 
-        <EditText
-            android:id="@+id/etVisitorOrganisation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Organisation" />
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Back"
+                    android:padding="8dp"
+                    android:src="@android:drawable/ic_media_previous"
+                    android:tint="#FFFFFF" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Visitor Gender"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="40dp">
 
-        <Spinner
-            android:id="@+id/spinnerGender"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="Create Booking"
+                        android:textColor="#FFFFFF"
+                        android:textSize="28sp"
+                        android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/etVisitorAddress"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Address" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center"
+                        android:text="Fill the details to create a new booking"
+                        android:textColor="#DCE5FF"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </LinearLayout>
 
-        <EditText
-            android:id="@+id/etVisitorMobile"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Mobile"
-            android:inputType="phone" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginTop="18dp"
+                android:layout_marginEnd="14dp"
+                android:background="@drawable/bg_create_booking_card"
+                android:elevation="8dp"
+                android:orientation="vertical"
+                android:padding="14dp">
 
-        <EditText
-            android:id="@+id/etVisitorEmail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Email"
-            android:inputType="textEmailAddress" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_section_icon_visitor"
+                        android:padding="5dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:tint="#FFFFFF" />
 
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Visitor Details"
+                        android:textColor="#324054"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
 
-        <EditText
-            android:id="@+id/etArrivalDT"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Arrival Date &amp; Time"
-            android:focusable="false"
-            android:clickable="true"
-            android:inputType="none"/>
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="3dp"
+                    android:layout_marginStart="34dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#6B68F3" />
 
-        <EditText
-            android:id="@+id/etDepartureDT"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Departure Date &amp; Time"
-            android:focusable="false"
-            android:clickable="true"
-            android:inputType="none"/>
+                <EditText
+                    android:id="@+id/etVisitorName"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawablePadding="8dp"
+                    android:hint="Visitor Name"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etPurpose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Purpose of Visit" />
+                <EditText
+                    android:id="@+id/etVisitorDesignation"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawablePadding="8dp"
+                    android:hint="Designation"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etRequesteeName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Requestee Name" />
+                <EditText
+                    android:id="@+id/etVisitorOrganisation"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_agenda"
+                    android:drawablePadding="8dp"
+                    android:hint="Organisation"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etRequesteeDesignation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Requestee Designation" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Gender"
+                    android:textColor="#667085"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/etRequesteeDepartment"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Requestee Department" />
+                <Spinner
+                    android:id="@+id/spinnerGender"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_create_booking_spinner"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:spinnerMode="dropdown" />
 
-        <EditText
-            android:id="@+id/etRequesteeMobile"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Requestee Mobile"
-            android:inputType="phone" />
+                <EditText
+                    android:id="@+id/etVisitorAddress"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_mylocation"
+                    android:drawablePadding="8dp"
+                    android:hint="Address"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etLogisticsName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Logistics Name" />
+                <EditText
+                    android:id="@+id/etVisitorMobile"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawablePadding="8dp"
+                    android:hint="Mobile Number"
+                    android:inputType="phone"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etLogisticsDesignation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Logistics Designation" />
+                <EditText
+                    android:id="@+id/etVisitorEmail"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_dialog_email"
+                    android:drawablePadding="8dp"
+                    android:hint="Email Address"
+                    android:inputType="textEmailAddress"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
 
-        <EditText
-            android:id="@+id/etLogisticsMobile"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Logistics Mobile"
-            android:inputType="phone" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Select Room"
-            android:textStyle="bold"
-            android:layout_marginTop="12dp" />
-        <Spinner
-            android:id="@+id/spinnerRoom"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
-        <TextView
-            android:id="@+id/tvMessage"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@android:color/holo_red_dark"
-            android:layout_marginTop="12dp"
-            android:visibility="gone" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/btnCreateBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Create Booking"
-            android:layout_marginTop="16dp" />
-        <Button
-            android:id="@+id/btnFillDummy"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Fill Dummy Data (Dev Only)"
-            android:layout_marginTop="8dp"/>
-    </LinearLayout>
-</ScrollView>
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_section_icon_visit"
+                        android:padding="5dp"
+                        android:src="@android:drawable/ic_menu_my_calendar"
+                        android:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Visit Details"
+                        android:textColor="#324054"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="3dp"
+                    android:layout_marginStart="34dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#5B99FF" />
+
+                <EditText
+                    android:id="@+id/etArrivalDT"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:clickable="true"
+                    android:drawableStart="@android:drawable/ic_menu_my_calendar"
+                    android:drawablePadding="8dp"
+                    android:focusable="false"
+                    android:hint="Arrival Date &amp; Time"
+                    android:inputType="none"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etDepartureDT"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:clickable="true"
+                    android:drawableStart="@android:drawable/ic_menu_my_calendar"
+                    android:drawablePadding="8dp"
+                    android:focusable="false"
+                    android:hint="Departure Date &amp; Time"
+                    android:inputType="none"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etPurpose"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawablePadding="8dp"
+                    android:hint="Purpose of Visit"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_section_icon_requestee"
+                        android:padding="5dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Requestee Details"
+                        android:textColor="#324054"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="3dp"
+                    android:layout_marginStart="34dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#57C783" />
+
+                <EditText
+                    android:id="@+id/etRequesteeName"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawablePadding="8dp"
+                    android:hint="Requestee Name"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etRequesteeDesignation"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawablePadding="8dp"
+                    android:hint="Designation"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etRequesteeDepartment"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_manage"
+                    android:drawablePadding="8dp"
+                    android:hint="Department"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etRequesteeMobile"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawablePadding="8dp"
+                    android:hint="Mobile Number"
+                    android:inputType="phone"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_section_icon_logistics"
+                        android:padding="5dp"
+                        android:src="@android:drawable/ic_menu_share"
+                        android:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Logistics Details"
+                        android:textColor="#324054"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="3dp"
+                    android:layout_marginStart="34dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#F4A74C" />
+
+                <EditText
+                    android:id="@+id/etLogisticsName"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_myplaces"
+                    android:drawablePadding="8dp"
+                    android:hint="Logistics Name"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etLogisticsDesignation"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_edit"
+                    android:drawablePadding="8dp"
+                    android:hint="Designation"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <EditText
+                    android:id="@+id/etLogisticsMobile"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_input"
+                    android:drawableStart="@android:drawable/ic_menu_call"
+                    android:drawablePadding="8dp"
+                    android:hint="Mobile Number"
+                    android:inputType="phone"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:textColor="#1F2A37"
+                    android:textColorHint="#9AA4B2"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:background="@drawable/bg_section_icon_room"
+                        android:padding="5dp"
+                        android:src="@drawable/hostel_svgrepo_com"
+                        android:tint="#FFFFFF" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="Room Details"
+                        android:textColor="#324054"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="30dp"
+                    android:layout_height="3dp"
+                    android:layout_marginStart="34dp"
+                    android:layout_marginTop="4dp"
+                    android:background="#736AF2" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="Select Room"
+                    android:textColor="#667085"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerRoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="6dp"
+                    android:background="@drawable/bg_create_booking_spinner"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:spinnerMode="dropdown" />
+
+                <TextView
+                    android:id="@+id/tvMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_create_booking_info"
+                    android:drawableStart="@android:drawable/ic_dialog_info"
+                    android:drawablePadding="8dp"
+                    android:padding="12dp"
+                    android:textColor="#D14343"
+                    android:textSize="12sp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnCreateBooking"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_create_booking_primary_button"
+                    android:text="Create Booking"
+                    android:textAllCaps="false"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <Button
+                    android:id="@+id/btnFillDummy"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_create_booking_outline_button"
+                    android:text="Fill Dummy Data (Dev Only)"
+                    android:textAllCaps="false"
+                    android:textColor="#6D67F5"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</FrameLayout>

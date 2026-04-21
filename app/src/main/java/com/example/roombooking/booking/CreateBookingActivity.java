@@ -3,6 +3,7 @@ package com.example.roombooking.booking;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
@@ -95,6 +96,10 @@ public class CreateBookingActivity extends AppCompatActivity {
         refreshDateTimeFields();
         loadRooms();
 
+        findViewById(R.id.btnBack).setOnClickListener(v ->
+                getOnBackPressedDispatcher().onBackPressed()
+        );
+
         etArrivalDT.setOnClickListener(v -> pickDateTime(arrivalCal, () -> {
             if (departureCal.getTimeInMillis() <= arrivalCal.getTimeInMillis()) {
                 departureCal.setTimeInMillis(arrivalCal.getTimeInMillis() + 60 * 60 * 1000L);
@@ -142,10 +147,10 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void setupRoomSpinner() {
         roomAdapter = new ArrayAdapter<>(
                 this,
-                android.R.layout.simple_spinner_item,
+                R.layout.item_spinner_selected,
                 new ArrayList<>()
         );
-        roomAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        roomAdapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
         spinnerRoom.setAdapter(roomAdapter);
     }
 
@@ -153,9 +158,9 @@ public class CreateBookingActivity extends AppCompatActivity {
         ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                 this,
                 R.array.gender_options,
-                android.R.layout.simple_spinner_item
+                R.layout.item_spinner_selected
         );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        adapter.setDropDownViewResource(R.layout.item_spinner_dropdown);
         spinnerGender.setAdapter(adapter);
     }
 
@@ -451,11 +456,13 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private void showError(String message) {
         tvMessage.setVisibility(View.VISIBLE);
+        tvMessage.setTextColor(Color.parseColor("#D14343"));
         tvMessage.setText(message);
     }
 
     private void showMessage(String message) {
         tvMessage.setVisibility(View.VISIBLE);
+        tvMessage.setTextColor(Color.parseColor("#4B9E68"));
         tvMessage.setText(message);
     }
 
