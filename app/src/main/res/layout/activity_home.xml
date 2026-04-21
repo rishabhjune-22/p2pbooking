@@ -1,108 +1,124 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@drawable/bg22">
+    android:background="#F5F7FF">
 
-    <!-- Toolbar with Centered Title -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <View
         android:layout_width="match_parent"
-        android:layout_marginTop="20dp"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/transparent">
+        android:layout_height="220dp"
+        android:background="@drawable/bg_create_booking_header" />
 
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Bookings"
-            android:layout_marginTop="30dp"
-            android:textSize="25sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:layout_gravity="center" />
-
-    </androidx.appcompat.widget.Toolbar>
-
-    <!-- Horizontal Icons Layout -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingBottom="8dp"
-        android:layout_marginTop="10dp"
-        android:gravity="center">
+        android:layout_height="match_parent"
+        android:drawablePadding="8dp"
+        android:orientation="vertical"
+        android:padding="12dp">
 
-        <ImageButton
-            android:id="@+id/btnCreateBooking"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/create_note_svgrepo_com"
-            android:background="@drawable/bg_icon_circle"
-            android:scaleType="fitCenter"
-            android:padding="8dp"
-            app:tint="#FFFFFF"
-            android:layout_marginEnd="16dp"
-            android:contentDescription="Create Booking" />
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:layout_marginTop="20dp"
+            android:background="@android:color/transparent">
 
-        <ImageButton
-            android:id="@+id/btnFilter"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/filter_svgrepo_com"
-            android:background="@drawable/bg_icon_circle"
-            android:scaleType="fitCenter"
-            android:padding="8dp"
-            app:tint="#FFFFFF"
-            android:layout_marginEnd="16dp"
-            android:contentDescription="Filter" />
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="30dp"
+                android:text="Bookings"
+                android:textColor="#FFFFFF"
+                android:textSize="25sp"
+                android:textStyle="bold" />
 
-        <ImageButton
-            android:id="@+id/btnToggleCancelled"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/switch_off_svgrepo_com"
-            android:background="@drawable/bg_icon_circle"
-            android:scaleType="fitCenter"
-            android:padding="8dp"
-            app:tint="#FFFFFF"
-            android:contentDescription="Toggle Cancelled" />
+        </androidx.appcompat.widget.Toolbar>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingBottom="8dp">
+
+            <ImageButton
+                android:id="@+id/btnCreateBooking"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_icon_circle"
+                android:contentDescription="Create Booking"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/create_note_svgrepo_com"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnFilter"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginEnd="16dp"
+                android:background="@drawable/bg_icon_circle"
+                android:contentDescription="Filter"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/filter_svgrepo_com"
+                app:tint="#FFFFFF" />
+
+            <ImageButton
+                android:id="@+id/btnToggleCancelled"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:background="@drawable/bg_icon_circle"
+                android:contentDescription="Toggle Cancelled"
+                android:padding="8dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/switch_off_svgrepo_com"
+                app:tint="#FFFFFF" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="8dp"
+            android:text="Loading..."
+            android:textColor="#324054"
+            android:textSize="16sp"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone" />
+
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+            android:id="@+id/swipeRefreshLayout"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewBookings"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingStart="4dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="12dp" />
+
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Loading..."
-        android:textSize="16sp"
-        android:visibility="gone"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="8dp" />
-
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:visibility="gone"
-        android:layout_marginBottom="8dp" />
-
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-        android:id="@+id/swipeRefreshLayout"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewBookings"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:padding="12dp"/>
-
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-</LinearLayout>
+</FrameLayout>

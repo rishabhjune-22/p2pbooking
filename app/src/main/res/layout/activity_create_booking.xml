@@ -37,7 +37,7 @@
                     android:background="@android:color/transparent"
                     android:contentDescription="Back"
                     android:padding="8dp"
-                    android:src="@android:drawable/ic_media_previous"
+                    android:src="@drawable/back_square_svgrepo_com"
                     android:tint="#FFFFFF" />
 
                 <LinearLayout
@@ -52,6 +52,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:text="Create Booking"
+                        android:layout_marginTop="50dp"
                         android:textColor="#FFFFFF"
                         android:textSize="28sp"
                         android:textStyle="bold" />
