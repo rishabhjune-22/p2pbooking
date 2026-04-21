@@ -1,9 +1,11 @@
 package com.example.roombooking.booking;
 
 import android.content.Context;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -31,6 +33,14 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final int VIEW_TYPE_ITEM = 1;
     private static final int VIEW_TYPE_LOADING = 2;
     private static final String MASK = "****";
+    private static final int[] ACCENT_COLORS = {
+            0xFF71DB93,
+            0xFF7C75F2,
+            0xFFFFA33D,
+            0xFF4DB6FF,
+            0xFFFF6FAE,
+            0xFF22C7A9
+    };
 
     private final Context context;
     private final List<BookingItem> items = new ArrayList<>();
@@ -121,14 +131,15 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         DecryptedDisplayData displayData = getDisplayData(item);
 
         bookingHolder.tvVisitorName.setText(displayData.visitorName);
-        bookingHolder.tvRoomName.setText("Room: " + safe(item.getRoomName()));
-        bookingHolder.tvOrganisation.setText("Organisation: " + displayData.visitorOrganisation);
-        bookingHolder.tvArrival.setText("Arrival: " + safe(item.getArrivalAt()));
-        bookingHolder.tvDeparture.setText("Departure: " + safe(item.getDepartureAt()));
-        bookingHolder.tvPurpose.setText("Purpose: " + displayData.purposeOfVisit);
-        
+        bookingHolder.tvRoomName.setText(safeOrMask(item.getRoomName()));
+        bookingHolder.tvOrganisation.setText(displayData.visitorOrganisation);
+        bookingHolder.tvArrival.setText(safeOrMask(item.getArrivalAt()));
+        bookingHolder.tvDeparture.setText(safeOrMask(item.getDepartureAt()));
+        bookingHolder.tvPurpose.setText(displayData.purposeOfVisit);
+
         String status = safe(item.getStatus());
-        bookingHolder.tvStatus.setText("Status: " + status);
+        int accentColor = getAccentColor(item, position);
+        applyAccentColor(bookingHolder, accentColor);
 
         if (item.canDecrypt()) {
             bookingHolder.tvCreatedBy.setText("Created By: You");
@@ -142,10 +153,13 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         bookingHolder.itemView.setAlpha(1f);
         if ("cancelled".equalsIgnoreCase(status)) {
-            bookingHolder.tvStatus.setText("Status: Cancelled");
-            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled);
+            bookingHolder.tvStatus.setText("Cancelled");
+            bookingHolder.tvStatus.setTextColor(0xFFC65B5B);
+            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status_cancelled_soft);
         } else {
-            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status);
+            bookingHolder.tvStatus.setText("Active");
+            bookingHolder.tvStatus.setTextColor(0xFF35A645);
+            bookingHolder.tvStatus.setBackgroundResource(R.drawable.bg_status_active_soft);
         }
 
         bookingHolder.itemView.setOnClickListener(v -> {
@@ -211,6 +225,27 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return value;
     }
 
+    private int getAccentColor(BookingItem item, int position) {
+        int seed = position + 1;
+        if (item != null && item.getId() != 0) {
+            seed = Math.abs(item.getId());
+        }
+        return ACCENT_COLORS[seed % ACCENT_COLORS.length];
+    }
+
+    private void applyAccentColor(BookingViewHolder holder, int color) {
+        tintDrawable(holder.viewAccent, color);
+        tintDrawable(holder.ivAvatar, color);
+    }
+
+    private void tintDrawable(View view, int color) {
+        if (!(view.getBackground() instanceof GradientDrawable)) {
+            return;
+        }
+        GradientDrawable drawable = (GradientDrawable) view.getBackground().mutate();
+        drawable.setColor(color);
+    }
+
     private static class DecryptedDisplayData {
         final String visitorName;
         final String visitorOrganisation;
@@ -224,6 +259,8 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     static class BookingViewHolder extends RecyclerView.ViewHolder {
+        View viewAccent;
+        ImageView ivAvatar;
         TextView tvVisitorName;
         TextView tvCreatedBy;
         TextView tvRoomName;
@@ -235,6 +272,8 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         BookingViewHolder(@NonNull View itemView) {
             super(itemView);
+            viewAccent = itemView.findViewById(R.id.viewAccent);
+            ivAvatar = itemView.findViewById(R.id.ivAvatar);
             tvVisitorName = itemView.findViewById(R.id.tvVisitorName);
             tvRoomName = itemView.findViewById(R.id.tvRoomName);
             tvOrganisation = itemView.findViewById(R.id.tvOrganisation);

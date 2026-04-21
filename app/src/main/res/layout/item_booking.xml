@@ -3,108 +3,275 @@
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="10dp"
-    card_view:cardCornerRadius="16dp"
+    android:layout_marginHorizontal="12dp"
+    android:layout_marginTop="20dp"
+    android:layout_marginBottom="0dp"
+    card_view:cardBackgroundColor="#FFFFFF"
+    card_view:cardCornerRadius="18dp"
     card_view:cardElevation="6dp"
-    card_view:cardBackgroundColor="#FFFFFF">
+    card_view:cardUseCompatPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="@drawable/input_glass1"
-        android:padding="16dp">
+        android:minHeight="186dp"
+        android:orientation="horizontal"
+        android:padding="0dp">
 
-        <!-- Top Row (Name + Status) -->
+        <View
+            android:id="@+id/viewAccent"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:layout_marginVertical="14dp"
+            android:background="@drawable/bg_booking_accent_bar" />
+
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingTop="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="14dp">
 
-            <TextView
-                android:id="@+id/tvVisitorName"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Visitor Name"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="#222222" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/ivAvatar"
+                    android:layout_width="34dp"
+                    android:layout_height="34dp"
+                    android:background="@drawable/bg_booking_avatar_circle"
+                    android:padding="6dp"
+                    android:src="@drawable/user_svgrepo_com"
+                    android:tint="#FFFFFF" />
+
+                <TextView
+                    android:id="@+id/tvVisitorName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:text="****"
+                    android:textColor="#3B3B49"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_status_active_soft"
+                    android:paddingStart="10dp"
+                    android:paddingTop="4dp"
+                    android:paddingEnd="10dp"
+                    android:paddingBottom="4dp"
+                    android:text="Active"
+                    android:textColor="#35A645"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Room"
+                        android:textColor="#9C9CAA"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivRoomIcon"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@android:drawable/ic_menu_agenda"
+                            android:tint="#8B8B96" />
+
+                        <TextView
+                            android:id="@+id/tvRoomName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="Delta 101"
+                            android:textColor="#3D3D47"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Organisation"
+                        android:textColor="#9C9CAA"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvOrganisation"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="****"
+                        android:textColor="#3D3D47"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Arrival"
+                        android:textColor="#9C9CAA"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivArrivalIcon"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@android:drawable/ic_menu_my_calendar"
+                            android:tint="#8B8B96" />
+
+                        <TextView
+                            android:id="@+id/tvArrival"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="2026-05-13"
+                            android:textColor="#3D3D47"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Departure"
+                        android:textColor="#9C9CAA"
+                        android:textSize="12sp" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:id="@+id/ivDepartureIcon"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:src="@android:drawable/ic_menu_my_calendar"
+                            android:tint="#8B8B96" />
+
+                        <TextView
+                            android:id="@+id/tvDeparture"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:text="2026-05-13"
+                            android:textColor="#3D3D47"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
 
             <TextView
-                android:id="@+id/tvStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Approved"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:padding="6dp"
-                android:background="@drawable/bg_status" />
-        </LinearLayout>
-
-        <!-- Room -->
-        <TextView
-            android:id="@+id/tvRoomName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Room: A-101"
-            android:textColor="#555555"
-            android:layout_marginTop="8dp" />
-
-        <!-- Organisation -->
-        <TextView
-            android:id="@+id/tvOrganisation"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Organisation: IIT"
-            android:textColor="#555555"
-            android:layout_marginTop="4dp" />
-
-        <!-- Dates -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="8dp">
+                android:layout_marginTop="14dp"
+                android:text="Purpose"
+                android:textColor="#9C9CAA"
+                android:textSize="12sp" />
 
             <TextView
-                android:id="@+id/tvArrival"
-                android:layout_width="0dp"
+                android:id="@+id/tvPurpose"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Arrival: 20 Apr"
-                android:textColor="#777777" />
+                android:layout_marginTop="4dp"
+                android:text="****"
+                android:textColor="#3D3D47"
+                android:textSize="14sp"
+                android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvDeparture"
-                android:layout_width="0dp"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Departure: 22 Apr"
-                android:textColor="#777777" />
+                android:layout_marginTop="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvCreatedBy"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Created By: nehas"
+                    android:textColor="#8F8F99"
+                    android:textSize="12sp"
+                    android:textStyle="italic" />
+                
+            </LinearLayout>
         </LinearLayout>
-
-        <!-- Purpose -->
-        <TextView
-            android:id="@+id/tvPurpose"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Purpose: Meeting"
-            android:textColor="#555555"
-            android:layout_marginTop="6dp" />
-
-        <!-- Created By -->
-        <TextView
-            android:id="@+id/tvCreatedBy"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Created By: Admin"
-            android:textStyle="italic"
-            android:textColor="#888888"
-            android:layout_marginTop="6dp" />
-
     </LinearLayout>
 
 </androidx.cardview.widget.CardView>
