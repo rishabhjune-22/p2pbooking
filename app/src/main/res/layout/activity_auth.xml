@@ -113,7 +113,7 @@
             android:layout_height="wrap_content"
             android:text="Don't have an account? Signup"
             android:textSize="14sp"
-            android:textColor="#b12e2e"
+            android:textColor="#B12E2E"
             android:layout_marginTop="16dp"/>
 
         <!-- Message -->

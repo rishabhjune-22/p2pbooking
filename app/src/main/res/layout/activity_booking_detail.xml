@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_booking_gradient">
+    android:background="@drawable/bg_gradient">
 
     <!-- Top App Bar -->
     <ImageView
@@ -41,7 +41,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         android:clipToPadding="false"
-        android:paddingBottom="24dp">
+        android:paddingBottom="24dp"
+        android:scrollbars="none"
+        android:overScrollMode="never">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -78,15 +80,16 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Booking ID: "
-                        android:textColor="#FFFFFF"
-                        android:textSize="16sp" />
+                        android:textColor="#000000"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvRoomName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Room Name: "
-                        android:textColor="#BDBDBD"
+                        android:textColor="#333333"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp" />
 
@@ -95,7 +98,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Created By: "
-                        android:textColor="#BDBDBD"
+                        android:textColor="#333333"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp" />
                 </LinearLayout>
@@ -135,7 +138,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@drawable/divider_line"
+                    android:background="#EEEEEE"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
@@ -143,7 +146,7 @@
                     android:id="@+id/tvVisitorDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#E0E0E0"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp"
                     android:paddingStart="8dp" />
@@ -174,7 +177,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@drawable/divider_line"
+                    android:background="#EEEEEE"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
@@ -182,7 +185,7 @@
                     android:id="@+id/tvVisitDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#E0E0E0"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp"
                     android:paddingStart="8dp" />
@@ -213,7 +216,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@drawable/divider_line"
+                    android:background="#EEEEEE"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
@@ -221,7 +224,7 @@
                     android:id="@+id/tvRequesteeDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#E0E0E0"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp"
                     android:paddingStart="8dp" />
@@ -252,7 +255,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@drawable/divider_line"
+                    android:background="#EEEEEE"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
@@ -260,7 +263,7 @@
                     android:id="@+id/tvLogisticsDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#E0E0E0"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp"
                     android:paddingStart="8dp" />
@@ -291,7 +294,7 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:background="@drawable/divider_line"
+                    android:background="#EEEEEE"
                     android:layout_marginTop="8dp"
                     android:layout_marginBottom="12dp" />
 
@@ -299,13 +302,13 @@
                     android:id="@+id/tvStatusDetails"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textColor="#E0E0E0"
+                    android:textColor="#000000"
                     android:textSize="14sp"
                     android:lineSpacingExtra="6dp"
                     android:paddingStart="8dp" />
             </LinearLayout>
 
-            <!-- Buttons -->
+            <!-- Buttons Card -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -323,10 +326,7 @@
                     android:textColor="#FFFFFF"
                     android:textAllCaps="false"
                     android:textSize="16sp"
-                    android:textStyle="bold"
-                    android:drawableStart="@drawable/ic_edit_white"
-                    android:paddingStart="100dp"
-                    android:paddingEnd="100dp" />
+                    android:textStyle="bold" />
 
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnCancelBooking"
@@ -338,10 +338,7 @@
                     android:textAllCaps="false"
                     android:textSize="16sp"
                     android:textStyle="bold"
-                    android:layout_marginTop="12dp"
-                    android:drawableStart="@drawable/ic_cancel_red"
-                    android:paddingStart="100dp"
-                    android:paddingEnd="100dp" />
+                    android:layout_marginTop="12dp" />
 
             </LinearLayout>
 
