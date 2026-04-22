@@ -94,4 +94,38 @@ public class FilterActivity extends AppCompatActivity {
         ((TextView) findViewById(R.id.tvRoom)).setText(R.string.filter_select_room);
         ((TextView) findViewById(R.id.tvStatus)).setText(R.string.filter_select_status);
     }
+
+    private float touchDownX, touchDownY;
+    private static final int CLICK_ACTION_THRESHOLD = 50;
+
+    @Override
+    public boolean dispatchTouchEvent(android.view.MotionEvent ev) {
+        if (ev.getAction() == android.view.MotionEvent.ACTION_DOWN) {
+            touchDownX = ev.getX();
+            touchDownY = ev.getY();
+        } else if (ev.getAction() == android.view.MotionEvent.ACTION_UP) {
+            float upX = ev.getX();
+            float upY = ev.getY();
+            
+            boolean isTap = Math.abs(upX - touchDownX) < CLICK_ACTION_THRESHOLD 
+                         && Math.abs(upY - touchDownY) < CLICK_ACTION_THRESHOLD;
+                         
+            if (isTap) {
+                View view = getCurrentFocus();
+                if (view != null && view instanceof EditText) {
+                    android.graphics.Rect r = new android.graphics.Rect();
+                    view.getGlobalVisibleRect(r);
+                    if (!r.contains((int) ev.getRawX(), (int) ev.getRawY())) {
+                        view.clearFocus();
+                        android.view.inputmethod.InputMethodManager imm = 
+                                (android.view.inputmethod.InputMethodManager) getSystemService(android.content.Context.INPUT_METHOD_SERVICE);
+                        if (imm != null) {
+                            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                        }
+                    }
+                }
+            }
+        }
+        return super.dispatchTouchEvent(ev);
+    }
 }

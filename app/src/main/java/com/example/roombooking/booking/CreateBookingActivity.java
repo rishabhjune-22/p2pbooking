@@ -583,6 +583,7 @@ public class CreateBookingActivity extends BaseActivity {
 
         showMessage("Random booking data generated 🎯");
     }
+
     private String generateRandomMobile() {
         return "9" + (100000000 + random.nextInt(900000000));
     }
