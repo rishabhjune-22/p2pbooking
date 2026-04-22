@@ -45,7 +45,6 @@
     </style>
 
     <style name="Theme.P2PRoomBooking.FilterDialog" parent="Theme.P2PRoomBooking">
-        <item name="android:windowIsTranslucent">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowAnimationStyle">@style/FilterDialogAnimation</item>

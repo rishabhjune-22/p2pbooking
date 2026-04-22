@@ -19,7 +19,8 @@
 
         <activity
             android:name=".booking.CreateBookingActivity"
-            android:windowSoftInputMode="adjustResize|stateHidden" />
+            android:windowSoftInputMode="adjustResize|stateHidden"
+            android:layout_marginBottom="80dp"/>
 
         <!-- HomeActivity ko Launcher bna diya -->
         <activity android:name=".home.HomeActivity"
@@ -39,7 +40,8 @@
         <activity android:name=".booking.BookingDetailActivity" />
         <activity
             android:name=".home.FilterActivity"
-            android:theme="@style/Theme.P2PRoomBooking.FilterDialog" />
+            android:theme="@style/Theme.P2PRoomBooking.FilterDialog"
+            android:windowSoftInputMode="adjustResize|stateHidden" />
 
         <!-- SplashActivity se intent-filter hta diya -->
         <activity android:name=".common.SplashActivity" />

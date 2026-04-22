@@ -7,6 +7,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,13 +15,17 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.roombooking.R;
 
 public class FilterActivity extends AppCompatActivity {
+    private ScrollView filterScrollView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_filter);
 
         setupWindow();
+        initViews();
         setupListeners();
+        setupFieldScrolling();
     }
 
     private void setupWindow() {
@@ -30,6 +35,11 @@ public class FilterActivity extends AppCompatActivity {
                 WindowManager.LayoutParams.MATCH_PARENT
         );
         window.setGravity(Gravity.BOTTOM);
+        window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
+    }
+
+    private void initViews() {
+        filterScrollView = findViewById(R.id.filterScrollView);
     }
 
     private void setupListeners() {
@@ -42,6 +52,29 @@ public class FilterActivity extends AppCompatActivity {
         btnApply.setOnClickListener(v -> finish());
         scrim.setOnClickListener(v -> finish());
         btnReset.setOnClickListener(v -> resetFields());
+    }
+
+    private void setupFieldScrolling() {
+        int[] editTextIds = {
+                R.id.etVisitorName,
+                R.id.etOrganisation,
+                R.id.etMobile,
+                R.id.etEmail,
+                R.id.etRequesteeName,
+                R.id.etDepartment,
+                R.id.etRequesteeMobile
+        };
+
+        for (int id : editTextIds) {
+            EditText editText = findViewById(id);
+            editText.setOnFocusChangeListener((view, hasFocus) -> {
+                if (hasFocus && filterScrollView != null) {
+                    filterScrollView.post(() ->
+                            filterScrollView.smoothScrollTo(0, Math.max(view.getTop() - 40, 0))
+                    );
+                }
+            });
+        }
     }
 
     private void resetFields() {
