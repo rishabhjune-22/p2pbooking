@@ -37,7 +37,9 @@
             android:name=".auth.AuthActivity"
             android:windowSoftInputMode="adjustResize|stateHidden" />
         <activity android:name=".booking.BookingDetailActivity" />
-        <activity android:name=".home.FilterActivity" />
+        <activity
+            android:name=".home.FilterActivity"
+            android:theme="@style/Theme.P2PRoomBooking.FilterDialog" />
 
         <!-- SplashActivity se intent-filter hta diya -->
         <activity android:name=".common.SplashActivity" />

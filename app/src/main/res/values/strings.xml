@@ -1,5 +1,29 @@
 <resources>
     <string name="app_name">P2PRoomBooking</string>
+    <string name="filter_title">Filter Bookings</string>
+    <string name="filter_close">Close filter</string>
+    <string name="filter_visitor_details">Visitor Details</string>
+    <string name="filter_visitor_name">Visitor Name</string>
+    <string name="filter_organisation">Organisation</string>
+    <string name="filter_select_gender">Select Gender</string>
+    <string name="filter_mobile_number">Mobile Number</string>
+    <string name="filter_email_address">Email Address</string>
+    <string name="filter_visit_details">Visit Details</string>
+    <string name="filter_arrival_from">Arrival From</string>
+    <string name="filter_arrival_to">Arrival To</string>
+    <string name="filter_departure_from">Departure From</string>
+    <string name="filter_departure_to">Departure To</string>
+    <string name="filter_select_purpose">Select Purpose of Visit</string>
+    <string name="filter_requestee_details">Requestee Details</string>
+    <string name="filter_requestee_name">Requestee Name</string>
+    <string name="filter_department">Department</string>
+    <string name="filter_requestee_mobile">Requestee Mobile Number</string>
+    <string name="filter_room_details">Room Details</string>
+    <string name="filter_select_room">Select Room</string>
+    <string name="filter_booking_status">Booking Status</string>
+    <string name="filter_select_status">Select Status</string>
+    <string name="filter_reset">Reset</string>
+    <string name="filter_apply">Apply Filter</string>
 
     <string-array name="gender_options">
         <item>Select Gender</item>

@@ -10,4 +10,52 @@
         <item name="android:textColorHint">#888888</item>
         <item name="android:drawablePadding">10dp</item>
     </style>
+
+    <style name="FilterFieldBase">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:background">@drawable/bg_filter_field</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:textColor">#4A5672</item>
+        <item name="android:textColorHint">#8A94AE</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:drawablePadding">12dp</item>
+    </style>
+
+    <style name="FilterFieldEditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_marginTop">12dp</item>
+        <item name="android:background">@drawable/bg_filter_field</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:textColor">#4A5672</item>
+        <item name="android:textColorHint">#8A94AE</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:drawablePadding">12dp</item>
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="FilterFieldLabel" parent="FilterFieldBase">
+        <item name="android:fontFamily">sans-serif</item>
+    </style>
+
+    <style name="Theme.P2PRoomBooking.FilterDialog" parent="Theme.P2PRoomBooking">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowAnimationStyle">@style/FilterDialogAnimation</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">#1120386D</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <style name="FilterDialogAnimation">
+        <item name="android:windowEnterAnimation">@android:anim/slide_in_left</item>
+        <item name="android:windowExitAnimation">@android:anim/slide_out_right</item>
+    </style>
 </resources>
