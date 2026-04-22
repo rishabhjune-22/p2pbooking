@@ -43,12 +43,9 @@
 
                 <ImageView
                     android:id="@+id/ivAvatar"
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:background="@drawable/bg_booking_avatar_circle"
-                    android:padding="6dp"
-                    android:src="@drawable/user_svgrepo_com"
-                    android:tint="#FFFFFF" />
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:src="@drawable/mens_room" />
 
                 <TextView
                     android:id="@+id/tvVisitorName"
@@ -180,7 +177,7 @@
                             android:id="@+id/ivArrivalIcon"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_my_calendar"
+                            android:src="@drawable/calender_svgrepo_com"
                             android:tint="#8B8B96" />
 
                         <TextView
@@ -219,7 +216,7 @@
                             android:id="@+id/ivDepartureIcon"
                             android:layout_width="20dp"
                             android:layout_height="20dp"
-                            android:src="@android:drawable/ic_menu_my_calendar"
+                            android:src="@drawable/calender_svgrepo_com"
                             android:tint="#8B8B96" />
 
                         <TextView

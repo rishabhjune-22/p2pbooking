@@ -139,12 +139,22 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         String status = safe(item.getStatus());
         int accentColor = getAccentColor(item, position);
-        applyAccentColor(bookingHolder, accentColor);
+        
+        // Removed accent color tinting for ivAvatar to show original drawable colors
+        tintDrawable(bookingHolder.viewAccent, accentColor);
 
         if (item.canDecrypt()) {
             bookingHolder.tvCreatedBy.setText("Created By: You");
         } else {
             bookingHolder.tvCreatedBy.setText("Created By: " + safe(item.getCreatedByUsername()));
+        }
+
+        // Set Male/Female icon
+        if ("Female".equalsIgnoreCase(displayData.visitorGender)) {
+            bookingHolder.ivAvatar.setImageResource(R.drawable.girl_svgrepo_com__1_);
+        } else {
+            // Default to Male
+            bookingHolder.ivAvatar.setImageResource(R.drawable.boy_svgrepo_com);
         }
 
         bookingHolder.tvVisitorName.setAlpha(item.canDecrypt() ? 1f : 0.6f);
@@ -180,6 +190,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         String visitorName = MASK;
         String visitorOrganisation = MASK;
         String purposeOfVisit = MASK;
+        String visitorGender = "";
 
         if (item != null && item.canDecrypt() && item.hasEncryptedPayload()) {
             try {
@@ -202,16 +213,18 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                         visitorName = safeOrMask(payload.getVisitorName());
                         visitorOrganisation = safeOrMask(payload.getVisitorOrganisation());
                         purposeOfVisit = safeOrMask(payload.getPurposeOfVisit());
+                        visitorGender = payload.getVisitorGender();
                     }
                 }
             } catch (Exception ignored) {
                 visitorName = MASK;
                 visitorOrganisation = MASK;
                 purposeOfVisit = MASK;
+                visitorGender = "";
             }
         }
 
-        return new DecryptedDisplayData(visitorName, visitorOrganisation, purposeOfVisit);
+        return new DecryptedDisplayData(visitorName, visitorOrganisation, purposeOfVisit, visitorGender);
     }
 
     private String safe(String value) {
@@ -233,12 +246,8 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return ACCENT_COLORS[seed % ACCENT_COLORS.length];
     }
 
-    private void applyAccentColor(BookingViewHolder holder, int color) {
-        tintDrawable(holder.viewAccent, color);
-        tintDrawable(holder.ivAvatar, color);
-    }
-
     private void tintDrawable(View view, int color) {
+        if (view == null || view.getBackground() == null) return;
         if (!(view.getBackground() instanceof GradientDrawable)) {
             return;
         }
@@ -250,11 +259,13 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         final String visitorName;
         final String visitorOrganisation;
         final String purposeOfVisit;
+        final String visitorGender;
 
-        DecryptedDisplayData(String visitorName, String visitorOrganisation, String purposeOfVisit) {
+        DecryptedDisplayData(String visitorName, String visitorOrganisation, String purposeOfVisit, String visitorGender) {
             this.visitorName = visitorName;
             this.visitorOrganisation = visitorOrganisation;
             this.purposeOfVisit = purposeOfVisit;
+            this.visitorGender = visitorGender;
         }
     }
 
