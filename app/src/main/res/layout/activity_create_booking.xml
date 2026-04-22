@@ -39,7 +39,7 @@
                     android:background="@android:color/transparent"
                     android:contentDescription="Back"
                     android:padding="8dp"
-                    android:src="@drawable/back_square_svgrepo_com"
+                    android:src="@drawable/back_svgrepo_com"
                     android:tint="#FFFFFF" />
 
                 <LinearLayout

@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -41,7 +42,8 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private static final String MASK = "****";
 
-    private TextView tvDetails;
+    private TextView tvBookingId, tvRoomName, tvCreatedBy;
+    private TextView tvVisitorDetails, tvVisitDetails, tvRequesteeDetails, tvLogisticsDetails, tvStatusDetails;
     private Button btnCancelBooking;
     private Button btnEditBooking;
 
@@ -85,9 +87,20 @@ public class BookingDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_detail);
 
-        tvDetails = findViewById(R.id.tvDetails);
+        tvBookingId = findViewById(R.id.tvBookingId);
+        tvRoomName = findViewById(R.id.tvRoomName);
+        tvCreatedBy = findViewById(R.id.tvCreatedBy);
+        tvVisitorDetails = findViewById(R.id.tvVisitorDetails);
+        tvVisitDetails = findViewById(R.id.tvVisitDetails);
+        tvRequesteeDetails = findViewById(R.id.tvRequesteeDetails);
+        tvLogisticsDetails = findViewById(R.id.tvLogisticsDetails);
+        tvStatusDetails = findViewById(R.id.tvStatusDetails);
+        
         btnCancelBooking = findViewById(R.id.btnCancelBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
+        
+        ImageView ivBack = findViewById(R.id.ivBack);
+        ivBack.setOnClickListener(v -> finish());
 
         bookingItem = getBookingFromIntent();
 
@@ -103,7 +116,7 @@ public class BookingDetailActivity extends AppCompatActivity {
                 editBookingLauncher.launch(intent);
             });
         } else {
-            tvDetails.setText("No booking details found.");
+            Toast.makeText(this, "No booking details found.", Toast.LENGTH_SHORT).show();
             btnCancelBooking.setEnabled(false);
             btnEditBooking.setEnabled(false);
         }
@@ -169,36 +182,37 @@ public class BookingDetailActivity extends AppCompatActivity {
             showToast("Failed to decrypt booking data");
         }
 
-        String details =
-                "Booking ID: " + bookingItem.getId() + "\n\n" +
-                        "Room Name: " + safe(bookingItem.getRoomName()) + "\n" +
-                        "Created By: " + safe(bookingItem.getCreatedByUsername()) + "\n\n" +
+        tvBookingId.setText("Booking ID: " + bookingItem.getId());
+        tvRoomName.setText("Room Name: " + safe(bookingItem.getRoomName()));
+        tvCreatedBy.setText("Created By: " + safe(bookingItem.getCreatedByUsername()));
 
-                        "Visitor Name: " + visitorName + "\n" +
-                        "Visitor Designation: " + visitorDesignation + "\n" +
-                        "Visitor Organisation: " + visitorOrganisation + "\n" +
-                        "Visitor Gender: " + visitorGender + "\n" +
-                        "Visitor Address: " + visitorAddress + "\n" +
-                        "Visitor Mobile: " + visitorMobile + "\n" +
-                        "Visitor Email: " + visitorEmail + "\n\n" +
+        String visitorStr = "•  Visitor Name             :  " + visitorName + "\n" +
+                            "•  Visitor Designation      :  " + visitorDesignation + "\n" +
+                            "•  Visitor Organisation     :  " + visitorOrganisation + "\n" +
+                            "•  Visitor Gender           :  " + visitorGender + "\n" +
+                            "•  Visitor Address          :  " + visitorAddress + "\n" +
+                            "•  Visitor Mobile           :  " + visitorMobile + "\n" +
+                            "•  Visitor Email            :  " + visitorEmail;
+        tvVisitorDetails.setText(visitorStr);
 
-                        "Arrival: " + safe(bookingItem.getArrivalAt()) + "\n" +
-                        "Departure: " + safe(bookingItem.getDepartureAt()) + "\n\n" +
+        String visitStr = "•  Arrival                  :  " + safe(bookingItem.getArrivalAt()) + "\n" +
+                          "•  Departure                :  " + safe(bookingItem.getDepartureAt()) + "\n" +
+                          "•  Purpose                  :  " + purpose;
+        tvVisitDetails.setText(visitStr);
 
-                        "Purpose: " + purpose + "\n\n" +
+        String reqStr = "•  Requestee Name           :  " + safe(bookingItem.getRequesteeName()) + "\n" +
+                        "•  Requestee Designation    :  " + safe(bookingItem.getRequesteeDesignation()) + "\n" +
+                        "•  Requestee Department     :  " + safe(bookingItem.getRequesteeDepartment()) + "\n" +
+                        "•  Requestee Mobile         :  " + safe(bookingItem.getRequesteeMobile());
+        tvRequesteeDetails.setText(reqStr);
 
-                        "Requestee Name: " + safe(bookingItem.getRequesteeName()) + "\n" +
-                        "Requestee Designation: " + safe(bookingItem.getRequesteeDesignation()) + "\n" +
-                        "Requestee Department: " + safe(bookingItem.getRequesteeDepartment()) + "\n" +
-                        "Requestee Mobile: " + safe(bookingItem.getRequesteeMobile()) + "\n\n" +
+        String logStr = "•  Logistics Name           :  " + safe(bookingItem.getLogisticsName()) + "\n" +
+                        "•  Logistics Designation    :  " + safe(bookingItem.getLogisticsDesignation()) + "\n" +
+                        "•  Logistics Mobile         :  " + safe(bookingItem.getLogisticsMobile());
+        tvLogisticsDetails.setText(logStr);
 
-                        "Logistics Name: " + safe(bookingItem.getLogisticsName()) + "\n" +
-                        "Logistics Designation: " + safe(bookingItem.getLogisticsDesignation()) + "\n" +
-                        "Logistics Mobile: " + safe(bookingItem.getLogisticsMobile()) + "\n\n" +
-
-                        "Status: " + safe(bookingItem.getStatus());
-
-        tvDetails.setText(details);
+        String statusStr = "•  Status                   :  " + safe(bookingItem.getStatus());
+        tvStatusDetails.setText(statusStr);
     }
 
     private void updateButtonState() {
