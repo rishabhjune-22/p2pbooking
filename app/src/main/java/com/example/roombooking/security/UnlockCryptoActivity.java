@@ -3,6 +3,8 @@ package com.example.roombooking.security;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Base64;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -79,22 +81,30 @@ public class UnlockCryptoActivity extends AppCompatActivity {
 
                             CryptoManager cryptoManager = new CryptoManager();
                             CryptoManager.KdfMetadata metadata = data.getKdfMetadata();
-
                             char[] passphraseChars = passphraseText.toCharArray();
 
-                            SecretKey dek = cryptoManager.unwrapDek(
-                                    passphraseChars,
-                                    data.getEncryptedDek(),
-                                    data.getDekWrapNonce(),
-                                    metadata
-                            );
+                            try {
 
-                            KeystoreBackedCryptoSessionManager
-                                    .getInstance(getApplicationContext())
-                                    .setDek(dek);
+                                SecretKey dek = cryptoManager.unwrapDek(
+                                        passphraseChars,
+                                        data.getEncryptedDek(),
+                                        data.getDekWrapNonce(),
+                                        metadata
+                                );
+                                Log.d("CRYPTO_DEBUG", "Decrypted Dek: " + base64Encode(dek.getEncoded()));
+
+
+                                KeystoreBackedCryptoSessionManager
+                                        .getInstance(getApplicationContext())
+                                        .setDek(dek);
+
+                            } finally {
+
+                                // Zeroize passphrase from memory
+                                java.util.Arrays.fill(passphraseChars, '\0');
+                            }
 
                             etPassphrase.setText("");
-
                             Intent intent = new Intent(UnlockCryptoActivity.this, HomeActivity.class);
                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                             startActivity(intent);
@@ -115,6 +125,9 @@ public class UnlockCryptoActivity extends AppCompatActivity {
                         showToast("Please check your internet connection.");
                     }
                 });
+    }
+    private String base64Encode(byte[] data) {
+        return Base64.encodeToString(data, Base64.NO_WRAP);
     }
 
     private void showToast(String message) {
