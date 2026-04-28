@@ -108,6 +108,10 @@ public class AuthActivity extends AppCompatActivity {
         etUser.setText("");
         etPass.setText("");
         etPassphrase.setText("");
+//        etEmail.setText("aman@gmail.com");
+//        etUser.setText("aman");
+//        etPass.setText("B@dex.june22");
+//        etPassphrase.setText("12345678");
     }
 
     private void onPrimaryClicked() throws Exception {
@@ -152,6 +156,7 @@ public class AuthActivity extends AppCompatActivity {
         CryptoManager cryptoManager = new CryptoManager();
         char[] passphraseChars = passphrase.toCharArray();
 
+
         try {
             CryptoManager.WrappedDekResult wrappedDekResult =
                     cryptoManager.createAndWrapDek(passphraseChars);
@@ -164,6 +169,7 @@ public class AuthActivity extends AppCompatActivity {
                     wrappedDekResult.getDekWrapNonceBase64(),
                     wrappedDekResult.getKdfMetadata()
             );
+            //System.exit(0);
 
             AuthRepository repo = new AuthRepository(this);
             repo.signup(request).enqueue(new Callback<ApiResponse<SignupData>>() {
@@ -314,6 +320,7 @@ public class AuthActivity extends AppCompatActivity {
         boolean restored = KeystoreBackedCryptoSessionManager
                 .getInstance(getApplicationContext())
                 .restoreDekFromLocalStore();
+
 
         Intent intent;
         if (restored) {

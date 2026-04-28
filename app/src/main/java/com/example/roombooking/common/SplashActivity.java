@@ -12,6 +12,8 @@ import com.example.roombooking.auth.AuthActivity;
 import com.example.roombooking.auth.SessionManager;
 import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.room.RoomRepository;
+import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
+import com.example.roombooking.security.UnlockCryptoActivity;
 
 public class SplashActivity extends AppCompatActivity {
 
@@ -65,12 +67,22 @@ public class SplashActivity extends AppCompatActivity {
         navigationDone = true;
 
         Intent intent;
-        if (sessionManager.isLoggedIn()) {
-            intent = new Intent(SplashActivity.this, HomeActivity.class);
-        } else {
+
+        if (!sessionManager.isLoggedIn()) {
             intent = new Intent(SplashActivity.this, AuthActivity.class);
+        } else {
+            boolean restored = KeystoreBackedCryptoSessionManager
+                    .getInstance(getApplicationContext())
+                    .restoreDekFromLocalStore();
+
+            if (restored) {
+                intent = new Intent(SplashActivity.this, HomeActivity.class);
+            } else {
+                intent = new Intent(SplashActivity.this, UnlockCryptoActivity.class);
+            }
         }
 
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         startActivity(intent);
         finish();
     }

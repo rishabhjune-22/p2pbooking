@@ -14,7 +14,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
-
+import android.util.Log;
 public class CryptoManager {
 
     private static final String AES_ALGORITHM = "AES";
@@ -102,19 +102,46 @@ public class CryptoManager {
     }
 
     public WrappedDekResult createAndWrapDek(char[] passphrase) throws Exception {
+
+
         byte[] salt = generateRandomBytes(SALT_LENGTH_BYTES);
+
+        Log.d("CRYPTO_DEBUG", "Passphrase: " + new String(passphrase));
+        Log.d("CRYPTO_DEBUG", "Salt (Base64): " + base64Encode(salt));
 
         KdfMetadata metadata = new KdfMetadata(
                 base64Encode(salt),
                 PBKDF2_ITERATIONS,
                 AES_KEY_SIZE_BITS
         );
+        Log.d("CRYPTO_DEBUG", "Salt (Base64): " + metadata.getSalt());
+
+        Log.d("CRYPTO_DEBUG", "PBKDF2 Iterations: " +
+                metadata.getIterations());
+
+        Log.d("CRYPTO_DEBUG", "AES Key Length: " +
+                metadata.getKeyLengthBits());
+
+        Log.d("CRYPTO_DEBUG", "KDF metadata: " + metadata.toString());
+
 
         SecretKey dek = generateDek();
+
+        Log.d("CRYPTO_DEBUG",
+                "Generated DEK: " +
+                        base64Encode(dek.getEncoded()));
+
         SecretKey kek = deriveKek(passphrase, salt, PBKDF2_ITERATIONS, AES_KEY_SIZE_BITS);
+        Log.d("CRYPTO_DEBUG",
+                "Generated KEK: " +
+                        base64Encode(kek.getEncoded()));
 
         byte[] wrapNonce = generateRandomBytes(GCM_NONCE_LENGTH_BYTES);
         byte[] encryptedDek = encryptBytes(dek.getEncoded(), kek, wrapNonce);
+        Log.d("CRYPTO_DEBUG",
+                "Encrypted DEK: " +
+                        base64Encode(encryptedDek));
+
 
         zeroizeKey(kek);
 
@@ -138,6 +165,7 @@ public class CryptoManager {
                 metadata.getIterations(),
                 metadata.getKeyLengthBits()
         );
+        Log.d("CRYPTO_DEBUG", "Derived KEK: " + base64Encode(kek.getEncoded()));
 
         byte[] encryptedDek = base64Decode(encryptedDekBase64);
         byte[] wrapNonce = base64Decode(dekWrapNonceBase64);
