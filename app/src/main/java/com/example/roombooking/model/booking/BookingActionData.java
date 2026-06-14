@@ -48,4 +48,16 @@ public class BookingActionData {
     public String getStatus() {
         return status;
     }
+
+    public String getSafeRoomName() {
+        return roomName != null ? roomName : "";
+    }
+
+    public String getSafeVisitorName() {
+        return visitorName != null ? visitorName : "";
+    }
+
+    public String getSafeStatus() {
+        return status != null ? status : "";
+    }
 }

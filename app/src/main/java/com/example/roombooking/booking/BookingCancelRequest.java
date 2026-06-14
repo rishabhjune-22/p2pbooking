@@ -1,13 +1,17 @@
 package com.example.roombooking.booking;
 
-public class BookingCancelRequest {
-    private String cancellation_reason;
+import com.google.gson.annotations.SerializedName;
 
-    public BookingCancelRequest(String cancellation_reason) {
-        this.cancellation_reason = cancellation_reason;
+public class BookingCancelRequest {
+
+    @SerializedName("cancellation_reason")
+    private final String cancellationReason;
+
+    public BookingCancelRequest(String cancellationReason) {
+        this.cancellationReason = cancellationReason;
     }
 
-    public String getCancellation_reason() {
-        return cancellation_reason;
+    public String getCancellationReason() {
+        return cancellationReason;
     }
 }

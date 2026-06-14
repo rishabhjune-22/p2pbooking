@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/booking_list_bg">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_64"
+        android:background="@color/info_blue"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/menu_landing_toolbar"
+        app:title="@string/app_name"
+        app:titleCentered="true"
+        app:titleTextColor="@color/white" />
+
+    <View
+        android:id="@+id/headerView"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_64"
+        android:background="@drawable/bg_create_booking_header"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="Bookings"
+        android:textAlignment="center"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_20"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/headerView"
+        app:layout_constraintEnd_toEndOf="@id/headerView"
+        app:layout_constraintStart_toStartOf="@id/headerView"
+        app:layout_constraintTop_toTopOf="@id/headerView" />
+
+    <FrameLayout
+        android:id="@+id/layoutCompactToggle"
+        style="@style/BookingListIconButton"
+        android:layout_width="@dimen/space_56"
+        android:layout_height="@dimen/space_56"
+        android:layout_marginEnd="@dimen/space_16"
+        android:elevation="4dp"
+        android:padding="@dimen/space_8"
+        app:layout_constraintBottom_toBottomOf="@id/headerView"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/headerView">
+
+        <ImageButton
+            android:id="@+id/btnToggleCompact"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:contentDescription="Switch booking view"
+            android:padding="@dimen/space_8"
+            android:src="@drawable/ic_compact_view"
+            app:tint="@color/white" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutBookingActions"
+        android:layout_width="@dimen/space_180"
+        android:layout_height="0dp"
+        android:background="@color/card_bg"
+        android:gravity="top|center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/space_16"
+        android:paddingTop="@dimen/space_24"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/headerView">
+
+        <LinearLayout style="@style/BookingActionItem">
+            <ImageButton android:id="@+id/btnCreateBooking" style="@style/BookingListIconButton" android:contentDescription="@string/create_booking" android:src="@drawable/create_note_svgrepo_com" />
+            <TextView style="@style/BookingActionLabel" android:text="Create\nNew Booking" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/TabletBookingActionItem">
+            <ImageButton android:id="@+id/btnFilter" style="@style/BookingListIconButton" android:contentDescription="@string/filter" android:src="@drawable/filter_svgrepo_com" />
+            <TextView style="@style/BookingActionLabel" android:text="Filter" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/TabletBookingActionItem">
+            <ImageButton android:id="@+id/btnToggleCancelled" style="@style/BookingStatusIconButton" android:contentDescription="@string/toggle_cancelled" />
+            <TextView android:id="@+id/tvStatusToggleLabel" style="@style/BookingActionLabel" android:text="Active\nBookings" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/TabletBookingActionItem">
+            <ImageButton android:id="@+id/btnClearFilter" style="@style/BookingListIconButton" android:contentDescription="@string/clear_filter" android:src="@drawable/remove_filter_icon" />
+            <TextView style="@style/BookingActionLabel" android:text="Clear\nFilter" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/TabletBookingActionItem">
+            <ImageButton android:id="@+id/btnRoomAvailability" style="@style/BookingListIconButton" android:contentDescription="Room Availability Calendar" android:src="@drawable/calender_svgrepo_com" />
+            <TextView style="@style/BookingActionLabel" android:text="Rooms\nAvailability" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/tvMessage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Loading..."
+        android:textColor="@color/booking_list_message_text"
+        android:textSize="@dimen/text_16"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
+        app:layout_constraintTop_toBottomOf="@id/headerView" />
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
+        app:layout_constraintTop_toBottomOf="@id/headerView" />
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="@dimen/space_16"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
+        app:layout_constraintTop_toBottomOf="@id/headerView">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewBookings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:padding="@dimen/space_12"
+            android:scrollbars="none" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

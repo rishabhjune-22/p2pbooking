@@ -1,10 +1,20 @@
 <resources>
-    <string name="app_name">P2PRoomBooking</string>
-
+    <string name="app_name">RoomBooking</string>
+    <string name="create_booking">Create Booking</string>
+    <string name="filter">Filter</string>
+    <string name="toggle_cancelled">Toggle Cancelled</string>
+    <string name="clear_filter">Clear Filter</string>
     <string-array name="gender_options">
         <item>Select Gender</item>
         <item>Male</item>
         <item>Female</item>
         <item>Other</item>
+
     </string-array>
+
+    <string name="hint_enter_name">Enter your name</string>
+    <string name="dialog_title_welcome">Welcome</string>
+    <string name="dialog_message_enter_name">Please enter your name to continue.</string>
+    <string name="action_continue">Continue</string>
+    <string name="error_name_required">Name is required</string>
 </resources>

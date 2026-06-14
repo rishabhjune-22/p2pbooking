@@ -1,17 +1,14 @@
 package com.example.roombooking.api;
 
-import com.example.roombooking.auth.SignupRequest;
-import com.example.roombooking.model.auth.LoginData;
-import com.example.roombooking.auth.LoginRequest;
-import com.example.roombooking.auth.LogoutRequest;
-import com.example.roombooking.auth.RefreshRequest;
-import com.example.roombooking.model.auth.RefreshTokenData;
-import com.example.roombooking.model.auth.SignupData;
-import com.example.roombooking.model.booking.BookingActionData;
+import com.example.roombooking.booking.AvailableRoomsRangeResponse;
+import com.example.roombooking.booking.AvailableRoomsResponse;
 import com.example.roombooking.booking.BookingCancelRequest;
 import com.example.roombooking.booking.BookingCreateRequest;
-import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.booking.BookingUpdateRequest;
+import com.example.roombooking.booking.RoomAvailabilityDetailsResponse;
+import com.example.roombooking.booking.RoomAvailabilityResponse;
+import com.example.roombooking.model.booking.BookingActionData;
+import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
@@ -26,29 +23,24 @@ import retrofit2.http.Query;
 
 public interface ApiService {
 
-    @POST("api/token/")
-    Call<ApiResponse<LoginData>> login(@Body LoginRequest request);
-
-    @POST("api/accounts/signup/")
-    Call<ApiResponse<SignupData>> signup(@Body SignupRequest request);
-
-    @POST("api/token/refresh/")
-    Call<ApiResponse<RefreshTokenData>> refreshToken(@Body RefreshRequest request);
-
     @GET("api/bookings/")
-    Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(@Query("page") int page);
+    Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(
+            @Query("page") int page,
+            @Query("prefix") String prefix,
+            @Query("arrival_from") String arrivalFrom,
+            @Query("departure_to") String departureTo,
+            @Query("status") String status
+    );
 
-    @POST("api/accounts/logout/")
-    Call<ApiResponse<Object>> logout(@Body LogoutRequest request);
-
-    @POST("api/bookings/{pk}/cancel/")
-    Call<ApiResponse<BookingActionData>> cancelBooking(
-            @Path("pk") int bookingId,
-            @Body BookingCancelRequest request
+    @GET("api/bookings/{pk}/")
+    Call<ApiResponse<BookingItem>> getBooking(
+            @Path("pk") int bookingId
     );
 
     @POST("api/bookings/create/")
-    Call<ApiResponse<BookingActionData>> createBooking(@Body BookingCreateRequest request);
+    Call<ApiResponse<BookingActionData>> createBooking(
+            @Body BookingCreateRequest request
+    );
 
     @PATCH("api/bookings/{pk}/edit/")
     Call<ApiResponse<BookingActionData>> updateBooking(
@@ -56,10 +48,39 @@ public interface ApiService {
             @Body BookingUpdateRequest request
     );
 
+    @POST("api/bookings/{pk}/cancel/")
+    Call<ApiResponse<BookingActionData>> cancelBooking(
+            @Path("pk") int bookingId,
+            @Body BookingCancelRequest request
+    );
 
     @GET("api/rooms/")
-    Call<ApiResponse<PaginatedData<RoomItem>>> getRooms(@Query("page") int page);
+    Call<ApiResponse<PaginatedData<RoomItem>>> getRooms(
+            @Query("page") int page
+    );
 
-    @retrofit2.http.GET("api/accounts/encryption-material/")
-    retrofit2.Call<com.example.roombooking.model.common.ApiResponse<com.example.roombooking.security.EncryptionMaterialData>> getEncryptionMaterial();
+    @GET("api/bookings/availability/")
+    Call<ApiResponse<RoomAvailabilityResponse>> getRoomAvailability(
+            @Query("month") int month,
+            @Query("year") int year
+    );
+
+    @GET("api/bookings/availability/details/")
+    Call<ApiResponse<RoomAvailabilityDetailsResponse>> getRoomAvailabilityDetails(
+            @Query("date") String date,
+            @Query("prefix") String prefix
+    );
+
+    @GET("api/room-available-rooms/")
+    Call<ApiResponse<AvailableRoomsResponse>> getAvailableRoomsByDate(
+            @Query("date") String date,
+            @Query("prefix") String prefix
+    );
+
+    @GET("api/room-available-rooms-range/")
+    Call<ApiResponse<AvailableRoomsRangeResponse>> getAvailableRoomsByDateRange(
+            @Query("arrival_date") String arrivalDate,
+            @Query("departure_date") String departureDate,
+            @Query("prefix") String prefix
+    );
 }

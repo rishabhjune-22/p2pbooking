@@ -4,19 +4,14 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
-import com.example.roombooking.auth.LogoutRequest;
-import com.example.roombooking.auth.AuthRepository;
-import com.example.roombooking.auth.SessionManager;
-import com.example.roombooking.model.booking.BookingActionData;
+
 import com.example.roombooking.booking.BookingCancelRequest;
 import com.example.roombooking.booking.BookingRepository;
+import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
-import com.example.roombooking.room.RoomCache;
-import com.google.gson.Gson;
-import android.content.Context;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,33 +21,51 @@ import retrofit2.Response;
 
 public class HomeViewModel extends ViewModel {
 
-    private final BookingRepository bookingRepository;
-    private final AuthRepository authRepository;
-    private final SessionManager sessionManager;
-    private final Gson gson = new Gson();
-    private final Context appContext;
-    private final MutableLiveData<List<BookingItem>> bookingsLiveData = new MutableLiveData<>(new ArrayList<>());
-    private final MutableLiveData<Boolean> fullScreenLoadingLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> paginationLoadingLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<Boolean> swipeRefreshingLiveData = new MutableLiveData<>(false);
-    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>("");
-    private final MutableLiveData<String> toastLiveData = new MutableLiveData<>();
-    private final MutableLiveData<Boolean> logoutEventLiveData = new MutableLiveData<>(false);
+    private static final int FIRST_PAGE = 1;
 
-    private int currentPage = 1;
+    private static final String DEFAULT_STATUS = "active";
+
+    private static final String MESSAGE_EMPTY_BOOKINGS =
+            "No bookings yet. Tap + to create one.";
+    private static final String MESSAGE_LOAD_FAILED =
+            "Failed to load bookings.";
+    private static final String MESSAGE_CANCEL_FAILED =
+            "Cancel failed.";
+    private static final String MESSAGE_NETWORK_ERROR =
+            "Please check your internet connection.";
+
+    private final BookingRepository bookingRepository;
+
+    private final MutableLiveData<List<BookingItem>> bookingsLiveData =
+            new MutableLiveData<>(new ArrayList<>());
+
+    private final MutableLiveData<Boolean> fullScreenLoadingLiveData =
+            new MutableLiveData<>(false);
+
+    private final MutableLiveData<Boolean> paginationLoadingLiveData =
+            new MutableLiveData<>(false);
+
+    private final MutableLiveData<Boolean> swipeRefreshingLiveData =
+            new MutableLiveData<>(false);
+
+    private final MutableLiveData<String> messageLiveData =
+            new MutableLiveData<>("");
+
+    private final MutableLiveData<String> toastLiveData =
+            new MutableLiveData<>();
+
+    private int currentPage = FIRST_PAGE;
+
     private boolean isLoading = false;
     private boolean isLastPage = false;
-    private boolean isFirstLoad = true;
-    public HomeViewModel(
-            Context context,
-            BookingRepository bookingRepository,
-            AuthRepository authRepository,
-            SessionManager sessionManager
-    ) {
-        this.appContext = context.getApplicationContext();
+
+    private String filterPrefix = null;
+    private String filterArrivalFrom = null;
+    private String filterDepartureTo = null;
+    private String filterStatus = DEFAULT_STATUS;
+
+    public HomeViewModel(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
-        this.authRepository = authRepository;
-        this.sessionManager = sessionManager;
     }
 
     public LiveData<List<BookingItem>> getBookingsLiveData() {
@@ -79,10 +92,6 @@ public class HomeViewModel extends ViewModel {
         return toastLiveData;
     }
 
-    public LiveData<Boolean> getLogoutEventLiveData() {
-        return logoutEventLiveData;
-    }
-
     public boolean isLoading() {
         return isLoading;
     }
@@ -91,130 +100,68 @@ public class HomeViewModel extends ViewModel {
         return isLastPage;
     }
 
-    public int getCurrentPage() {
-        return currentPage;
-    }
-
     public void loadInitialBookings() {
         if (isLoading) return;
-        currentPage = 1;
-        isLastPage = false;
-        isFirstLoad = true;
-        fetchBookings(1, true, false);
+
+        resetPagination();
+        fetchBookings(FIRST_PAGE, true);
     }
 
     public void refreshBookings() {
         if (isLoading) return;
-        currentPage = 1;
-        isLastPage = false;
-        isFirstLoad = false;
+
+        resetPagination();
         swipeRefreshingLiveData.setValue(true);
-        fetchBookings(1, false, true);
+        fetchBookings(FIRST_PAGE, false);
     }
 
     public void loadNextPage() {
         if (isLoading || isLastPage) return;
-        fetchBookings(currentPage + 1, false, false);
+
+        fetchBookings(currentPage + 1, false);
     }
 
-    private void fetchBookings(int page, boolean showFullScreenLoader, boolean isRefresh) {
-        isLoading = true;
+    public void applyFilter(
+            String prefix,
+            String arrivalFrom,
+            String departureTo,
+            String status
+    ) {
+        filterPrefix = isBlank(prefix) ? null : prefix.trim();
+        filterArrivalFrom = arrivalFrom;
+        filterDepartureTo = departureTo;
+        filterStatus = status != null ? status : DEFAULT_STATUS;
 
-        if (showFullScreenLoader) {
-            fullScreenLoadingLiveData.setValue(true);
-            messageLiveData.setValue("");
-        } else if (page > 1) {
-            paginationLoadingLiveData.setValue(true);
-        }
-
-        bookingRepository.getBookings(page).enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
-            @Override
-            public void onResponse(
-                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
-                    @NonNull Response<ApiResponse<PaginatedData<BookingItem>>> response
-            ) {
-                isLoading = false;
-                fullScreenLoadingLiveData.setValue(false);
-                paginationLoadingLiveData.setValue(false);
-                swipeRefreshingLiveData.setValue(false);
-                isFirstLoad = false;
-
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<PaginatedData<BookingItem>> apiResponse = response.body();
-
-                    if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                        messageLiveData.setValue(apiResponse.getFirstErrorMessage());
-                        return;
-                    }
-
-                    PaginatedData<BookingItem> paginatedData = apiResponse.getData();
-                    List<BookingItem> results = paginatedData.getResults();
-
-                    if (page == 1) {
-                        if (results == null || results.isEmpty()) {
-                            bookingsLiveData.setValue(new ArrayList<>());
-                            messageLiveData.setValue("No bookings yet. Tap + to create one.");
-                            return;
-                        }
-                        bookingsLiveData.setValue(new ArrayList<>(results));
-                    } else {
-                        List<BookingItem> currentList = bookingsLiveData.getValue();
-                        if (currentList == null) currentList = new ArrayList<>();
-                        currentList = new ArrayList<>(currentList);
-                        if (results != null) {
-                            currentList.addAll(results);
-                        }
-                        bookingsLiveData.setValue(currentList);
-                    }
-
-                    currentPage = page;
-                    isLastPage = paginatedData.getNext() == null || results == null || results.isEmpty();
-                    messageLiveData.setValue("");
-                    return;
-                }
-
-                handleApiError(response);
-            }
-
-            @Override
-            public void onFailure(
-                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
-                    @NonNull Throwable t
-            ) {
-                isLoading = false;
-                fullScreenLoadingLiveData.setValue(false);
-                paginationLoadingLiveData.setValue(false);
-                swipeRefreshingLiveData.setValue(false);
-                messageLiveData.setValue(getNetworkErrorMessage(t));
-            }
-        });
+        loadInitialBookings();
     }
 
     public void cancelBooking(BookingItem bookingItem, String reason) {
+        if (bookingItem == null) return;
+
         bookingRepository.cancelBooking(
                 bookingItem.getId(),
                 new BookingCancelRequest(reason)
         ).enqueue(new Callback<ApiResponse<BookingActionData>>() {
+
             @Override
             public void onResponse(
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Response<ApiResponse<BookingActionData>> response
             ) {
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<BookingActionData> apiResponse = response.body();
-
-                    if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                        toastLiveData.setValue(apiResponse.getFirstErrorMessage());
-                        return;
-                    }
-
-                    BookingActionData data = apiResponse.getData();
-                    updateBookingStatusById(data.getBookingId(), data.getStatus());
-                    toastLiveData.setValue(apiResponse.getMessage());
+                if (!response.isSuccessful() || response.body() == null) {
+                    toastLiveData.setValue(MESSAGE_CANCEL_FAILED);
                     return;
                 }
 
-                toastLiveData.setValue(extractErrorMessage(response));
+                ApiResponse<BookingActionData> apiResponse = response.body();
+
+                if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
+                    toastLiveData.setValue(apiResponse.getFirstErrorMessage());
+                    return;
+                }
+
+                toastLiveData.setValue(apiResponse.getSafeMessage());
+                refreshBookings();
             }
 
             @Override
@@ -222,78 +169,31 @@ public class HomeViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Throwable t
             ) {
-                toastLiveData.setValue(getNetworkErrorMessage(t));
+                toastLiveData.setValue(MESSAGE_NETWORK_ERROR);
             }
         });
-    }
-
-    public void performLogout() {
-        String refreshToken = sessionManager.getRefreshToken();
-
-        if (refreshToken == null || refreshToken.trim().isEmpty()) {
-            clearLocalSession();
-            logoutEventLiveData.setValue(true);
-            return;
-        }
-
-        authRepository.logout(new LogoutRequest(refreshToken))
-                .enqueue(new Callback<ApiResponse<Object>>() {
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<Object>> call,
-                            @NonNull Response<ApiResponse<Object>> response
-                    ) {
-                        clearLocalSession();
-
-                        logoutEventLiveData.setValue(true);
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<Object>> call,
-                            @NonNull Throwable t
-                    ) {
-                        clearLocalSession();
-                        logoutEventLiveData.setValue(true);
-                    }
-                });
     }
 
     public void updateBookingById(
             int bookingId,
             String updatedStatus,
-            String visitorName,   // ignored now
-            String visitorMobile, // ignored now
-            String purpose,       // ignored now
             String arrivalAt,
             String departureAt
     ) {
         List<BookingItem> currentList = bookingsLiveData.getValue();
+
         if (currentList == null || currentList.isEmpty()) return;
 
         List<BookingItem> updatedList = new ArrayList<>(currentList);
 
-        for (int i = 0; i < updatedList.size(); i++) {
-            BookingItem item = updatedList.get(i);
-
+        for (BookingItem item : updatedList) {
             if (item.getId() == bookingId) {
-
-                // ✅ Only safe fields to update locally
-                if (updatedStatus != null) {
-                    item.setStatus(updatedStatus);
-                }
-
-                if (arrivalAt != null) {
-                    item.setArrivalAt(arrivalAt);
-                }
-
-                if (departureAt != null) {
-                    item.setDepartureAt(departureAt);
-                }
-
-                // ❌ DO NOT touch encrypted data here
-                // visitorName, mobile, purpose → encrypted → ignore
-
+                updateBookingFields(
+                        item,
+                        updatedStatus,
+                        arrivalAt,
+                        departureAt
+                );
                 break;
             }
         }
@@ -301,67 +201,144 @@ public class HomeViewModel extends ViewModel {
         bookingsLiveData.setValue(updatedList);
     }
 
-    private void updateBookingStatusById(int bookingId, String status) {
-        List<BookingItem> currentList = bookingsLiveData.getValue();
-        if (currentList == null || currentList.isEmpty()) return;
+    private void fetchBookings(
+            int page,
+            boolean showFullScreenLoader
+    ) {
+        isLoading = true;
+        showLoaderForRequest(page, showFullScreenLoader);
 
-        List<BookingItem> updatedList = new ArrayList<>(currentList);
+        bookingRepository.getBookings(
+                page,
+                filterPrefix,
+                filterArrivalFrom,
+                filterDepartureTo,
+                filterStatus
+        ).enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
 
-        for (int i = 0; i < updatedList.size(); i++) {
-            BookingItem item = updatedList.get(i);
-            if (item.getId() == bookingId) {
-                item.setStatus(status);
-                break;
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
+                    @NonNull Response<ApiResponse<PaginatedData<BookingItem>>> response
+            ) {
+                hideAllLoaders();
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    messageLiveData.setValue(MESSAGE_LOAD_FAILED);
+                    return;
+                }
+
+                ApiResponse<PaginatedData<BookingItem>> apiResponse = response.body();
+
+                if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
+                    messageLiveData.setValue(apiResponse.getFirstErrorMessage());
+                    return;
+                }
+
+                handleBookingsPage(page, apiResponse.getData());
             }
-        }
 
-        bookingsLiveData.setValue(updatedList);
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
+                    @NonNull Throwable t
+            ) {
+                hideAllLoaders();
+                messageLiveData.setValue(MESSAGE_NETWORK_ERROR);
+            }
+        });
     }
 
-    private <T> void handleApiError(Response<ApiResponse<T>> response) {
-        if (response.code() == 401) {
-            clearLocalSession();
-
-            messageLiveData.setValue("Session expired. Please login again.");
-            logoutEventLiveData.setValue(true);
+    private void showLoaderForRequest(int page, boolean showFullScreenLoader) {
+        if (showFullScreenLoader) {
+            fullScreenLoadingLiveData.setValue(true);
+            messageLiveData.setValue("");
             return;
         }
 
-        messageLiveData.setValue(extractErrorMessage(response));
+        if (page > FIRST_PAGE) {
+            paginationLoadingLiveData.setValue(true);
+        }
     }
 
-    private <T> String extractErrorMessage(Response<ApiResponse<T>> response) {
-        try {
-            if (response.errorBody() != null) {
-                String errorJson = response.errorBody().string();
-                ApiResponse<?> errorResponse = gson.fromJson(errorJson, ApiResponse.class);
+    private void hideAllLoaders() {
+        isLoading = false;
+        fullScreenLoadingLiveData.setValue(false);
+        paginationLoadingLiveData.setValue(false);
+        swipeRefreshingLiveData.setValue(false);
+    }
 
-                if (errorResponse != null) {
-                    String firstError = errorResponse.getFirstErrorMessage();
-                    if (firstError != null && !firstError.trim().isEmpty()) {
-                        return firstError;
-                    }
+    private void handleBookingsPage(
+            int page,
+            PaginatedData<BookingItem> paginatedData
+    ) {
+        List<BookingItem> results = paginatedData.getResults();
 
-                    if (errorResponse.getMessage() != null && !errorResponse.getMessage().trim().isEmpty()) {
-                        return errorResponse.getMessage();
-                    }
-                }
-            }
-        } catch (Exception ignored) {
+        if (page == FIRST_PAGE) {
+            handleFirstPageResults(results);
+        } else {
+            appendNextPageResults(results);
         }
 
-        return "Request failed. Code: " + response.code();
+        currentPage = page;
+        isLastPage = !paginatedData.hasNextPage()
+                || results == null
+                || results.isEmpty();
+
+        messageLiveData.setValue("");
     }
 
-    private String getNetworkErrorMessage(Throwable throwable) {
-        return "Please check your internet connection.";
+    private void handleFirstPageResults(List<BookingItem> results) {
+        if (results == null || results.isEmpty()) {
+            bookingsLiveData.setValue(new ArrayList<>());
+            messageLiveData.setValue(MESSAGE_EMPTY_BOOKINGS);
+            return;
+        }
+
+        bookingsLiveData.setValue(new ArrayList<>(results));
     }
 
-    private void clearLocalSession() {
-        sessionManager.logout();
-        RoomCache.clear();
-        KeystoreBackedCryptoSessionManager
-                .getInstance(appContext)
-                .clearAll();
+    private void appendNextPageResults(List<BookingItem> results) {
+        List<BookingItem> currentList = bookingsLiveData.getValue();
+
+        if (currentList == null) {
+            currentList = new ArrayList<>();
+        }
+
+        List<BookingItem> updatedList = new ArrayList<>(currentList);
+
+        if (results != null) {
+            updatedList.addAll(results);
+        }
+
+        bookingsLiveData.setValue(updatedList);
+    }
+
+    private void resetPagination() {
+        currentPage = FIRST_PAGE;
+        isLastPage = false;
+    }
+
+    private void updateBookingFields(
+            BookingItem item,
+            String updatedStatus,
+            String arrivalAt,
+            String departureAt
+    ) {
+        if (updatedStatus != null) {
+            item.setStatus(updatedStatus);
+        }
+
+        if (arrivalAt != null) {
+            item.setArrivalAt(arrivalAt);
+        }
+
+        if (departureAt != null) {
+            item.setDepartureAt(departureAt);
+        }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }

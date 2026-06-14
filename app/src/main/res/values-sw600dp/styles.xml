@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CheckAvailabilityIconButton">
+        <item name="android:layout_width">@dimen/space_70</item>
+        <item name="android:layout_height">@dimen/space_70</item>
+        <item name="android:padding">@dimen/space_12</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:background">@drawable/bg_booking_icon_button</item>
+        <item name="android:tint">@color/white</item>
+    </style>
+
+    <style name="RoomTabTextStyle" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textStyle">bold</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="RoomAvailabilityHeaderDimensions">
+        <item name="android:layout_height">@dimen/space_260</item>
+    </style>
+
+    <style name="CalendarDayCardDimensions">
+        <item name="android:layout_height">@dimen/space_72</item>
+        <item name="android:layout_margin">@dimen/space_4</item>
+    </style>
+
+    <style name="BookingStatusChipDimensions">
+        <item name="android:layout_width">@dimen/space_104</item>
+        <item name="android:layout_height">@dimen/space_34</item>
+    </style>
+</resources>

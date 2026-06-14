@@ -4,40 +4,48 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.roombooking.R;
 import com.example.roombooking.model.booking.BookingItem;
-import com.example.roombooking.security.CryptoManager;
-import com.example.roombooking.security.EncryptedBookingPayload;
-import com.example.roombooking.security.KeystoreBackedCryptoSessionManager;
-import com.google.gson.Gson;
+import com.example.roombooking.utils.DateTimeUtils;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.crypto.SecretKey;
+import java.util.Locale;
 
 public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     public interface OnBookingClickListener {
         void onBookingClick(BookingItem bookingItem);
+
         void onBookingLongClick(BookingItem bookingItem, int position);
     }
 
-    private static final int VIEW_TYPE_ITEM = 1;
+    private static final int VIEW_TYPE_DETAILED = 1;
     private static final int VIEW_TYPE_LOADING = 2;
-    private static final String MASK = "****";
+    private static final int VIEW_TYPE_COMPACT = 3;
+
+    private static final String STATUS_ACTIVE = "active";
+    private static final String STATUS_CANCELLED = "cancelled";
+    private static final String STATUS_EXPIRED = "expired";
+
+    private static final String GENDER_MALE = "male";
+    private static final String GENDER_FEMALE = "female";
 
     private final Context context;
     private final List<BookingItem> items = new ArrayList<>();
-    private final Gson gson = new Gson();
     private final OnBookingClickListener listener;
 
     private boolean showLoading = false;
+    private boolean compactView = false;
 
     public BookingAdapter(Context context, OnBookingClickListener listener) {
         this.context = context.getApplicationContext();
@@ -45,41 +53,47 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     public void setItems(List<BookingItem> newItems) {
+        List<BookingItem> oldItems = new ArrayList<>(items);
+        List<BookingItem> updatedItems = newItems != null
+                ? new ArrayList<>(newItems)
+                : new ArrayList<>();
+
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
+                new BookingDiffCallback(oldItems, updatedItems)
+        );
+
         items.clear();
-        if (newItems != null) {
-            items.addAll(newItems);
-        }
-        notifyDataSetChanged();
+        items.addAll(updatedItems);
+
+        diffResult.dispatchUpdatesTo(this);
     }
 
-    public void addItems(List<BookingItem> newItems) {
-        if (newItems == null || newItems.isEmpty()) {
+    public void setCompactView(boolean compactView) {
+        if (this.compactView == compactView) {
             return;
         }
-        int start = items.size();
-        items.addAll(newItems);
-        notifyItemRangeInserted(start, newItems.size());
+
+        this.compactView = compactView;
+        notifyDataSetChanged();
     }
 
-    public void clearItems() {
-        items.clear();
-        showLoading = false;
-        notifyDataSetChanged();
+    public boolean isCompactView() {
+        return compactView;
     }
 
     public void showPaginationLoader() {
-        if (!showLoading) {
-            showLoading = true;
-            notifyItemInserted(items.size());
-        }
+        if (showLoading) return;
+
+        showLoading = true;
+        notifyItemInserted(items.size());
     }
 
     public void hidePaginationLoader() {
-        if (showLoading) {
-            int loaderPosition = items.size();
-            showLoading = false;
-            notifyItemRemoved(loaderPosition);
-        }
+        if (!showLoading) return;
+
+        int loaderPosition = items.size();
+        showLoading = false;
+        notifyItemRemoved(loaderPosition);
     }
 
     @Override
@@ -87,7 +101,8 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         if (showLoading && position == items.size()) {
             return VIEW_TYPE_LOADING;
         }
-        return VIEW_TYPE_ITEM;
+
+        return compactView ? VIEW_TYPE_COMPACT : VIEW_TYPE_DETAILED;
     }
 
     @Override
@@ -97,7 +112,10 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     @NonNull
     @Override
-    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public RecyclerView.ViewHolder onCreateViewHolder(
+            @NonNull ViewGroup parent,
+            int viewType
+    ) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
 
         if (viewType == VIEW_TYPE_LOADING) {
@@ -105,132 +123,239 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             return new LoadingViewHolder(view);
         }
 
-        View view = inflater.inflate(R.layout.item_booking, parent, false);
+        int layoutResId = viewType == VIEW_TYPE_COMPACT
+                ? R.layout.item_booking_compact
+                : R.layout.item_booking;
+        View view = inflater.inflate(layoutResId, parent, false);
         return new BookingViewHolder(view);
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+    public void onBindViewHolder(
+            @NonNull RecyclerView.ViewHolder holder,
+            int position
+    ) {
         if (!(holder instanceof BookingViewHolder)) {
+            return;
+        }
+
+        if (position < 0 || position >= items.size()) {
             return;
         }
 
         BookingItem item = items.get(position);
         BookingViewHolder bookingHolder = (BookingViewHolder) holder;
 
-        DecryptedDisplayData displayData = getDisplayData(item);
+        bookingHolder.bind(item);
+    }
 
-        bookingHolder.tvVisitorName.setText(displayData.visitorName);
-        bookingHolder.tvRoomName.setText("Room: " + safe(item.getRoomName()));
-        bookingHolder.tvOrganisation.setText("Organisation: " + displayData.visitorOrganisation);
-        bookingHolder.tvArrival.setText("Arrival: " + safe(item.getArrivalAt()));
-        bookingHolder.tvDeparture.setText("Departure: " + safe(item.getDepartureAt()));
-        bookingHolder.tvPurpose.setText("Purpose: " + displayData.purposeOfVisit);
-        bookingHolder.tvStatus.setText("Status: " + safe(item.getStatus()));
-
-        if (item.canDecrypt()) {
-            bookingHolder.tvCreatedBy.setText("Created By: You");
-        } else {
-            bookingHolder.tvCreatedBy.setText("Created By: " + safe(item.getCreatedByUsername()));
+    private void bindBookingData(BookingViewHolder holder, BookingItem item) {
+        holder.tvVisitorName.setText(safe(item.getVisitorName()));
+        holder.tvRoomName.setText(safe(item.getRoomName()));
+        holder.tvOrganisation.setText(safe(item.getVisitorOrganisation()));
+        holder.tvArrival.setText(DateTimeUtils.formatUtcToLocal(item.getArrivalAt()));
+        holder.tvDeparture.setText(DateTimeUtils.formatUtcToLocal(item.getDepartureAt()));
+        if (holder.tvDateRange != null) {
+            holder.tvDateRange.setText(
+                    DateTimeUtils.formatUtcToCompactLocal(item.getArrivalAt())
+                            + " → "
+                            + DateTimeUtils.formatUtcToCompactLocal(item.getDepartureAt())
+            );
         }
+        holder.tvPurpose.setText(safe(item.getPurposeOfVisit()));
+        String requesteeName = safe(item.getRequesteeName());
+        holder.tvRequestedBy.setText(
+                holder.tvDateRange != null
+                        ? (requesteeName.isEmpty() ? "" : "By: " + requesteeName)
+                        : "Requestee: " + requesteeName
+        );
+        holder.tvCreatedBy.setText("Created By: " + safe(item.getCreatedByName()));
+    }
 
-        bookingHolder.tvVisitorName.setAlpha(item.canDecrypt() ? 1f : 0.6f);
-        bookingHolder.tvOrganisation.setAlpha(item.canDecrypt() ? 1f : 0.6f);
-        bookingHolder.tvPurpose.setAlpha(item.canDecrypt() ? 1f : 0.6f);
+    private void bindAvatar(BookingViewHolder holder, BookingItem item) {
+        holder.ivAvatar.setImageResource(getAvatarRes(item.getVisitorGender()));
+        holder.ivAvatar.setColorFilter(getGenderColor(item.getVisitorGender()));
+    }
 
-        bookingHolder.itemView.setAlpha(1f);
-        if ("cancelled".equalsIgnoreCase(item.getStatus())) {
-            bookingHolder.tvStatus.setText("Status: Cancelled");
-            bookingHolder.itemView.setAlpha(0.6f);
+    private void bindStatus(BookingViewHolder holder, BookingItem item) {
+        String status = normalizeStatus(item.getStatus());
+
+        switch (status) {
+            case STATUS_CANCELLED:
+                applyCancelledStatus(holder);
+                break;
+
+            case STATUS_EXPIRED:
+                applyExpiredStatus(holder);
+                break;
+
+            case STATUS_ACTIVE:
+            default:
+                applyActiveStatus(holder);
+                break;
         }
+    }
 
-        bookingHolder.itemView.setOnClickListener(v -> {
+    private void applyActiveStatus(BookingViewHolder holder) {
+        holder.tvStatus.setText("Active");
+        holder.tvStatus.setTextColor(
+                ContextCompat.getColor(context, R.color.status_active)
+        );
+        holder.tvStatus.setBackground(
+                ContextCompat.getDrawable(context, R.drawable.bg_status_active_soft)
+        );
+        applyCardAppearance(
+                holder,
+                R.color.booking_card_bg,
+                R.color.booking_card_active_stroke
+        );
+    }
+
+    private void applyCancelledStatus(BookingViewHolder holder) {
+        holder.tvStatus.setText("Cancelled");
+        holder.tvStatus.setTextColor(
+                ContextCompat.getColor(context, R.color.status_cancelled)
+        );
+        holder.tvStatus.setBackground(
+                ContextCompat.getDrawable(context, R.drawable.bg_status_cancelled)
+        );
+        applyCardAppearance(
+                holder,
+                R.color.booking_card_cancelled_bg,
+                R.color.booking_card_cancelled_stroke
+        );
+    }
+
+    private void applyExpiredStatus(BookingViewHolder holder) {
+        holder.tvStatus.setText("Expired");
+        holder.tvStatus.setTextColor(
+                ContextCompat.getColor(context, R.color.status_expired)
+        );
+        holder.tvStatus.setBackground(
+                ContextCompat.getDrawable(context, R.drawable.bg_status_expired)
+        );
+        applyCardAppearance(
+                holder,
+                R.color.booking_card_expired_bg,
+                R.color.booking_card_expired_stroke
+        );
+    }
+
+    private void applyCardAppearance(
+            BookingViewHolder holder,
+            int backgroundColorRes,
+            int strokeColorRes
+    ) {
+        holder.itemView.setAlpha(1.0f);
+        holder.cardView.setCardBackgroundColor(
+                ContextCompat.getColor(context, backgroundColorRes)
+        );
+        holder.cardView.setStrokeColor(
+                ContextCompat.getColor(context, strokeColorRes)
+        );
+    }
+
+    private void bindClickListeners(BookingViewHolder holder, BookingItem item) {
+        holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onBookingClick(item);
             }
         });
 
-        bookingHolder.itemView.setOnLongClickListener(v -> {
-            if (listener != null) {
-                listener.onBookingLongClick(item, holder.getBindingAdapterPosition());
+        holder.itemView.setOnLongClickListener(v -> {
+            int position = holder.getBindingAdapterPosition();
+
+            if (position == RecyclerView.NO_POSITION) {
+                return true;
             }
+
+            if (listener != null) {
+                listener.onBookingLongClick(item, position);
+            }
+
             return true;
         });
     }
 
-    private DecryptedDisplayData getDisplayData(BookingItem item) {
-        String visitorName = MASK;
-        String visitorOrganisation = MASK;
-        String purposeOfVisit = MASK;
-
-        if (item != null && item.canDecrypt() && item.hasEncryptedPayload()) {
-            try {
-                KeystoreBackedCryptoSessionManager cryptoSessionManager =
-                        KeystoreBackedCryptoSessionManager.getInstance(context);
-
-                SecretKey dek = cryptoSessionManager.getDek();
-                if (dek != null) {
-                    CryptoManager cryptoManager = new CryptoManager();
-                    String decryptedJson = cryptoManager.decryptPayload(
-                            item.getEncryptedPayload(),
-                            item.getPayloadNonce(),
-                            dek
-                    );
-
-                    EncryptedBookingPayload payload =
-                            EncryptedBookingPayload.fromJson(decryptedJson, gson);
-
-                    if (payload != null) {
-                        visitorName = safeOrMask(payload.getVisitorName());
-                        visitorOrganisation = safeOrMask(payload.getVisitorOrganisation());
-                        purposeOfVisit = safeOrMask(payload.getPurposeOfVisit());
-                    }
-                }
-            } catch (Exception ignored) {
-                visitorName = MASK;
-                visitorOrganisation = MASK;
-                purposeOfVisit = MASK;
-            }
+    private String normalizeStatus(String status) {
+        if (status == null) {
+            return STATUS_ACTIVE;
         }
 
-        return new DecryptedDisplayData(visitorName, visitorOrganisation, purposeOfVisit);
+        String value = status.trim().toLowerCase(Locale.ROOT);
+
+        if (STATUS_CANCELLED.equals(value)) {
+            return STATUS_CANCELLED;
+        }
+
+        if (STATUS_EXPIRED.equals(value)) {
+            return STATUS_EXPIRED;
+        }
+
+        return STATUS_ACTIVE;
+    }
+
+    private int getAvatarRes(String gender) {
+        String normalizedGender = normalizeGender(gender);
+
+        switch (normalizedGender) {
+            case GENDER_MALE:
+                return R.drawable.man_person_icon;
+
+            case GENDER_FEMALE:
+                return R.drawable.female_face_icon;
+
+            default:
+                return R.drawable.person_svgrepo_com;
+        }
+    }
+
+    private int getGenderColor(String gender) {
+        String normalizedGender = normalizeGender(gender);
+
+        switch (normalizedGender) {
+            case GENDER_MALE:
+                return ContextCompat.getColor(context, R.color.male_color);
+
+            case GENDER_FEMALE:
+                return ContextCompat.getColor(context, R.color.female_color);
+
+            default:
+                return ContextCompat.getColor(context, R.color.neutral_color);
+        }
+    }
+
+    private String normalizeGender(String gender) {
+        if (gender == null) {
+            return "";
+        }
+
+        return gender.trim().toLowerCase(Locale.ROOT);
     }
 
     private String safe(String value) {
-        return value == null ? "" : value;
+        return value != null ? value.trim() : "";
     }
 
-    private String safeOrMask(String value) {
-        if (value == null || value.trim().isEmpty()) {
-            return MASK;
-        }
-        return value;
-    }
+    private class BookingViewHolder extends RecyclerView.ViewHolder {
 
-    private static class DecryptedDisplayData {
-        final String visitorName;
-        final String visitorOrganisation;
-        final String purposeOfVisit;
-
-        DecryptedDisplayData(String visitorName, String visitorOrganisation, String purposeOfVisit) {
-            this.visitorName = visitorName;
-            this.visitorOrganisation = visitorOrganisation;
-            this.purposeOfVisit = purposeOfVisit;
-        }
-    }
-
-    static class BookingViewHolder extends RecyclerView.ViewHolder {
-        TextView tvVisitorName;
-        TextView tvCreatedBy;
-        TextView tvRoomName;
-        TextView tvOrganisation;
-        TextView tvArrival;
-        TextView tvDeparture;
-        TextView tvPurpose;
-        TextView tvStatus;
+        private final MaterialCardView cardView;
+        private final TextView tvVisitorName;
+        private final TextView tvRequestedBy;
+        private final TextView tvCreatedBy;
+        private final TextView tvRoomName;
+        private final TextView tvOrganisation;
+        private final TextView tvArrival;
+        private final TextView tvDeparture;
+        private final TextView tvPurpose;
+        private final TextView tvStatus;
+        private final TextView tvDateRange;
+        private final ImageView ivAvatar;
 
         BookingViewHolder(@NonNull View itemView) {
             super(itemView);
+
+            cardView = (MaterialCardView) itemView;
             tvVisitorName = itemView.findViewById(R.id.tvVisitorName);
             tvRoomName = itemView.findViewById(R.id.tvRoomName);
             tvOrganisation = itemView.findViewById(R.id.tvOrganisation);
@@ -238,13 +363,64 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             tvDeparture = itemView.findViewById(R.id.tvDeparture);
             tvPurpose = itemView.findViewById(R.id.tvPurpose);
             tvStatus = itemView.findViewById(R.id.tvStatus);
+            tvDateRange = itemView.findViewById(R.id.tvDateRange);
+            tvRequestedBy = itemView.findViewById(R.id.tvRequestedBy);
             tvCreatedBy = itemView.findViewById(R.id.tvCreatedBy);
+            ivAvatar = itemView.findViewById(R.id.ivAvatar);
+        }
+
+        private void bind(BookingItem item) {
+            bindBookingData(this, item);
+            bindAvatar(this, item);
+            bindStatus(this, item);
+            bindClickListeners(this, item);
         }
     }
 
-    static class LoadingViewHolder extends RecyclerView.ViewHolder {
+    private static class LoadingViewHolder extends RecyclerView.ViewHolder {
+
         LoadingViewHolder(@NonNull View itemView) {
             super(itemView);
+        }
+    }
+
+    private static class BookingDiffCallback extends DiffUtil.Callback {
+
+        private final List<BookingItem> oldList;
+        private final List<BookingItem> newList;
+
+        BookingDiffCallback(
+                List<BookingItem> oldList,
+                List<BookingItem> newList
+        ) {
+            this.oldList = oldList;
+            this.newList = newList;
+        }
+
+        @Override
+        public int getOldListSize() {
+            return oldList.size();
+        }
+
+        @Override
+        public int getNewListSize() {
+            return newList.size();
+        }
+
+        @Override
+        public boolean areItemsTheSame(int oldItemPosition, int newItemPosition) {
+            BookingItem oldItem = oldList.get(oldItemPosition);
+            BookingItem newItem = newList.get(newItemPosition);
+
+            return oldItem.getId() == newItem.getId();
+        }
+
+        @Override
+        public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+            BookingItem oldItem = oldList.get(oldItemPosition);
+            BookingItem newItem = newList.get(newItemPosition);
+
+            return oldItem.hasSameContent(newItem);
         }
     }
 }

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg"
+    tools:context=".booking.LandingActivity">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_64"
+        android:background="@color/info_blue"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/menu_landing_toolbar"
+        app:title="@string/app_name"
+        app:titleCentered="true"
+        app:titleTextColor="@color/white" />
+
+    <TextView
+        android:id="@+id/bannerSelectedDateRange"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/success_green"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/space_32"
+        android:paddingVertical="@dimen/space_14"
+        android:text="Long press to select arrival date"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_16"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toolbar" />
+
+    <LinearLayout
+        android:id="@+id/tabletCalendarControls"
+        android:layout_width="@dimen/space_280"
+        android:layout_height="0dp"
+        android:background="@color/card_bg"
+        android:orientation="vertical"
+        android:padding="@dimen/space_20"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/bannerSelectedDateRange">
+
+        <LinearLayout
+            android:id="@+id/monthyear"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPreviousMonth"
+                style="@style/MonthNavigationButtonStyle"
+                android:contentDescription="Previous month"
+                app:icon="@drawable/back_svgrepo_com" />
+
+            <com.google.android.material.textview.MaterialTextView
+                android:id="@+id/tvMonthYear"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Month YYYY"
+                android:textColor="@color/black"
+                android:textSize="@dimen/text_20"
+                android:textStyle="bold"
+                app:textAllCaps="true" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNextMonth"
+                style="@style/MonthNavigationButtonStyle"
+                android:contentDescription="Next month"
+                android:rotation="180"
+                app:icon="@drawable/back_svgrepo_com" />
+        </LinearLayout>
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayoutRooms"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            app:tabBackground="@drawable/bg_room_tab_selector"
+            app:tabGravity="fill"
+            app:tabIndicatorHeight="0dp"
+            app:tabMode="fixed"
+            app:tabSelectedTextColor="@android:color/white"
+            app:tabTextAppearance="@style/RoomTabTextStyle"
+            app:tabTextColor="@color/detail_text_secondary">
+            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Beta" />
+            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Gamma" />
+            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delta" />
+        </com.google.android.material.tabs.TabLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutTotalRoomCapacity"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_20"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="@dimen/space_12">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Total Room Capacity: " android:textColor="@color/detail_text_secondary" android:textSize="@dimen/text_14" android:textStyle="bold" />
+            <TextView android:id="@+id/tvTotalRoomCapacity" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0" android:textColor="@color/detail_text_primary" android:textSize="@dimen/text_14" android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutAvailabilityLegend"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            android:orientation="vertical">
+            <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_available" /><TextView style="@style/LegendTextStyle" android:text="All Rooms Available" /></LinearLayout>
+            <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_not_available" /><TextView style="@style/LegendTextStyle" android:text="No Rooms Available" /></LinearLayout>
+            <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_half_available" /><TextView style="@style/LegendTextStyle" android:text="More Than Half Booked" /></LinearLayout>
+            <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_less_than_half_available" /><TextView style="@style/LegendTextStyle" android:text="Most Rooms Booked" /></LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutWeekDays"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_20"
+        android:paddingTop="@dimen/space_16"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tabletCalendarControls"
+        app:layout_constraintTop_toBottomOf="@id/bannerSelectedDateRange">
+        <TextView style="@style/CalendarWeekDayTextStyle" android:text="Sun" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Mon" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Tue" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Wed" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Thu" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Fri" /><TextView style="@style/CalendarWeekDayTextStyle" android:text="Sat" />
+    </LinearLayout>
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshAvailability"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_margin="@dimen/space_16"
+        app:layout_constraintBottom_toTopOf="@id/layoutCreateBookingSticky"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tabletCalendarControls"
+        app:layout_constraintTop_toBottomOf="@id/layoutWeekDays">
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvAvailabilityGroups"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clickable="true"
+            android:clipToPadding="false"
+            android:focusable="true"
+            android:overScrollMode="never"
+            android:paddingBottom="@dimen/space_24"
+            android:scrollbars="none" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutCreateBookingSticky"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_16"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:padding="@dimen/space_6"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/tabletCalendarControls">
+        <LinearLayout style="@style/BookingActionItem">
+            <ImageButton android:id="@+id/btnCheckAvailability" style="@style/CheckAvailabilityIconButton" android:contentDescription="Check Availability" android:src="@drawable/check_availability2" />
+            <TextView style="@style/BookingActionLabel" android:text="Check" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

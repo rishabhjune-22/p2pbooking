@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Base Gradient -->
+    <item>
+        <shape>
+            <gradient
+                android:startColor="@color/palette_6a11cb"
+                android:endColor="@color/palette_2575fc"
+                android:angle="45"/>
+        </shape>
+    </item>
+
+    <!-- Top Glow -->
+    <item android:top="0dp">
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="50%"
+                android:centerY="0%"
+                android:gradientRadius="300dp"
+                android:startColor="@color/white_50_percent"
+                android:endColor="@color/white_transparent"/>
+        </shape>
+    </item>
+
+    <!-- Bottom Glow -->
+    <item android:bottom="0dp">
+        <shape>
+            <gradient
+                android:type="radial"
+                android:centerX="50%"
+                android:centerY="100%"
+                android:gradientRadius="300dp"
+                android:startColor="@color/white_25_percent"
+                android:endColor="@color/white_transparent"/>
+        </shape>
+    </item>
+
+</layer-list>

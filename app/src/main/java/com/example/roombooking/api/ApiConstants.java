@@ -3,13 +3,8 @@ package com.example.roombooking.api;
 public final class ApiConstants {
 
     private ApiConstants() {
-        // Prevent instantiation
+        // Utility class. No object required.
     }
 
-    // -----------------------------
-    // BASE URL
-    // -----------------------------
-    public static final String BASE_URL = "http://10.50.26.75:8000/";
-
-
+    public static final String BASE_URL = "http://192.168.1.19:8000/";
 }

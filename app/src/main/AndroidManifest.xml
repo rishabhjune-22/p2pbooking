@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -15,16 +13,32 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.P2PRoomBooking"
-        android:usesCleartextTraffic="true"
+        android:forceDarkAllowed="false"
+        android:usesCleartextTraffic="true">
 
-        >
-<!--        <activity android:name=".booking.EditBookingActivity" />-->
-        <activity android:name=".booking.CreateBookingActivity" />
-        <activity android:name=".home.HomeActivity" />
-        <activity android:name=".booking.EditBookingActivity"></activity>
+        <activity
+            android:name=".booking.LandingActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
 
-        <activity android:name=".auth.AuthActivity" />
-        <activity android:name=".booking.BookingDetailActivity" />
+        <activity
+            android:name=".home.HomeActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+
+        <activity
+            android:name=".booking.CreateBookingActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".booking.EditBookingActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:exported="false" />
+
+        <activity
+            android:name=".booking.BookingDetailActivity"
+            android:exported="false" />
+
         <activity
             android:name=".common.SplashActivity"
             android:exported="true">
@@ -33,8 +47,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".security.UnlockCryptoActivity" />
-
 
     </application>
 

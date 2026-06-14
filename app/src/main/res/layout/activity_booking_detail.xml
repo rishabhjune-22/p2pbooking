@@ -1,104 +1,339 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:id="@+id/rootView"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp">
+    android:background="@drawable/bg_gradient">
 
-    <LinearLayout
-        android:layout_width="match_parent"
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/appToolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/info_blue"
+        app:menu="@menu/menu_landing_toolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:title="@string/app_name"
+        app:titleCentered="true"
+        app:titleTextColor="@color/white" />
+
+    <ImageButton
+        android:id="@+id/btnBack"
+        android:layout_width="@dimen/space_48"
+        android:layout_height="@dimen/space_48"
+        android:layout_marginTop="@dimen/space_12"
+        android:contentDescription="Back"
+        android:padding="@dimen/space_12"
+        android:src="@drawable/back_svgrepo_com"
+        android:background="@android:color/transparent"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/appToolbar"
+        app:tint="@color/white" />
+
+    <TextView
+        android:id="@+id/tvTitle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:text="Booking Details"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_22"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@id/btnBack"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btnBack" />
 
-        <TextView
-            android:id="@+id/tvTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Booking Details"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp" />
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshBookingDetail"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_16"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBack">
 
-        <TextView
-            android:id="@+id/tvDetails"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:lineSpacingExtra="4dp"
-            android:layout_marginBottom="20dp" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:paddingBottom="@dimen/space_24"
+            android:scrollbars="none">
 
-        <!-- Edit Fields (Hidden by default) -->
-        <EditText
-            android:id="@+id/etVisitorName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Name"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/space_16">
 
-        <EditText
-            android:id="@+id/etVisitorMobile"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Visitor Mobile"
-            android:inputType="phone"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
+            <!-- TOP CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_detail_card"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/space_16">
 
-        <EditText
-            android:id="@+id/etPurpose"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Purpose of Visit"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
+                <ImageView
+                    android:layout_width="@dimen/space_40"
+                    android:layout_height="@dimen/space_40"
+                    android:background="@drawable/bg_icon_circle"
+                    android:padding="@dimen/space_8"
+                    android:src="@drawable/ic_calendar_white" />
 
-        <EditText
-            android:id="@+id/etArrivalAt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Arrival At"
-            android:focusable="false"
-            android:clickable="true"
-            android:visibility="gone"
-            android:layout_marginBottom="8dp" />
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_16"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-        <EditText
-            android:id="@+id/etDepartureAt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Departure At"
-            android:focusable="false"
-            android:clickable="true"
-            android:visibility="gone"
-            android:layout_marginBottom="16dp" />
+                    <TextView
+                        android:id="@+id/tvBookingId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Booking ID"
+                        android:textColor="@color/detail_text_primary"
+                        android:textSize="@dimen/text_16"
+                        android:textStyle="bold" />
 
-        <Button
-            android:id="@+id/btnSaveBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Save"
-            android:visibility="gone" />
+                    <TextView
+                        android:id="@+id/tvRoomName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:text="Room Name"
+                        android:textColor="@color/detail_text_secondary"
+                        android:textSize="@dimen/text_14" />
 
-        <Button
-            android:id="@+id/btnCancelEdit"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Cancel Edit"
-            android:visibility="gone" />
 
-        <Button
-            android:id="@+id/btnEditBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Edit Booking"
-            android:layout_marginTop="8dp" />
 
-        <Button
-            android:id="@+id/btnCancelBooking"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Cancel Booking" />
+                </LinearLayout>
 
-    </LinearLayout>
+            </LinearLayout>
 
-</ScrollView>
+            <!-- DETAILS CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_detail_card"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16">
+
+                <!-- VISITOR -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_user_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Visitor Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvVisitorDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- VISIT -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_calendar_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Visit Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvVisitDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- VISITOR CATEGORY -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@android:drawable/ic_menu_sort_by_size" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Visitor Category" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvVisitorCategoryDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- ROOM CHARGES -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Room Charges" />
+
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvRoomChargesDetails"
+                    style="@style/DetailContentText" />
+                <!-- ATTENDER DETAILS -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_user_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Attender Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvAttenderDetails"
+                    style="@style/DetailContentText" />
+
+
+
+                <!-- REQUESTEE -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_user_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Requestee Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvRequesteeDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- LOGISTICS -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_truck_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Logistics Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvLogisticsDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- STATUS -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Status" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvStatusDetails"
+                    style="@style/DetailContentText" />
+
+            </LinearLayout>
+
+            <!-- BUTTON CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_16"
+                android:background="@drawable/bg_detail_card"
+                android:orientation="vertical"
+                android:padding="@dimen/space_16">
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnEditBooking"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_48"
+                    android:background="@drawable/bg_btn_gradient"
+                    android:text="Edit Booking"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_16"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnCancelBooking"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_48"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@drawable/bg_btn_cancel"
+                    android:text="Cancel Booking"
+                    android:textAllCaps="false"
+                    android:textColor="@color/detail_cancel_red"
+                    android:textSize="@dimen/text_16"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/space_32" />
+
+            </LinearLayout>
+
+        </ScrollView>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

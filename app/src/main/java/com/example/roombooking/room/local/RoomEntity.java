@@ -2,9 +2,17 @@ package com.example.roombooking.room.local;
 
 import androidx.annotation.NonNull;
 import androidx.room.Entity;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 
-@Entity(tableName = "rooms")
+@Entity(
+        tableName = "rooms",
+        indices = {
+                @Index("prefix"),
+                @Index("number"),
+                @Index(value = {"prefix", "number"})
+        }
+)
 public class RoomEntity {
 
     @PrimaryKey
@@ -19,7 +27,12 @@ public class RoomEntity {
     @NonNull
     private String roomName;
 
-    public RoomEntity(int id, @NonNull String prefix, @NonNull String number, @NonNull String roomName) {
+    public RoomEntity(
+            int id,
+            @NonNull String prefix,
+            @NonNull String number,
+            @NonNull String roomName
+    ) {
         this.id = id;
         this.prefix = prefix;
         this.number = number;

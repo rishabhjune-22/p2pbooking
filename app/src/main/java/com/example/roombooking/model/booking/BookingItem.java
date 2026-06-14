@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Objects;
+
 public class BookingItem implements Parcelable {
 
     @SerializedName("id")
@@ -24,20 +26,66 @@ public class BookingItem implements Parcelable {
     @SerializedName("departure_at")
     private String departureAt;
 
-    // Encryption fields (ONLY source of sensitive data)
-    @SerializedName("encrypted_payload")
-    private String encryptedPayload;
+    @SerializedName("created_by_name")
+    private String createdByName;
 
-    @SerializedName("payload_nonce")
-    private String payloadNonce;
+    @SerializedName("visitor_name")
+    private String visitorName;
 
-    @SerializedName("payload_version")
-    private int payloadVersion;
+    @SerializedName("visitor_designation")
+    private String visitorDesignation;
 
-    @SerializedName("can_view_sensitive_details")
-    private boolean canViewSensitiveDetails;
+    @SerializedName("visitor_organisation")
+    private String visitorOrganisation;
 
-    // Visible to all users
+    @SerializedName("visitor_gender")
+    private String visitorGender;
+
+    @SerializedName("visitor_address")
+    private String visitorAddress;
+
+    @SerializedName("visitor_mobile")
+    private String visitorMobile;
+
+    @SerializedName("visitor_email")
+    private String visitorEmail;
+
+    @SerializedName("purpose_of_visit")
+    private String purposeOfVisit;
+
+    @SerializedName("visitor_category")
+    private String visitorCategory;
+
+    @SerializedName("attender_required")
+    private boolean attenderRequired;
+
+    @SerializedName("attender_count_per_day")
+    private int attenderCountPerDay;
+
+    @SerializedName("attender_general_shift")
+    private boolean attenderGeneralShift;
+
+    @SerializedName("attender_morning_shift")
+    private boolean attenderMorningShift;
+
+    @SerializedName("attender_day_shift")
+    private boolean attenderDayShift;
+
+    @SerializedName("attender_night_shift")
+    private boolean attenderNightShift;
+
+    @SerializedName("room_charges_status")
+    private String roomChargesStatus;
+
+    @SerializedName("attender_charges_status")
+    private String attenderChargesStatus;
+
+    @SerializedName("room_charges_amount")
+    private String roomChargesAmount;
+
+    @SerializedName("attender_charges_amount")
+    private String attenderChargesAmount;
+
     @SerializedName("requestee_name")
     private String requesteeName;
 
@@ -62,8 +110,9 @@ public class BookingItem implements Parcelable {
     @SerializedName("status")
     private String status;
 
-    @SerializedName("created_by_username")
-    private String createdByUsername;
+    public BookingItem() {
+        // Required for Gson/Retrofit deserialization.
+    }
 
     protected BookingItem(Parcel in) {
         id = in.readInt();
@@ -71,19 +120,39 @@ public class BookingItem implements Parcelable {
         roomName = in.readString();
         arrivalAt = in.readString();
         departureAt = in.readString();
-        encryptedPayload = in.readString();
-        payloadNonce = in.readString();
-        payloadVersion = in.readInt();
-        canViewSensitiveDetails = in.readByte() != 0;
+        createdByName = in.readString();
+
+        visitorName = in.readString();
+        visitorDesignation = in.readString();
+        visitorOrganisation = in.readString();
+        visitorGender = in.readString();
+        visitorAddress = in.readString();
+        visitorMobile = in.readString();
+        visitorEmail = in.readString();
+        purposeOfVisit = in.readString();
+        visitorCategory = in.readString();
+
+        attenderRequired = in.readByte() != 0;
+        attenderCountPerDay = in.readInt();
+        attenderGeneralShift = in.readByte() != 0;
+        attenderMorningShift = in.readByte() != 0;
+        attenderDayShift = in.readByte() != 0;
+        attenderNightShift = in.readByte() != 0;
+        roomChargesStatus = in.readString();
+        attenderChargesStatus = in.readString();
+        roomChargesAmount = in.readString();
+        attenderChargesAmount = in.readString();
+
         requesteeName = in.readString();
         requesteeDesignation = in.readString();
         requesteeDepartment = in.readString();
         requesteeMobile = in.readString();
+
         logisticsName = in.readString();
         logisticsDesignation = in.readString();
         logisticsMobile = in.readString();
+
         status = in.readString();
-        createdByUsername = in.readString();
     }
 
     public static final Creator<BookingItem> CREATOR = new Creator<BookingItem>() {
@@ -98,37 +167,188 @@ public class BookingItem implements Parcelable {
         }
     };
 
-    // Getters
-    public int getId() { return id; }
-    public int getRoom() { return room; }
-    public String getRoomName() { return roomName; }
+    public boolean hasSameContent(BookingItem other) {
+        if (other == null) return false;
 
-    public String getArrivalAt() { return arrivalAt; }
-    public String getDepartureAt() { return departureAt; }
-
-    public String getEncryptedPayload() { return encryptedPayload; }
-    public String getPayloadNonce() { return payloadNonce; }
-    public int getPayloadVersion() { return payloadVersion; }
-
-    public boolean canDecrypt() { return canViewSensitiveDetails; }
-
-    public String getRequesteeName() { return requesteeName; }
-    public String getRequesteeDesignation() { return requesteeDesignation; }
-    public String getRequesteeDepartment() { return requesteeDepartment; }
-    public String getRequesteeMobile() { return requesteeMobile; }
-
-    public String getLogisticsName() { return logisticsName; }
-    public String getLogisticsDesignation() { return logisticsDesignation; }
-    public String getLogisticsMobile() { return logisticsMobile; }
-
-    public String getStatus() { return status; }
-    public String getCreatedByUsername() { return createdByUsername; }
-
-    // Utility
-    public boolean hasEncryptedPayload() {
-        return encryptedPayload != null && !encryptedPayload.trim().isEmpty()
-                && payloadNonce != null && !payloadNonce.trim().isEmpty();
+        return id == other.id
+                && room == other.room
+                && attenderRequired == other.attenderRequired
+                && attenderCountPerDay == other.attenderCountPerDay
+                && attenderGeneralShift == other.attenderGeneralShift
+                && attenderMorningShift == other.attenderMorningShift
+                && attenderDayShift == other.attenderDayShift
+                && attenderNightShift == other.attenderNightShift
+                && Objects.equals(roomName, other.roomName)
+                && Objects.equals(arrivalAt, other.arrivalAt)
+                && Objects.equals(departureAt, other.departureAt)
+                && Objects.equals(createdByName, other.createdByName)
+                && Objects.equals(visitorName, other.visitorName)
+                && Objects.equals(visitorDesignation, other.visitorDesignation)
+                && Objects.equals(visitorOrganisation, other.visitorOrganisation)
+                && Objects.equals(visitorGender, other.visitorGender)
+                && Objects.equals(visitorAddress, other.visitorAddress)
+                && Objects.equals(visitorMobile, other.visitorMobile)
+                && Objects.equals(visitorEmail, other.visitorEmail)
+                && Objects.equals(purposeOfVisit, other.purposeOfVisit)
+                && Objects.equals(visitorCategory, other.visitorCategory)
+                && Objects.equals(roomChargesStatus, other.roomChargesStatus)
+                && Objects.equals(attenderChargesStatus, other.attenderChargesStatus)
+                && Objects.equals(roomChargesAmount, other.roomChargesAmount)
+                && Objects.equals(attenderChargesAmount, other.attenderChargesAmount)
+                && Objects.equals(requesteeName, other.requesteeName)
+                && Objects.equals(requesteeDesignation, other.requesteeDesignation)
+                && Objects.equals(requesteeDepartment, other.requesteeDepartment)
+                && Objects.equals(requesteeMobile, other.requesteeMobile)
+                && Objects.equals(logisticsName, other.logisticsName)
+                && Objects.equals(logisticsDesignation, other.logisticsDesignation)
+                && Objects.equals(logisticsMobile, other.logisticsMobile)
+                && Objects.equals(status, other.status);
     }
+
+    public int getId() {
+        return id;
+    }
+
+    public int getRoom() {
+        return room;
+    }
+
+    public String getRoomName() {
+        return roomName;
+    }
+
+    public String getArrivalAt() {
+        return arrivalAt;
+    }
+
+    public String getDepartureAt() {
+        return departureAt;
+    }
+
+    public String getCreatedByName() {
+        return createdByName;
+    }
+
+    public String getVisitorName() {
+        return visitorName;
+    }
+
+    public String getVisitorDesignation() {
+        return visitorDesignation;
+    }
+
+    public String getVisitorOrganisation() {
+        return visitorOrganisation;
+    }
+
+    public String getVisitorGender() {
+        return visitorGender;
+    }
+
+    public String getVisitorAddress() {
+        return visitorAddress;
+    }
+
+    public String getVisitorMobile() {
+        return visitorMobile;
+    }
+
+    public String getVisitorEmail() {
+        return visitorEmail;
+    }
+
+    public String getPurposeOfVisit() {
+        return purposeOfVisit;
+    }
+
+    public String getVisitorCategory() {
+        return visitorCategory;
+    }
+
+    public boolean isAttenderRequired() {
+        return attenderRequired;
+    }
+
+    public int getAttenderCountPerDay() {
+        return attenderCountPerDay;
+    }
+
+    public boolean isAttenderGeneralShift() {
+        return attenderGeneralShift;
+    }
+
+    public boolean isAttenderMorningShift() {
+        return attenderMorningShift;
+    }
+
+    public boolean isAttenderDayShift() {
+        return attenderDayShift;
+    }
+
+    public boolean isAttenderNightShift() {
+        return attenderNightShift;
+    }
+
+    public String getRoomChargesStatus() {
+        return roomChargesStatus;
+    }
+
+    public String getAttenderChargesStatus() {
+        return attenderChargesStatus;
+    }
+
+    public String getRoomChargesAmount() {
+        return roomChargesAmount;
+    }
+
+    public String getAttenderChargesAmount() {
+        return attenderChargesAmount;
+    }
+
+    public String getRequesteeName() {
+        return requesteeName;
+    }
+
+    public String getRequesteeDesignation() {
+        return requesteeDesignation;
+    }
+
+    public String getRequesteeDepartment() {
+        return requesteeDepartment;
+    }
+
+    public String getRequesteeMobile() {
+        return requesteeMobile;
+    }
+
+    public String getLogisticsName() {
+        return logisticsName;
+    }
+
+    public String getLogisticsDesignation() {
+        return logisticsDesignation;
+    }
+
+    public String getLogisticsMobile() {
+        return logisticsMobile;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setArrivalAt(String arrivalAt) {
+        this.arrivalAt = arrivalAt;
+    }
+
+    public void setDepartureAt(String departureAt) {
+        this.departureAt = departureAt;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -141,31 +361,38 @@ public class BookingItem implements Parcelable {
         parcel.writeString(roomName);
         parcel.writeString(arrivalAt);
         parcel.writeString(departureAt);
-        parcel.writeString(encryptedPayload);
-        parcel.writeString(payloadNonce);
-        parcel.writeInt(payloadVersion);
-        parcel.writeByte((byte) (canViewSensitiveDetails ? 1 : 0));
+        parcel.writeString(createdByName);
+
+        parcel.writeString(visitorName);
+        parcel.writeString(visitorDesignation);
+        parcel.writeString(visitorOrganisation);
+        parcel.writeString(visitorGender);
+        parcel.writeString(visitorAddress);
+        parcel.writeString(visitorMobile);
+        parcel.writeString(visitorEmail);
+        parcel.writeString(purposeOfVisit);
+        parcel.writeString(visitorCategory);
+
+        parcel.writeByte((byte) (attenderRequired ? 1 : 0));
+        parcel.writeInt(attenderCountPerDay);
+        parcel.writeByte((byte) (attenderGeneralShift ? 1 : 0));
+        parcel.writeByte((byte) (attenderMorningShift ? 1 : 0));
+        parcel.writeByte((byte) (attenderDayShift ? 1 : 0));
+        parcel.writeByte((byte) (attenderNightShift ? 1 : 0));
+        parcel.writeString(roomChargesStatus);
+        parcel.writeString(attenderChargesStatus);
+        parcel.writeString(roomChargesAmount);
+        parcel.writeString(attenderChargesAmount);
+
         parcel.writeString(requesteeName);
         parcel.writeString(requesteeDesignation);
         parcel.writeString(requesteeDepartment);
         parcel.writeString(requesteeMobile);
+
         parcel.writeString(logisticsName);
         parcel.writeString(logisticsDesignation);
         parcel.writeString(logisticsMobile);
+
         parcel.writeString(status);
-        parcel.writeString(createdByUsername);
     }
-
-
-
-
-
-
-    public void setStatus(String status) { this.status = status; }
-    public void setArrivalAt(String arrivalAt) { this.arrivalAt = arrivalAt; }
-    public void setDepartureAt(String departureAt) { this.departureAt = departureAt; }
-    public void setEncryptedPayload(String encryptedPayload) { this.encryptedPayload = encryptedPayload; }
-    public void setPayloadNonce(String payloadNonce) { this.payloadNonce = payloadNonce; }
-    public void setPayloadVersion(int payloadVersion) { this.payloadVersion = payloadVersion; }
-
 }

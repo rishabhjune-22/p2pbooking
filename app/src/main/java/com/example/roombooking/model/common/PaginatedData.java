@@ -20,6 +20,7 @@ public class PaginatedData<T> {
     private String previous;
 
     @SerializedName("results")
+    @Nullable
     private List<T> results;
 
     public int getCount() {
@@ -36,7 +37,20 @@ public class PaginatedData<T> {
         return previous;
     }
 
+    @Nullable
     public List<T> getResults() {
         return results;
+    }
+
+    public boolean hasResults() {
+        return results != null && !results.isEmpty();
+    }
+
+    public boolean hasNextPage() {
+        return next != null && !next.trim().isEmpty();
+    }
+
+    public boolean hasPreviousPage() {
+        return previous != null && !previous.trim().isEmpty();
     }
 }

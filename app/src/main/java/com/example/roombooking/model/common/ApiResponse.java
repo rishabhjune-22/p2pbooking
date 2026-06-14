@@ -9,10 +9,13 @@ import java.util.Map;
 
 public class ApiResponse<T> {
 
+    private static final String DEFAULT_ERROR_MESSAGE = "Something went wrong";
+
     @SerializedName("success")
     private boolean success;
 
     @SerializedName("message")
+    @Nullable
     private String message;
 
     @SerializedName("data")
@@ -27,6 +30,7 @@ public class ApiResponse<T> {
         return success;
     }
 
+    @Nullable
     public String getMessage() {
         return message;
     }
@@ -41,18 +45,37 @@ public class ApiResponse<T> {
         return errors;
     }
 
+    public boolean hasData() {
+        return data != null;
+    }
+
+    public boolean hasErrors() {
+        return errors != null && !errors.isEmpty();
+    }
+
     public String getFirstErrorMessage() {
-        if (errors == null || errors.isEmpty()) {
-            return message != null ? message : "Something went wrong";
+        if (!hasErrors()) {
+            return getSafeMessage();
         }
 
         for (Map.Entry<String, List<String>> entry : errors.entrySet()) {
             List<String> values = entry.getValue();
+
             if (values != null && !values.isEmpty()) {
-                return values.get(0);
+                String firstError = values.get(0);
+
+                if (firstError != null && !firstError.trim().isEmpty()) {
+                    return firstError;
+                }
             }
         }
 
-        return message != null ? message : "Something went wrong";
+        return getSafeMessage();
+    }
+
+    public String getSafeMessage() {
+        return message != null && !message.trim().isEmpty()
+                ? message
+                : DEFAULT_ERROR_MESSAGE;
     }
 }

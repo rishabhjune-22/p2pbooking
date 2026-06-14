@@ -13,6 +13,12 @@ public interface RoomDao {
     @Query("SELECT * FROM rooms ORDER BY prefix ASC, number ASC")
     List<RoomEntity> getAllRooms();
 
+    @Query("SELECT * FROM rooms WHERE prefix = :prefix ORDER BY number ASC")
+    List<RoomEntity> getRoomsByPrefix(String prefix);
+
+    @Query("SELECT COUNT(*) FROM rooms")
+    int getRoomCount();
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertRooms(List<RoomEntity> rooms);
 

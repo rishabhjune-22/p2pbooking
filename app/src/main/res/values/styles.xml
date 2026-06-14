@@ -1,0 +1,243 @@
+<resources>
+
+    <style name="CreateBookingEditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/space_50</item>
+        <item name="android:background">@drawable/bg_create_booking_input</item>
+        <item name="android:drawablePadding">@dimen/space_8</item>
+        <item name="android:paddingStart">@dimen/space_12</item>
+        <item name="android:paddingEnd">@dimen/space_12</item>
+        <item name="android:textColor">@color/create_booking_text_primary</item>
+        <item name="android:textColorHint">@color/create_booking_hint</item>
+        <item name="android:textSize">@dimen/text_14</item>
+    </style>
+    <style name="EditBookingInput">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/space_52</item>
+        <item name="android:background">@drawable/bg_create_booking_input</item>
+        <item name="android:drawablePadding">@dimen/space_10</item>
+        <item name="android:paddingStart">@dimen/space_14</item>
+        <item name="android:paddingEnd">@dimen/space_14</item>
+        <item name="android:textColor">@color/edit_text_primary</item>
+        <item name="android:textColorHint">@color/edit_text_hint</item>
+        <item name="android:textSize">@dimen/text_14</item>
+    </style>
+
+    <style name="DetailContentText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">@color/detail_text_primary</item>
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:lineSpacingExtra">@dimen/space_6</item>
+        <item name="android:paddingStart">@dimen/space_8</item>
+    </style>
+
+
+    <style name="DetailSectionHeader">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+    </style>
+
+    <style name="DetailSectionIcon">
+        <item name="android:layout_width">@dimen/space_24</item>
+        <item name="android:layout_height">@dimen/space_24</item>
+        <item name="android:background">@drawable/bg_icon_circle</item>
+        <item name="android:padding">@dimen/space_4</item>
+    </style>
+
+    <style name="DetailSectionTitle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/space_12</item>
+        <item name="android:textColor">@color/detail_title</item>
+        <item name="android:textSize">@dimen/text_16</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ScreenTitleLarge">
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_22</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="ScreenSubtitleSmall">
+        <item name="android:textSize">@dimen/text_13</item>
+    </style>
+
+    <style name="SectionLabelMedium">
+        <item name="android:textSize">@dimen/text_15</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="DetailDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">@dimen/space_1</item>
+        <item name="android:background">@color/detail_divider</item>
+        <item name="android:layout_marginTop">@dimen/space_8</item>
+        <item name="android:layout_marginBottom">@dimen/space_12</item>
+    </style>
+
+
+
+
+    <style name="BookingListIconButton">
+        <item name="android:layout_width">@dimen/space_48</item>
+        <item name="android:layout_height">@dimen/space_48</item>
+        <item name="android:padding">@dimen/space_12</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:background">@drawable/bg_booking_icon_button</item>
+        <item name="android:tint">@color/white</item>
+    </style>
+
+    <style name="CheckAvailabilityIconButton">
+        <item name="android:layout_width">@dimen/space_56</item>
+        <item name="android:layout_height">@dimen/space_56</item>
+        <item name="android:padding">@dimen/space_10</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:background">@drawable/bg_booking_icon_button</item>
+        <item name="android:tint">@color/white</item>
+    </style>
+
+    <style name="BookingStatusIconButton">
+        <item name="android:layout_width">@dimen/space_48</item>
+        <item name="android:layout_height">@dimen/space_48</item>
+        <item name="android:padding">@dimen/space_12</item>
+        <item name="android:scaleType">centerInside</item>
+        <item name="android:background">@drawable/bg_booking_icon_button</item>
+ <item name="android:src">@drawable/bg_icon_active</item>
+    </style>
+    <style name="CalendarWeekText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/detail_text_secondary</item>
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="AvailabilityToggleSelected">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">42dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@drawable/bg_btn_gradient</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="AvailabilityToggleUnselected">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">42dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:background">@android:color/transparent</item>
+        <item name="android:textColor">@color/detail_text_secondary</item>
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="BookingActionItem">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <style name="TabletBookingActionItem" parent="BookingActionItem">
+        <item name="android:layout_marginTop">@dimen/space_24</item>
+    </style>
+
+    <style name="TabletLegendRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_12</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="TabletLegendDot">
+        <item name="android:layout_width">@dimen/space_16</item>
+        <item name="android:layout_height">@dimen/space_16</item>
+    </style>
+
+    <style name="BookingActionLabel">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_4</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:maxLines">2</item>
+
+        <item name="android:textStyle">bold</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+
+    <style name="RoomTabTextStyle" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">@dimen/text_14</item>
+        <item name="android:textStyle">bold</item>
+        <item name="textAllCaps">false</item>
+    </style>
+
+    <style name="LegendTextStyle">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/space_4</item>
+        <item name="android:textColor">@color/detail_text_primary</item>
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="MonthNavigationButtonStyle" parent="Widget.MaterialComponents.Button.TextButton">
+        <item name="android:layout_width">@dimen/space_56</item>
+        <item name="android:layout_height">@dimen/space_48</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="backgroundTint">@android:color/transparent</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">0dp</item>
+        <item name="iconTint">@color/detail_text_primary</item>
+        <item name="rippleColor">@color/detail_text_primary</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="CalendarWeekDayTextStyle">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textColor">@color/detail_text_secondary</item>
+        <item name="android:textSize">@dimen/text_12</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="FilterQuickRangeButton">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">@dimen/space_40</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_filter_chip</item>
+        <item name="android:minHeight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:padding">0dp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textSize">@dimen/text_13</item>
+    </style>
+
+    <style name="RoomAvailabilityHeaderDimensions">
+        <item name="android:layout_height">@dimen/space_220</item>
+    </style>
+
+    <style name="CalendarDayCardDimensions">
+        <item name="android:layout_height">@dimen/space_50</item>
+        <item name="android:layout_margin">@dimen/space_2</item>
+    </style>
+
+    <style name="BookingStatusChipDimensions">
+        <item name="android:layout_width">@dimen/space_96</item>
+        <item name="android:layout_height">@dimen/space_32</item>
+    </style>
+</resources>

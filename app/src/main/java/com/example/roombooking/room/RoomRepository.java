@@ -4,6 +4,8 @@ import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.annotation.NonNull;
+
 import com.example.roombooking.api.ApiService;
 import com.example.roombooking.api.RetrofitClient;
 import com.example.roombooking.model.common.ApiResponse;
@@ -15,7 +17,7 @@ import com.example.roombooking.room.local.RoomEntity;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import retrofit2.Call;
@@ -28,116 +30,159 @@ public class RoomRepository {
         void onResult(RoomResult result);
     }
 
+    private static final int FIRST_PAGE = 1;
+
+    private static final String MESSAGE_LOAD_FAILED = "Failed to load rooms.";
+    private static final String MESSAGE_NETWORK_ERROR = "Please check your internet connection.";
+
     private final ApiService apiService;
     private final RoomDao roomDao;
-    private final Executor diskExecutor;
+    private final ExecutorService diskExecutor;
     private final Handler mainHandler;
 
     public RoomRepository(Context context) {
         Context appContext = context.getApplicationContext();
-        this.apiService = RetrofitClient.getApiService(appContext);
-        this.roomDao = AppDatabase.getInstance(appContext).roomDao();
-        this.diskExecutor = Executors.newSingleThreadExecutor();
-        this.mainHandler = new Handler(Looper.getMainLooper());
+
+        apiService = RetrofitClient.getApiService(appContext);
+        roomDao = AppDatabase.getInstance(appContext).roomDao();
+        diskExecutor = Executors.newSingleThreadExecutor();
+        mainHandler = new Handler(Looper.getMainLooper());
     }
 
     public void getRooms(RoomRepositoryCallback callback) {
         if (RoomMemoryCache.hasRooms()) {
-            callback.onResult(new RoomResult(RoomMemoryCache.getRooms(), null, true));
-            refreshRoomsInBackground(null);
+            sendSuccess(callback, RoomMemoryCache.getRooms(), true);
+            refreshRoomsSilently();
             return;
         }
 
-        diskExecutor.execute(() -> {
-            List<RoomEntity> cachedEntities = roomDao.getAllRooms();
-            List<RoomItem> cachedRooms = RoomMapper.toModelList(cachedEntities);
-
-            if (!cachedRooms.isEmpty()) {
-                RoomMemoryCache.setRooms(cachedRooms);
-
-                mainHandler.post(() ->
-                        callback.onResult(new RoomResult(cachedRooms, null, true))
-                );
-
-                refreshRoomsInBackground(null);
-            } else {
-                refreshRoomsInBackground(callback);
-            }
-        });
+        loadRoomsFromLocalDatabase(callback);
     }
 
     public void forceRefresh(RoomRepositoryCallback callback) {
-        refreshRoomsInBackground(callback);
-    }
-
-    private void refreshRoomsInBackground(RoomRepositoryCallback callback) {
-        fetchAllPages(1, new ArrayList<>(), callback);
-    }
-
-    private void fetchAllPages(int page, List<RoomItem> accumulator, RoomRepositoryCallback callback) {
-        apiService.getRooms(page).enqueue(new Callback<ApiResponse<PaginatedData<RoomItem>>>() {
-            @Override
-            public void onResponse(
-                    Call<ApiResponse<PaginatedData<RoomItem>>> call,
-                    Response<ApiResponse<PaginatedData<RoomItem>>> response
-            ) {
-                if (response.isSuccessful() && response.body() != null) {
-                    ApiResponse<PaginatedData<RoomItem>> apiResponse = response.body();
-
-                    if (apiResponse.isSuccess() && apiResponse.getData() != null) {
-                        PaginatedData<RoomItem> data = apiResponse.getData();
-
-                        if (data.getResults() != null) {
-                            accumulator.addAll(data.getResults());
-                        }
-
-                        if (data.getNext() != null) {
-                            fetchAllPages(page + 1, accumulator, callback);
-                            return;
-                        }
-
-                        saveApiRooms(accumulator, callback);
-                        return;
-                    }
-                }
-
-                if (callback != null) {
-                    String errorMessage = "Failed to load rooms.";
-                    mainHandler.post(() ->
-                            callback.onResult(new RoomResult(null, errorMessage, false))
-                    );
-                }
-            }
-
-            @Override
-            public void onFailure(Call<ApiResponse<PaginatedData<RoomItem>>> call, Throwable t) {
-                if (callback != null) {
-                    mainHandler.post(() ->
-                            callback.onResult(new RoomResult(null, "Please check your internet connection.", false))
-                    );
-                }
-            }
-        });
-    }
-
-    private void saveApiRooms(List<RoomItem> apiRooms, RoomRepositoryCallback callback) {
-        diskExecutor.execute(() -> {
-            roomDao.clearRooms();
-            roomDao.insertRooms(RoomMapper.toEntityList(apiRooms));
-
-            RoomMemoryCache.setRooms(apiRooms);
-
-            if (callback != null) {
-                mainHandler.post(() ->
-                        callback.onResult(new RoomResult(apiRooms, null, false))
-                );
-            }
-        });
+        fetchRoomsFromApi(callback);
     }
 
     public void clearCache() {
         RoomMemoryCache.clear();
 
         diskExecutor.execute(roomDao::clearRooms);
+    }
+
+    private void loadRoomsFromLocalDatabase(RoomRepositoryCallback callback) {
+        diskExecutor.execute(() -> {
+            List<RoomEntity> cachedEntities = roomDao.getAllRooms();
+            List<RoomItem> cachedRooms = RoomMapper.toModelList(cachedEntities);
+
+            if (!cachedRooms.isEmpty()) {
+                RoomMemoryCache.setRooms(cachedRooms);
+                sendSuccess(callback, cachedRooms, true);
+                refreshRoomsSilently();
+                return;
+            }
+
+            fetchRoomsFromApi(callback);
+        });
+    }
+
+    private void refreshRoomsSilently() {
+        fetchRoomsFromApi(null);
+    }
+
+    private void fetchRoomsFromApi(RoomRepositoryCallback callback) {
+        fetchRoomsPage(FIRST_PAGE, new ArrayList<>(), callback);
+    }
+
+    private void fetchRoomsPage(
+            int page,
+            List<RoomItem> accumulatedRooms,
+            RoomRepositoryCallback callback
+    ) {
+        apiService.getRooms(page).enqueue(new Callback<ApiResponse<PaginatedData<RoomItem>>>() {
+
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<PaginatedData<RoomItem>>> call,
+                    @NonNull Response<ApiResponse<PaginatedData<RoomItem>>> response
+            ) {
+                if (!isValidRoomsResponse(response)) {
+                    sendErrorIfNeeded(callback, MESSAGE_LOAD_FAILED);
+                    return;
+                }
+
+                PaginatedData<RoomItem> paginatedData = response.body().getData();
+
+                List<RoomItem> pageResults = paginatedData.getResults();
+
+                if (pageResults != null && !pageResults.isEmpty()) {
+                    accumulatedRooms.addAll(pageResults);
+                }
+
+                if (paginatedData.hasNextPage()) {
+                    fetchRoomsPage(page + 1, accumulatedRooms, callback);
+                    return;
+                }
+
+                saveRoomsToCache(accumulatedRooms, callback);
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<PaginatedData<RoomItem>>> call,
+                    @NonNull Throwable t
+            ) {
+                sendErrorIfNeeded(callback, MESSAGE_NETWORK_ERROR);
+            }
+        });
+    }
+
+    private boolean isValidRoomsResponse(
+            Response<ApiResponse<PaginatedData<RoomItem>>> response
+    ) {
+        return response.isSuccessful()
+                && response.body() != null
+                && response.body().isSuccess()
+                && response.body().getData() != null;
+    }
+
+    private void saveRoomsToCache(
+            List<RoomItem> apiRooms,
+            RoomRepositoryCallback callback
+    ) {
+        List<RoomItem> finalRooms = apiRooms != null
+                ? new ArrayList<>(apiRooms)
+                : new ArrayList<>();
+
+        diskExecutor.execute(() -> {
+            roomDao.clearRooms();
+            roomDao.insertRooms(RoomMapper.toEntityList(finalRooms));
+
+            RoomMemoryCache.setRooms(finalRooms);
+
+            sendSuccess(callback, finalRooms, false);
+        });
+    }
+
+    private void sendSuccess(
+            RoomRepositoryCallback callback,
+            List<RoomItem> rooms,
+            boolean fromCache
+    ) {
+        if (callback == null) return;
+
+        mainHandler.post(() ->
+                callback.onResult(RoomResult.success(rooms, fromCache))
+        );
+    }
+
+    private void sendErrorIfNeeded(
+            RoomRepositoryCallback callback,
+            String errorMessage
+    ) {
+        if (callback == null) return;
+
+        mainHandler.post(() ->
+                callback.onResult(RoomResult.error(errorMessage))
+        );
     }
 }
