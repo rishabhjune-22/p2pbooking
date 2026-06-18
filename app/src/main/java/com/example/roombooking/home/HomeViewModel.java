@@ -10,6 +10,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.example.roombooking.booking.BookingRepository;
+import com.example.roombooking.cache.CachePolicy;
+import com.example.roombooking.cache.CacheReadResult;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.booking.BookingStatus;
@@ -48,7 +50,7 @@ public class HomeViewModel extends ViewModel {
     private static final int MAX_FIRST_PAGE_NETWORK_RETRIES = 0;
     private static final long FIRST_PAGE_RETRY_DELAY_MS = 700L;
     private static final Object CACHE_LOCK = new Object();
-    private static final Map<String, List<BookingItem>> firstPageCache = new HashMap<>();
+    private static final Map<String, CachedBookingPage> firstPageCache = new HashMap<>();
 
     private final BookingRepository bookingRepository;
     private final Handler retryHandler = new Handler(Looper.getMainLooper());
@@ -81,6 +83,7 @@ public class HomeViewModel extends ViewModel {
             new HashMap<>();
     private Runnable pendingBookingsRetry;
     private int firstPageNetworkRetryCount = 0;
+    private int cacheLoadGeneration = 0;
 
     private String filterPrefix = null;
     private String filterArrivalFrom = null;
@@ -89,6 +92,16 @@ public class HomeViewModel extends ViewModel {
 
     public HomeViewModel(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
+    }
+
+    private static final class CachedBookingPage {
+        private final List<BookingItem> bookings;
+        private final long updatedAtMillis;
+
+        private CachedBookingPage(List<BookingItem> bookings, long updatedAtMillis) {
+            this.bookings = NullSafeCollections.copyWithoutNulls(bookings);
+            this.updatedAtMillis = updatedAtMillis;
+        }
     }
 
     public LiveData<List<BookingItem>> getBookingsLiveData() {
@@ -127,22 +140,44 @@ public class HomeViewModel extends ViewModel {
         abortBookingsRequest();
         resetPagination();
 
-        List<BookingItem> cachedBookings = getCachedBookingsForCurrentFilter();
-        if (cachedBookings != null && !cachedBookings.isEmpty()) {
-            bookingsLiveData.setValue(cachedBookings);
-            messageLiveData.setValue("");
-            fetchBookings(FIRST_PAGE, false, true);
+        long actionStartedAtMillis = System.currentTimeMillis();
+        String cacheKey = firstPageCacheKey();
+        CachedBookingPage memoryPage = getCachedBookingsForCurrentFilter();
+        if (memoryPage != null) {
+            showCachedFirstPage(memoryPage.bookings, "memory", actionStartedAtMillis);
+            if (isFresh(memoryPage.updatedAtMillis, CachePolicy.BOOKING_PAGE_ONE_TTL_MS)) {
+                return;
+            }
+
+            fetchBookings(FIRST_PAGE, false, true, actionStartedAtMillis);
             return;
         }
 
-        fetchBookings(FIRST_PAGE, true, false);
+        int generation = ++cacheLoadGeneration;
+        if (!hasVisibleBookings()) {
+            fullScreenLoadingLiveData.setValue(true);
+            messageLiveData.setValue("");
+        }
+
+        bookingRepository.getCachedFirstPage(cacheKey, result -> {
+            if (generation != cacheLoadGeneration || !cacheKey.equals(firstPageCacheKey())) {
+                return;
+            }
+
+            handleCachedFirstPageResult(result, actionStartedAtMillis);
+        });
     }
 
     public void refreshBookings() {
+        cacheLoadGeneration++;
         abortBookingsRequest();
         resetPagination();
         swipeRefreshingLiveData.setValue(true);
         fetchBookings(FIRST_PAGE, false, false);
+    }
+
+    public void invalidateBookingPageOneCacheForMutation() {
+        clearFirstPageCaches();
     }
 
     public void loadNextPage() {
@@ -212,6 +247,7 @@ public class HomeViewModel extends ViewModel {
                 }
 
                 toastLiveData.setValue(apiResponse.getSafeMessage());
+                removeBookingById(bookingId);
                 refreshBookingsAfterBookingChange();
             }
 
@@ -266,6 +302,7 @@ public class HomeViewModel extends ViewModel {
         }
 
         bookingsLiveData.setValue(updatedList);
+        clearFirstPageCaches();
     }
 
     public void removeBookingById(int bookingId) {
@@ -287,7 +324,7 @@ public class HomeViewModel extends ViewModel {
         if (!removed) return;
 
         bookingsLiveData.setValue(updatedList);
-        cacheFirstPageForCurrentFilter(updatedList);
+        clearFirstPageCaches();
         if (updatedList.isEmpty()) {
             messageLiveData.setValue(MESSAGE_EMPTY_BOOKINGS);
         }
@@ -298,12 +335,24 @@ public class HomeViewModel extends ViewModel {
             boolean showFullScreenLoader,
             boolean quietFailure
     ) {
+        fetchBookings(page, showFullScreenLoader, quietFailure, System.currentTimeMillis());
+    }
+
+    private void fetchBookings(
+            int page,
+            boolean showFullScreenLoader,
+            boolean quietFailure,
+            long actionStartedAtMillis
+    ) {
         if (isLoading || bookingsCall != null) {
             logSkippedRequest(page);
             return;
         }
 
         logRequestStart(page);
+        String cacheKey = firstPageCacheKey();
+        long requestStartedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart("booking_list_page_" + page, cacheKey);
         isLoading = true;
         showLoaderForRequest(page, showFullScreenLoader);
 
@@ -333,12 +382,14 @@ public class HomeViewModel extends ViewModel {
                     if (shouldRetryFirstPageRequest(page, response.code())) {
                         scheduleFirstPageRetry(showFullScreenLoader, quietFailure);
                         logRequestResponse(page, response.code());
+                        logNetworkResponse(page, response.code(), requestStartedAtMillis);
                         return;
                     }
 
                     hideAllLoaders();
                     handleUnsuccessfulBookingsResponse(page, response, quietFailure);
                     logRequestResponse(page, response.code());
+                    logNetworkResponse(page, response.code(), requestStartedAtMillis);
                     return;
                 }
 
@@ -351,12 +402,19 @@ public class HomeViewModel extends ViewModel {
                             MESSAGE_LOAD_FAILED
                     ));
                     logRequestResponse(page, response.code());
+                    logNetworkResponse(page, response.code(), requestStartedAtMillis);
                     return;
                 }
 
                 hideAllLoaders();
                 handleBookingsPage(page, apiResponse.getData());
+                AppDiagnostics.logUiUpdated(
+                        "booking_list_page_" + page,
+                        "network",
+                        System.currentTimeMillis() - actionStartedAtMillis
+                );
                 logRequestResponse(page, response.code());
+                logNetworkResponse(page, response.code(), requestStartedAtMillis);
             }
 
             @Override
@@ -371,6 +429,7 @@ public class HomeViewModel extends ViewModel {
                 if (!isCurrentBookingsCall(call)) return;
                 bookingsCall = null;
                 logRequestFailure(page, t);
+                logNetworkResponse(page, 0, requestStartedAtMillis);
 
                 if (shouldRetryFirstPageRequest(page)) {
                     scheduleFirstPageRetry(showFullScreenLoader, quietFailure);
@@ -525,7 +584,7 @@ public class HomeViewModel extends ViewModel {
     private void refreshBookingsAfterBookingChange() {
         abortBookingsRequest();
         resetPagination();
-        bookingsLiveData.setValue(new ArrayList<>());
+        clearFirstPageCaches();
         swipeRefreshingLiveData.setValue(true);
         fetchBookings(FIRST_PAGE, false, false);
     }
@@ -568,18 +627,86 @@ public class HomeViewModel extends ViewModel {
     }
 
     private void cacheFirstPageForCurrentFilter(List<BookingItem> results) {
+        String cacheKey = firstPageCacheKey();
+        long updatedAtMillis = System.currentTimeMillis();
+        List<BookingItem> cachedBookings = NullSafeCollections.copyWithoutNulls(results);
+        cacheFirstPageInMemory(cacheKey, cachedBookings, updatedAtMillis);
+        bookingRepository.saveCachedFirstPage(cacheKey, cachedBookings);
+    }
+
+    private void cacheFirstPageInMemory(
+            String cacheKey,
+            List<BookingItem> results,
+            long updatedAtMillis
+    ) {
         synchronized (CACHE_LOCK) {
-            firstPageCache.put(filterKey(), NullSafeCollections.copyWithoutNulls(results));
+            firstPageCache.put(cacheKey, new CachedBookingPage(results, updatedAtMillis));
         }
     }
 
-    private List<BookingItem> getCachedBookingsForCurrentFilter() {
+    private void clearFirstPageCaches() {
         synchronized (CACHE_LOCK) {
-            List<BookingItem> cachedBookings = firstPageCache.get(filterKey());
-            return cachedBookings != null
-                    ? NullSafeCollections.copyWithoutNulls(cachedBookings)
-                    : null;
+            firstPageCache.clear();
         }
+        bookingRepository.clearFirstPageCaches();
+    }
+
+    private CachedBookingPage getCachedBookingsForCurrentFilter() {
+        synchronized (CACHE_LOCK) {
+            CachedBookingPage cachedPage = firstPageCache.get(firstPageCacheKey());
+            if (cachedPage == null) {
+                return null;
+            }
+
+            return new CachedBookingPage(
+                    cachedPage.bookings,
+                    cachedPage.updatedAtMillis
+            );
+        }
+    }
+
+    private void handleCachedFirstPageResult(
+            CacheReadResult<List<BookingItem>> result,
+            long actionStartedAtMillis
+    ) {
+        if (result.isHit()) {
+            List<BookingItem> cachedBookings = NullSafeCollections.copyWithoutNulls(
+                    result.getValue()
+            );
+            cacheFirstPageInMemory(
+                    result.getKey(),
+                    cachedBookings,
+                    result.getUpdatedAtMillis()
+            );
+            showCachedFirstPage(cachedBookings, "disk", actionStartedAtMillis);
+
+            if (result.isFresh()) {
+                return;
+            }
+
+            fetchBookings(FIRST_PAGE, false, true, actionStartedAtMillis);
+            return;
+        }
+
+        fetchBookings(FIRST_PAGE, !hasVisibleBookings(), false, actionStartedAtMillis);
+    }
+
+    private void showCachedFirstPage(
+            List<BookingItem> bookings,
+            String source,
+            long actionStartedAtMillis
+    ) {
+        hideAllLoaders();
+        handleFirstPageResults(NullSafeCollections.copyWithoutNulls(bookings));
+        AppDiagnostics.logUiUpdated(
+                "booking_list_page_1",
+                "cache_" + source,
+                System.currentTimeMillis() - actionStartedAtMillis
+        );
+    }
+
+    private boolean isFresh(long updatedAtMillis, long ttlMillis) {
+        return CachePolicy.isFresh(updatedAtMillis, ttlMillis, System.currentTimeMillis());
     }
 
     private String filterKey() {
@@ -590,6 +717,28 @@ public class HomeViewModel extends ViewModel {
                 + safeFilterValue(filterDepartureTo)
                 + "|"
                 + safeFilterValue(filterStatus);
+    }
+
+    private String firstPageCacheKey() {
+        return BookingRepository.firstPageCacheKey(
+                filterPrefix,
+                filterArrivalFrom,
+                filterDepartureTo,
+                filterStatus
+        );
+    }
+
+    private void logNetworkResponse(
+            int page,
+            int httpCode,
+            long requestStartedAtMillis
+    ) {
+        AppDiagnostics.logNetworkResponse(
+                "booking_list_page_" + page,
+                firstPageCacheKey(),
+                httpCode,
+                System.currentTimeMillis() - requestStartedAtMillis
+        );
     }
 
     private String safeFilterValue(String value) {

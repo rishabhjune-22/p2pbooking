@@ -10,8 +10,8 @@ import androidx.room.migration.Migration;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
 @Database(
-        entities = {RoomEntity.class},
-        version = 3,
+        entities = {RoomEntity.class, CacheEntryEntity.class},
+        version = 4,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -34,7 +34,15 @@ public abstract class AppDatabase extends RoomDatabase {
         }
     };
 
+    private static final Migration MIGRATION_3_4 = new Migration(3, 4) {
+        @Override
+        public void migrate(SupportSQLiteDatabase database) {
+            createCacheEntriesTable(database);
+        }
+    };
+
     public abstract RoomDao roomDao();
+    public abstract CacheEntryDao cacheEntryDao();
 
     public static AppDatabase getInstance(Context context) {
         if (instance == null) {
@@ -56,11 +64,23 @@ public abstract class AppDatabase extends RoomDatabase {
                 )
                 // Rooms are a server-backed cache. Migrations preserve existing rows when
                 // possible; RoomRepository can still refresh stale cache from the API.
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build();
     }
 
+    private static void createCacheEntriesTable(SupportSQLiteDatabase database) {
+        database.execSQL(
+                "CREATE TABLE IF NOT EXISTS `cache_entries` ("
+                        + "`cacheKey` TEXT NOT NULL, "
+                        + "`payloadJson` TEXT NOT NULL, "
+                        + "`updatedAtMillis` INTEGER NOT NULL, "
+                        + "PRIMARY KEY(`cacheKey`))"
+        );
+    }
+
     private static void migrateRoomsCacheSchema(SupportSQLiteDatabase database) {
+        createCacheEntriesTable(database);
+
         boolean roomsTableExists = tableExists(database, "rooms");
 
         database.execSQL(

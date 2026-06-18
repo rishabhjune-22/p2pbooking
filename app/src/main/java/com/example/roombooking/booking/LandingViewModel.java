@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
+import com.example.roombooking.cache.CachePolicy;
+import com.example.roombooking.cache.CacheReadResult;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.utils.ApiErrorUtils;
@@ -57,7 +59,7 @@ public class LandingViewModel extends ViewModel {
     private static final int MAX_NETWORK_RETRIES = 0;
     private static final long RETRY_DELAY_MS = 700L;
     private static final Object CACHE_LOCK = new Object();
-    private static final Map<String, List<RoomAvailabilityGroup>> availabilityCache =
+    private static final Map<String, CachedAvailability> availabilityCache =
             new HashMap<>();
 
     private final AvailabilityRepository availabilityRepository;
@@ -89,6 +91,8 @@ public class LandingViewModel extends ViewModel {
     private Runnable pendingAvailabilityRetry;
     private Runnable pendingAvailableRoomsRetry;
     private Runnable pendingAvailableRoomsRangeRetry;
+    private int availabilityCacheGeneration = 0;
+    private boolean forceNextAvailabilityNetworkRefresh = false;
 
     private int requestedMonth = -1;
     private int requestedYear = -1;
@@ -98,6 +102,19 @@ public class LandingViewModel extends ViewModel {
 
     public LandingViewModel(AvailabilityRepository availabilityRepository) {
         this.availabilityRepository = availabilityRepository;
+    }
+
+    private static final class CachedAvailability {
+        private final List<RoomAvailabilityGroup> groups;
+        private final long updatedAtMillis;
+
+        private CachedAvailability(
+                List<RoomAvailabilityGroup> groups,
+                long updatedAtMillis
+        ) {
+            this.groups = NullSafeCollections.copyWithoutNulls(groups);
+            this.updatedAtMillis = updatedAtMillis;
+        }
     }
 
     public LiveData<Boolean> getAvailabilityLoadingLiveData() {
@@ -137,7 +154,13 @@ public class LandingViewModel extends ViewModel {
         return deleteBookingResultLiveData;
     }
 
+    public void invalidateCalendarAvailabilityCacheForMutation() {
+        clearAvailabilityCaches();
+        forceNextAvailabilityNetworkRefresh = true;
+    }
+
     public void loadAvailability(int month, int year) {
+        long actionStartedAtMillis = System.currentTimeMillis();
         requestedMonth = month;
         requestedYear = year;
         cancelPendingAvailabilityRetry();
@@ -145,15 +168,39 @@ public class LandingViewModel extends ViewModel {
         cancelCall(availabilityCall);
         availabilityCall = null;
 
-        List<RoomAvailabilityGroup> cachedGroups = getCachedAvailability(month, year);
-        boolean hasCachedGroups = cachedGroups != null && !cachedGroups.isEmpty();
-        if (hasCachedGroups) {
-            availabilityLoadingLiveData.setValue(false);
-            networkBannerLiveData.setValue(new UiEvent<>(false));
-            availabilityGroupsLiveData.setValue(cachedGroups);
+        if (forceNextAvailabilityNetworkRefresh) {
+            forceNextAvailabilityNetworkRefresh = false;
+            availabilityLoadingLiveData.setValue(!hasVisibleAvailability());
+            loadAvailabilityInternal(month, year, 0, !hasVisibleAvailability(), true,
+                    actionStartedAtMillis);
+            return;
         }
 
-        loadAvailabilityInternal(month, year, 0, !hasCachedGroups, hasCachedGroups);
+        CachedAvailability memoryAvailability = getCachedAvailability(month, year);
+        if (memoryAvailability != null) {
+            showCachedAvailability(memoryAvailability.groups, "memory", actionStartedAtMillis);
+            if (isFresh(
+                    memoryAvailability.updatedAtMillis,
+                    CachePolicy.CALENDAR_AVAILABILITY_TTL_MS
+            )) {
+                return;
+            }
+
+            loadAvailabilityInternal(month, year, 0, false, true, actionStartedAtMillis);
+            return;
+        }
+
+        int generation = ++availabilityCacheGeneration;
+        availabilityLoadingLiveData.setValue(!hasVisibleAvailability());
+        availabilityRepository.getCachedCalendarAvailability(month, year, result -> {
+            if (generation != availabilityCacheGeneration
+                    || month != requestedMonth
+                    || year != requestedYear) {
+                return;
+            }
+
+            handleCachedAvailabilityResult(result, month, year, actionStartedAtMillis);
+        });
     }
 
     private void loadAvailabilityInternal(
@@ -163,10 +210,31 @@ public class LandingViewModel extends ViewModel {
             boolean showLoading,
             boolean quietFailure
     ) {
+        loadAvailabilityInternal(
+                month,
+                year,
+                retryAttempt,
+                showLoading,
+                quietFailure,
+                System.currentTimeMillis()
+        );
+    }
+
+    private void loadAvailabilityInternal(
+            int month,
+            int year,
+            int retryAttempt,
+            boolean showLoading,
+            boolean quietFailure,
+            long actionStartedAtMillis
+    ) {
         if (showLoading) {
             availabilityLoadingLiveData.setValue(true);
         }
 
+        String cacheKey = AvailabilityRepository.calendarAvailabilityCacheKey(month, year);
+        long requestStartedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart("availability_calendar", cacheKey);
         Call<ApiResponse<RoomAvailabilityResponse>> request =
                 availabilityRepository.getRoomAvailability(month, year);
         availabilityCall = request;
@@ -189,7 +257,8 @@ public class LandingViewModel extends ViewModel {
                                 year,
                                 retryAttempt + 1,
                                 showLoading,
-                                quietFailure
+                                quietFailure,
+                                actionStartedAtMillis
                         );
                         return;
                     }
@@ -200,9 +269,16 @@ public class LandingViewModel extends ViewModel {
                             MESSAGE_AVAILABILITY_FAILED
                     );
                     AppDiagnostics.logApiFailure("availability_calendar", message, null);
-                    if (!quietFailure) {
+                    if (quietFailure) {
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                    } else {
                         toastLiveData.setValue(new UiEvent<>(message));
                     }
+                    logAvailabilityNetworkResponse(
+                            cacheKey,
+                            response.code(),
+                            requestStartedAtMillis
+                    );
                     return;
                 }
 
@@ -214,6 +290,12 @@ public class LandingViewModel extends ViewModel {
                         : new ArrayList<>();
                 cacheAvailability(month, year, groups);
                 availabilityGroupsLiveData.setValue(groups);
+                AppDiagnostics.logUiUpdated(
+                        "availability_calendar",
+                        "network",
+                        System.currentTimeMillis() - actionStartedAtMillis
+                );
+                logAvailabilityNetworkResponse(cacheKey, response.code(), requestStartedAtMillis);
             }
 
             @Override
@@ -233,7 +315,8 @@ public class LandingViewModel extends ViewModel {
                                 year,
                                 retryAttempt + 1,
                                 showLoading,
-                                quietFailure
+                                quietFailure,
+                                actionStartedAtMillis
                         );
                         return;
                     }
@@ -244,9 +327,8 @@ public class LandingViewModel extends ViewModel {
                             ApiErrorUtils.networkMessage(),
                             t
                     );
-                    if (!quietFailure) {
-                        networkBannerLiveData.setValue(new UiEvent<>(true));
-                    }
+                    networkBannerLiveData.setValue(new UiEvent<>(true));
+                    logAvailabilityNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
             }
         });
@@ -524,6 +606,8 @@ public class LandingViewModel extends ViewModel {
                 }
 
                 networkBannerLiveData.setValue(new UiEvent<>(false));
+                clearAvailabilityCaches();
+                forceNextAvailabilityNetworkRefresh = true;
                 deleteBookingResultLiveData.setValue(new UiEvent<>(
                         new DeleteBookingResult(
                                 bookingId,
@@ -584,13 +668,21 @@ public class LandingViewModel extends ViewModel {
             int year,
             int retryAttempt,
             boolean showLoading,
-            boolean quietFailure
+            boolean quietFailure,
+            long actionStartedAtMillis
     ) {
         cancelPendingAvailabilityRetry();
         long delayMillis = RETRY_DELAY_MS * retryAttempt;
         pendingAvailabilityRetry = () -> {
             pendingAvailabilityRetry = null;
-            loadAvailabilityInternal(month, year, retryAttempt, showLoading, quietFailure);
+            loadAvailabilityInternal(
+                    month,
+                    year,
+                    retryAttempt,
+                    showLoading,
+                    quietFailure,
+                    actionStartedAtMillis
+            );
         };
         retryHandler.postDelayed(pendingAvailabilityRetry, delayMillis);
     }
@@ -662,26 +754,108 @@ public class LandingViewModel extends ViewModel {
             int year,
             List<RoomAvailabilityGroup> groups
     ) {
+        String cacheKey = AvailabilityRepository.calendarAvailabilityCacheKey(month, year);
+        long updatedAtMillis = System.currentTimeMillis();
+        List<RoomAvailabilityGroup> cachedGroups = NullSafeCollections.copyWithoutNulls(groups);
         synchronized (CACHE_LOCK) {
             availabilityCache.put(
-                    availabilityCacheKey(month, year),
-                    NullSafeCollections.copyWithoutNulls(groups)
+                    cacheKey,
+                    new CachedAvailability(cachedGroups, updatedAtMillis)
+            );
+        }
+        availabilityRepository.saveCachedCalendarAvailability(month, year, cachedGroups);
+    }
+
+    private CachedAvailability getCachedAvailability(int month, int year) {
+        synchronized (CACHE_LOCK) {
+            CachedAvailability availability =
+                    availabilityCache.get(AvailabilityRepository.calendarAvailabilityCacheKey(
+                            month,
+                            year
+                    ));
+            if (availability == null) {
+                return null;
+            }
+
+            return new CachedAvailability(
+                    availability.groups,
+                    availability.updatedAtMillis
             );
         }
     }
 
-    private List<RoomAvailabilityGroup> getCachedAvailability(int month, int year) {
-        synchronized (CACHE_LOCK) {
-            List<RoomAvailabilityGroup> groups =
-                    availabilityCache.get(availabilityCacheKey(month, year));
-            return groups != null
-                    ? NullSafeCollections.copyWithoutNulls(groups)
-                    : null;
+    private void handleCachedAvailabilityResult(
+            CacheReadResult<List<RoomAvailabilityGroup>> result,
+            int month,
+            int year,
+            long actionStartedAtMillis
+    ) {
+        if (result.isHit()) {
+            List<RoomAvailabilityGroup> groups = NullSafeCollections.copyWithoutNulls(
+                    result.getValue()
+            );
+            synchronized (CACHE_LOCK) {
+                availabilityCache.put(
+                        result.getKey(),
+                        new CachedAvailability(groups, result.getUpdatedAtMillis())
+                );
+            }
+            showCachedAvailability(groups, "disk", actionStartedAtMillis);
+
+            if (result.isFresh()) {
+                return;
+            }
+
+            loadAvailabilityInternal(month, year, 0, false, true, actionStartedAtMillis);
+            return;
         }
+
+        loadAvailabilityInternal(month, year, 0, !hasVisibleAvailability(), false,
+                actionStartedAtMillis);
     }
 
-    private String availabilityCacheKey(int month, int year) {
-        return year + "-" + month;
+    private void showCachedAvailability(
+            List<RoomAvailabilityGroup> groups,
+            String source,
+            long actionStartedAtMillis
+    ) {
+        availabilityLoadingLiveData.setValue(false);
+        networkBannerLiveData.setValue(new UiEvent<>(false));
+        availabilityGroupsLiveData.setValue(NullSafeCollections.copyWithoutNulls(groups));
+        AppDiagnostics.logUiUpdated(
+                "availability_calendar",
+                "cache_" + source,
+                System.currentTimeMillis() - actionStartedAtMillis
+        );
+    }
+
+    private boolean hasVisibleAvailability() {
+        List<RoomAvailabilityGroup> groups = availabilityGroupsLiveData.getValue();
+        return groups != null;
+    }
+
+    private boolean isFresh(long updatedAtMillis, long ttlMillis) {
+        return CachePolicy.isFresh(updatedAtMillis, ttlMillis, System.currentTimeMillis());
+    }
+
+    private void clearAvailabilityCaches() {
+        synchronized (CACHE_LOCK) {
+            availabilityCache.clear();
+        }
+        availabilityRepository.clearCalendarAvailabilityCache();
+    }
+
+    private void logAvailabilityNetworkResponse(
+            String cacheKey,
+            int httpCode,
+            long requestStartedAtMillis
+    ) {
+        AppDiagnostics.logNetworkResponse(
+                "availability_calendar",
+                cacheKey,
+                httpCode,
+                System.currentTimeMillis() - requestStartedAtMillis
+        );
     }
 
     private boolean isValidAvailabilityResponse(

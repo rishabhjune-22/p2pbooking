@@ -812,6 +812,7 @@ public class HomeActivity extends AppCompatActivity {
         boolean bookingCreated = data.getBooleanExtra(EXTRA_BOOKING_CREATED, false);
 
         if (bookingCreated) {
+            viewModel.invalidateBookingPageOneCacheForMutation();
             viewModel.refreshBookings();
         }
     }

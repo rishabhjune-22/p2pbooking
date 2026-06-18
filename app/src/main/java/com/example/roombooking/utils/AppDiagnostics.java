@@ -91,6 +91,55 @@ public final class AppDiagnostics {
         }
     }
 
+    public static void logCacheHit(String cacheKey, boolean fresh, long ageMillis) {
+        Log.d(TAG, "cache_hit"
+                + " key=" + safe(cacheKey)
+                + " fresh=" + fresh
+                + " ageMs=" + ageMillis);
+    }
+
+    public static void logCacheMiss(String cacheKey) {
+        Log.d(TAG, "cache_miss key=" + safe(cacheKey));
+    }
+
+    public static void logCacheWrite(String cacheKey) {
+        Log.d(TAG, "cache_write key=" + safe(cacheKey));
+    }
+
+    public static void logCacheInvalidated(String cacheKeyPrefix) {
+        Log.d(TAG, "cache_invalidated prefix=" + safe(cacheKeyPrefix));
+    }
+
+    public static void logCacheCorrupt(String cacheKey, Throwable throwable) {
+        Log.w(TAG, "cache_corrupt key=" + safe(cacheKey), throwable);
+    }
+
+    public static void logNetworkStart(String operation, String cacheKey) {
+        Log.d(TAG, "network_start"
+                + " operation=" + safe(operation)
+                + " key=" + safe(cacheKey));
+    }
+
+    public static void logNetworkResponse(
+            String operation,
+            String cacheKey,
+            int httpCode,
+            long elapsedMillis
+    ) {
+        Log.d(TAG, "network_response"
+                + " operation=" + safe(operation)
+                + " key=" + safe(cacheKey)
+                + " code=" + httpCode
+                + " elapsedMs=" + elapsedMillis);
+    }
+
+    public static void logUiUpdated(String operation, String source, long elapsedMillis) {
+        Log.d(TAG, "ui_updated"
+                + " operation=" + safe(operation)
+                + " source=" + safe(source)
+                + " elapsedMs=" + elapsedMillis);
+    }
+
     private static String safe(String value) {
         return value != null ? value.trim() : "";
     }

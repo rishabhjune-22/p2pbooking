@@ -1075,6 +1075,7 @@ public class LandingActivity extends AppCompatActivity {
             activeBottomSheetDialog.dismiss();
         }
 
+        viewModel.invalidateCalendarAvailabilityCacheForMutation();
         loadAvailability();
 
         if (arrivalDate == null || departureDate == null) {

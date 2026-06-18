@@ -8,11 +8,14 @@ import androidx.annotation.NonNull;
 
 import com.example.roombooking.api.ApiService;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.cache.CachePolicy;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.room.local.AppDatabase;
+import com.example.roombooking.room.local.CacheEntryDao;
+import com.example.roombooking.room.local.CacheEntryEntity;
 import com.example.roombooking.room.local.RoomDao;
 import com.example.roombooking.room.local.RoomEntity;
 import com.example.roombooking.utils.ApiErrorUtils;
@@ -35,7 +38,8 @@ public class RoomRepository {
 
     private static final int FIRST_PAGE = 1;
     private static final int ROOM_PAGE_SIZE = 100;
-    private static final long ROOM_REFRESH_INTERVAL_MS = 6L * 60L * 60L * 1000L;
+    private static final String ROOM_CACHE_KEY = "rooms:all";
+    private static final long ROOM_REFRESH_INTERVAL_MS = CachePolicy.ROOMS_TTL_MS;
     private static final long FAILED_REFRESH_RETRY_INTERVAL_MS = 5L * 60L * 1000L;
 
     private static final String MESSAGE_LOAD_FAILED = "Failed to load rooms.";
@@ -49,6 +53,7 @@ public class RoomRepository {
 
     private final ApiService apiService;
     private final RoomDao roomDao;
+    private final CacheEntryDao cacheEntryDao;
     private final ExecutorService diskExecutor;
     private final Handler mainHandler;
 
@@ -56,7 +61,9 @@ public class RoomRepository {
         Context appContext = context.getApplicationContext();
 
         apiService = RetrofitClient.getApiService(appContext);
-        roomDao = AppDatabase.getInstance(appContext).roomDao();
+        AppDatabase database = AppDatabase.getInstance(appContext);
+        roomDao = database.roomDao();
+        cacheEntryDao = database.cacheEntryDao();
         diskExecutor = Executors.newSingleThreadExecutor();
         mainHandler = new Handler(Looper.getMainLooper());
     }
@@ -79,18 +86,25 @@ public class RoomRepository {
         RoomMemoryCache.clear();
         resetRefreshTimestamps();
 
-        diskExecutor.execute(roomDao::clearRooms);
+        diskExecutor.execute(() -> {
+            roomDao.clearRooms();
+            cacheEntryDao.delete(ROOM_CACHE_KEY);
+        });
     }
 
     private void loadRoomsFromLocalDatabase(RoomRepositoryCallback callback) {
         diskExecutor.execute(() -> {
             List<RoomEntity> cachedEntities = roomDao.getAllRooms();
             List<RoomItem> cachedRooms = RoomMapper.toModelList(cachedEntities);
+            CacheEntryEntity cacheEntry = cacheEntryDao.getEntry(ROOM_CACHE_KEY);
+            long updatedAtMillis = cacheEntry != null
+                    ? cacheEntry.getUpdatedAtMillis()
+                    : 0L;
 
             if (!cachedRooms.isEmpty()) {
                 RoomMemoryCache.setRooms(cachedRooms);
                 sendSuccess(callback, cachedRooms, true);
-                refreshRoomsSilentlyIfStale();
+                refreshRoomsSilentlyIfStale(updatedAtMillis);
                 return;
             }
 
@@ -99,14 +113,36 @@ public class RoomRepository {
     }
 
     private void refreshRoomsSilentlyIfStale() {
-        if (!shouldRefreshRoomsSilently()) {
+        diskExecutor.execute(() -> {
+            CacheEntryEntity cacheEntry = cacheEntryDao.getEntry(ROOM_CACHE_KEY);
+            long updatedAtMillis = cacheEntry != null
+                    ? cacheEntry.getUpdatedAtMillis()
+                    : lastApiRefreshSucceededAtMillis;
+
+            refreshRoomsSilentlyIfStale(updatedAtMillis);
+        });
+    }
+
+    private void refreshRoomsSilentlyIfStale(long updatedAtMillis) {
+        boolean fresh = CachePolicy.isFresh(
+                updatedAtMillis,
+                ROOM_REFRESH_INTERVAL_MS,
+                System.currentTimeMillis()
+        );
+        AppDiagnostics.logCacheHit(
+                ROOM_CACHE_KEY,
+                fresh,
+                CachePolicy.ageMillis(updatedAtMillis, System.currentTimeMillis())
+        );
+
+        if (!shouldRefreshRoomsSilently(updatedAtMillis)) {
             return;
         }
 
         fetchRoomsFromApi(null);
     }
 
-    private boolean shouldRefreshRoomsSilently() {
+    private boolean shouldRefreshRoomsSilently(long updatedAtMillis) {
         long now = System.currentTimeMillis();
 
         synchronized (REQUEST_LOCK) {
@@ -114,8 +150,7 @@ public class RoomRepository {
                 return false;
             }
 
-            if (lastApiRefreshSucceededAtMillis > 0
-                    && now - lastApiRefreshSucceededAtMillis < ROOM_REFRESH_INTERVAL_MS) {
+            if (CachePolicy.isFresh(updatedAtMillis, ROOM_REFRESH_INTERVAL_MS, now)) {
                 return false;
             }
 
@@ -153,6 +188,8 @@ public class RoomRepository {
     ) {
         Call<ApiResponse<PaginatedData<RoomItem>>> request =
                 apiService.getRooms(page, ROOM_PAGE_SIZE);
+        long requestStartedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart("rooms_page_" + page, ROOM_CACHE_KEY);
         synchronized (REQUEST_LOCK) {
             activeRoomsCall = request;
         }
@@ -171,6 +208,12 @@ public class RoomRepository {
                 if (!isValidRoomsResponse(response)) {
                     if (response.code() == 404 && page > FIRST_PAGE) {
                         saveRoomsToCache(accumulatedRooms, finishRoomRequest());
+                        AppDiagnostics.logNetworkResponse(
+                                "rooms_page_" + page,
+                                ROOM_CACHE_KEY,
+                                response.code(),
+                                System.currentTimeMillis() - requestStartedAtMillis
+                        );
                         return;
                     }
 
@@ -180,6 +223,12 @@ public class RoomRepository {
                     );
                     AppDiagnostics.logApiFailure("rooms", message, null);
                     finishRoomRequestWithError(message);
+                    AppDiagnostics.logNetworkResponse(
+                            "rooms_page_" + page,
+                            ROOM_CACHE_KEY,
+                            response.code(),
+                            System.currentTimeMillis() - requestStartedAtMillis
+                    );
                     return;
                 }
 
@@ -190,11 +239,23 @@ public class RoomRepository {
                 accumulatedRooms.addAll(NullSafeCollections.copyWithoutNulls(pageResults));
 
                 if (paginatedData.hasNextPage()) {
+                    AppDiagnostics.logNetworkResponse(
+                            "rooms_page_" + page,
+                            ROOM_CACHE_KEY,
+                            response.code(),
+                            System.currentTimeMillis() - requestStartedAtMillis
+                    );
                     fetchRoomsPage(page + 1, accumulatedRooms);
                     return;
                 }
 
                 saveRoomsToCache(accumulatedRooms, finishRoomRequest());
+                AppDiagnostics.logNetworkResponse(
+                        "rooms_page_" + page,
+                        ROOM_CACHE_KEY,
+                        response.code(),
+                        System.currentTimeMillis() - requestStartedAtMillis
+                );
             }
 
             @Override
@@ -208,6 +269,12 @@ public class RoomRepository {
 
                 AppDiagnostics.logApiFailure("rooms", MESSAGE_NETWORK_ERROR, t);
                 finishRoomRequestWithError(ApiErrorUtils.networkMessage());
+                AppDiagnostics.logNetworkResponse(
+                        "rooms_page_" + page,
+                        ROOM_CACHE_KEY,
+                        0,
+                        System.currentTimeMillis() - requestStartedAtMillis
+                );
             }
         });
     }
@@ -247,11 +314,18 @@ public class RoomRepository {
             List<RoomRepositoryCallback> callbacks
     ) {
         List<RoomItem> finalRooms = NullSafeCollections.copyWithoutNulls(apiRooms);
-        markRoomsApiRefreshSucceeded();
+        long refreshedAtMillis = System.currentTimeMillis();
+        markRoomsApiRefreshSucceeded(refreshedAtMillis);
 
         diskExecutor.execute(() -> {
             roomDao.clearRooms();
             roomDao.insertRooms(RoomMapper.toEntityList(finalRooms));
+            cacheEntryDao.upsert(new CacheEntryEntity(
+                    ROOM_CACHE_KEY,
+                    "{}",
+                    refreshedAtMillis
+            ));
+            AppDiagnostics.logCacheWrite(ROOM_CACHE_KEY);
 
             RoomMemoryCache.setRooms(finalRooms);
 
@@ -259,9 +333,9 @@ public class RoomRepository {
         });
     }
 
-    private void markRoomsApiRefreshSucceeded() {
+    private void markRoomsApiRefreshSucceeded(long refreshedAtMillis) {
         synchronized (REQUEST_LOCK) {
-            lastApiRefreshSucceededAtMillis = System.currentTimeMillis();
+            lastApiRefreshSucceededAtMillis = refreshedAtMillis;
         }
     }
 
