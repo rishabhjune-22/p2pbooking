@@ -1,6 +1,7 @@
 package com.example.roombooking.room;
 
 import com.example.roombooking.model.room.RoomItem;
+import com.example.roombooking.utils.NullSafeCollections;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,9 +19,7 @@ public final class RoomMemoryCache {
 
     public static void setRooms(List<RoomItem> roomList) {
         synchronized (LOCK) {
-            rooms = roomList != null
-                    ? new ArrayList<>(roomList)
-                    : new ArrayList<>();
+            rooms = NullSafeCollections.copyWithoutNulls(roomList);
         }
     }
 

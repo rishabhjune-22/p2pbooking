@@ -21,7 +21,12 @@ public final class RoomMapper {
                 item.getId(),
                 item.getSafePrefix(),
                 item.getSafeNumber(),
-                item.getSafeRoomName()
+                item.getSafeRoomName(),
+                item.getSafeHostelName(),
+                item.hasAttachedBath(),
+                item.getSafeRoomType(),
+                item.getSafeSelectionLabel(),
+                item.getDisplayOrder()
         );
     }
 
@@ -35,6 +40,11 @@ public final class RoomMapper {
         item.setPrefix(entity.getPrefix());
         item.setNumber(entity.getNumber());
         item.setRoomName(entity.getRoomName());
+        item.setHostelName(entity.getHostelName());
+        item.setHasAttachedBath(entity.isHasAttachedBath());
+        item.setRoomType(entity.getRoomType());
+        item.setSelectionLabel(entity.getSelectionLabel());
+        item.setDisplayOrder(entity.getDisplayOrder());
 
         return item;
     }

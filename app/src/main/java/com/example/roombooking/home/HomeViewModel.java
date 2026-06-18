@@ -1,19 +1,30 @@
 package com.example.roombooking.home;
 
+import android.util.Log;
+import android.os.Handler;
+import android.os.Looper;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.roombooking.booking.BookingCancelRequest;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.utils.ApiErrorUtils;
+import com.example.roombooking.utils.AppDiagnostics;
+import com.example.roombooking.utils.NullSafeCollections;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -21,20 +32,26 @@ import retrofit2.Response;
 
 public class HomeViewModel extends ViewModel {
 
+    private static final String TAG = "HomeViewModel";
     private static final int FIRST_PAGE = 1;
-
-    private static final String DEFAULT_STATUS = "active";
 
     private static final String MESSAGE_EMPTY_BOOKINGS =
             "No bookings yet. Tap + to create one.";
     private static final String MESSAGE_LOAD_FAILED =
             "Failed to load bookings.";
-    private static final String MESSAGE_CANCEL_FAILED =
-            "Cancel failed.";
+    private static final String MESSAGE_DELETE_FAILED =
+            "Delete failed.";
     private static final String MESSAGE_NETWORK_ERROR =
             "Please check your internet connection.";
+    private static final String MESSAGE_STALE_BOOKINGS =
+            "Could not update latest bookings. Showing last loaded data.";
+    private static final int MAX_FIRST_PAGE_NETWORK_RETRIES = 0;
+    private static final long FIRST_PAGE_RETRY_DELAY_MS = 700L;
+    private static final Object CACHE_LOCK = new Object();
+    private static final Map<String, List<BookingItem>> firstPageCache = new HashMap<>();
 
     private final BookingRepository bookingRepository;
+    private final Handler retryHandler = new Handler(Looper.getMainLooper());
 
     private final MutableLiveData<List<BookingItem>> bookingsLiveData =
             new MutableLiveData<>(new ArrayList<>());
@@ -59,10 +76,16 @@ public class HomeViewModel extends ViewModel {
     private boolean isLoading = false;
     private boolean isLastPage = false;
 
+    private Call<ApiResponse<PaginatedData<BookingItem>>> bookingsCall;
+    private final Map<Integer, Call<ApiResponse<BookingActionData>>> deleteCalls =
+            new HashMap<>();
+    private Runnable pendingBookingsRetry;
+    private int firstPageNetworkRetryCount = 0;
+
     private String filterPrefix = null;
     private String filterArrivalFrom = null;
     private String filterDepartureTo = null;
-    private String filterStatus = DEFAULT_STATUS;
+    private String filterStatus = BookingStatus.ACTIVE;
 
     public HomeViewModel(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
@@ -101,24 +124,34 @@ public class HomeViewModel extends ViewModel {
     }
 
     public void loadInitialBookings() {
-        if (isLoading) return;
-
+        abortBookingsRequest();
         resetPagination();
-        fetchBookings(FIRST_PAGE, true);
+
+        List<BookingItem> cachedBookings = getCachedBookingsForCurrentFilter();
+        if (cachedBookings != null && !cachedBookings.isEmpty()) {
+            bookingsLiveData.setValue(cachedBookings);
+            messageLiveData.setValue("");
+            fetchBookings(FIRST_PAGE, false, true);
+            return;
+        }
+
+        fetchBookings(FIRST_PAGE, true, false);
     }
 
     public void refreshBookings() {
-        if (isLoading) return;
-
+        abortBookingsRequest();
         resetPagination();
         swipeRefreshingLiveData.setValue(true);
-        fetchBookings(FIRST_PAGE, false);
+        fetchBookings(FIRST_PAGE, false, false);
     }
 
     public void loadNextPage() {
-        if (isLoading || isLastPage) return;
+        if (isLoading || isLastPage || bookingsCall != null) {
+            logSkippedRequest(currentPage + 1);
+            return;
+        }
 
-        fetchBookings(currentPage + 1, false);
+        fetchBookings(currentPage + 1, false, false);
     }
 
     public void applyFilter(
@@ -130,38 +163,56 @@ public class HomeViewModel extends ViewModel {
         filterPrefix = isBlank(prefix) ? null : prefix.trim();
         filterArrivalFrom = arrivalFrom;
         filterDepartureTo = departureTo;
-        filterStatus = status != null ? status : DEFAULT_STATUS;
+        filterStatus = status != null ? status : BookingStatus.ACTIVE;
 
         loadInitialBookings();
     }
 
-    public void cancelBooking(BookingItem bookingItem, String reason) {
+    public void deleteBooking(BookingItem bookingItem) {
         if (bookingItem == null) return;
 
-        bookingRepository.cancelBooking(
-                bookingItem.getId(),
-                new BookingCancelRequest(reason)
-        ).enqueue(new Callback<ApiResponse<BookingActionData>>() {
+        int bookingId = bookingItem.getId();
+        if (deleteCalls.containsKey(bookingId)) {
+            toastLiveData.setValue("Deletion is already in progress.");
+            return;
+        }
+
+        Call<ApiResponse<BookingActionData>> request = bookingRepository.deleteBooking(bookingId);
+        deleteCalls.put(bookingId, request);
+        request.enqueue(new Callback<ApiResponse<BookingActionData>>() {
 
             @Override
             public void onResponse(
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Response<ApiResponse<BookingActionData>> response
             ) {
+                if (!isCurrentDeleteCall(bookingId, call)) return;
+                deleteCalls.remove(bookingId);
+
                 if (!response.isSuccessful() || response.body() == null) {
-                    toastLiveData.setValue(MESSAGE_CANCEL_FAILED);
+                    String message = ApiErrorUtils.messageFromResponse(
+                            response,
+                            MESSAGE_DELETE_FAILED
+                    );
+                    AppDiagnostics.logBookingMutationFailure("delete", bookingId, message);
+                    toastLiveData.setValue(message);
                     return;
                 }
 
                 ApiResponse<BookingActionData> apiResponse = response.body();
 
                 if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                    toastLiveData.setValue(apiResponse.getFirstErrorMessage());
+                    String message = ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            MESSAGE_DELETE_FAILED
+                    );
+                    AppDiagnostics.logBookingMutationFailure("delete", bookingId, message);
+                    toastLiveData.setValue(message);
                     return;
                 }
 
                 toastLiveData.setValue(apiResponse.getSafeMessage());
-                refreshBookings();
+                refreshBookingsAfterBookingChange();
             }
 
             @Override
@@ -169,7 +220,17 @@ public class HomeViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Throwable t
             ) {
-                toastLiveData.setValue(MESSAGE_NETWORK_ERROR);
+                if (!isCurrentDeleteCall(bookingId, call)) return;
+                deleteCalls.remove(bookingId);
+                if (!call.isCanceled()) {
+                    AppDiagnostics.logBookingMutationFailure(
+                            "delete",
+                            bookingId,
+                            MESSAGE_NETWORK_ERROR,
+                            t
+                    );
+                    toastLiveData.setValue(ApiErrorUtils.networkMessage());
+                }
             }
         });
     }
@@ -186,8 +247,14 @@ public class HomeViewModel extends ViewModel {
 
         List<BookingItem> updatedList = new ArrayList<>(currentList);
 
-        for (BookingItem item : updatedList) {
+        for (int index = 0; index < updatedList.size(); index++) {
+            BookingItem item = updatedList.get(index);
             if (item.getId() == bookingId) {
+                if (updatedStatus != null
+                        && !updatedStatus.equalsIgnoreCase(filterStatus)) {
+                    updatedList.remove(index);
+                    break;
+                }
                 updateBookingFields(
                         item,
                         updatedStatus,
@@ -201,41 +268,95 @@ public class HomeViewModel extends ViewModel {
         bookingsLiveData.setValue(updatedList);
     }
 
+    public void removeBookingById(int bookingId) {
+        List<BookingItem> currentList = bookingsLiveData.getValue();
+
+        if (currentList == null || currentList.isEmpty()) return;
+
+        List<BookingItem> updatedList = new ArrayList<>(currentList);
+        boolean removed = false;
+
+        for (int index = 0; index < updatedList.size(); index++) {
+            if (updatedList.get(index).getId() == bookingId) {
+                updatedList.remove(index);
+                removed = true;
+                break;
+            }
+        }
+
+        if (!removed) return;
+
+        bookingsLiveData.setValue(updatedList);
+        cacheFirstPageForCurrentFilter(updatedList);
+        if (updatedList.isEmpty()) {
+            messageLiveData.setValue(MESSAGE_EMPTY_BOOKINGS);
+        }
+    }
+
     private void fetchBookings(
             int page,
-            boolean showFullScreenLoader
+            boolean showFullScreenLoader,
+            boolean quietFailure
     ) {
+        if (isLoading || bookingsCall != null) {
+            logSkippedRequest(page);
+            return;
+        }
+
+        logRequestStart(page);
         isLoading = true;
         showLoaderForRequest(page, showFullScreenLoader);
 
-        bookingRepository.getBookings(
+        Call<ApiResponse<PaginatedData<BookingItem>>> request = bookingRepository.getBookings(
                 page,
                 filterPrefix,
                 filterArrivalFrom,
                 filterDepartureTo,
                 filterStatus
-        ).enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
+        );
+        bookingsCall = request;
+        request.enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
 
             @Override
             public void onResponse(
                     @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
                     @NonNull Response<ApiResponse<PaginatedData<BookingItem>>> response
             ) {
-                hideAllLoaders();
+                if (call.isCanceled()) {
+                    clearCurrentBookingsCall(call);
+                    return;
+                }
+                if (!isCurrentBookingsCall(call)) return;
+                bookingsCall = null;
 
                 if (!response.isSuccessful() || response.body() == null) {
-                    messageLiveData.setValue(MESSAGE_LOAD_FAILED);
+                    if (shouldRetryFirstPageRequest(page, response.code())) {
+                        scheduleFirstPageRetry(showFullScreenLoader, quietFailure);
+                        logRequestResponse(page, response.code());
+                        return;
+                    }
+
+                    hideAllLoaders();
+                    handleUnsuccessfulBookingsResponse(page, response, quietFailure);
+                    logRequestResponse(page, response.code());
                     return;
                 }
 
                 ApiResponse<PaginatedData<BookingItem>> apiResponse = response.body();
 
                 if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                    messageLiveData.setValue(apiResponse.getFirstErrorMessage());
+                    hideAllLoaders();
+                    messageLiveData.setValue(ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            MESSAGE_LOAD_FAILED
+                    ));
+                    logRequestResponse(page, response.code());
                     return;
                 }
 
+                hideAllLoaders();
                 handleBookingsPage(page, apiResponse.getData());
+                logRequestResponse(page, response.code());
             }
 
             @Override
@@ -243,10 +364,59 @@ public class HomeViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
                     @NonNull Throwable t
             ) {
+                if (call.isCanceled()) {
+                    clearCurrentBookingsCall(call);
+                    return;
+                }
+                if (!isCurrentBookingsCall(call)) return;
+                bookingsCall = null;
+                logRequestFailure(page, t);
+
+                if (shouldRetryFirstPageRequest(page)) {
+                    scheduleFirstPageRetry(showFullScreenLoader, quietFailure);
+                    return;
+                }
+
                 hideAllLoaders();
-                messageLiveData.setValue(MESSAGE_NETWORK_ERROR);
+                if (quietFailure && hasVisibleBookings()) {
+                    toastLiveData.setValue(MESSAGE_STALE_BOOKINGS);
+                    return;
+                }
+
+                AppDiagnostics.logApiFailure("booking_list", MESSAGE_NETWORK_ERROR, t);
+                messageLiveData.setValue(ApiErrorUtils.networkMessage());
             }
         });
+    }
+
+    private boolean isCurrentBookingsCall(
+            Call<ApiResponse<PaginatedData<BookingItem>>> call
+    ) {
+        return call == bookingsCall;
+    }
+
+    private void clearCurrentBookingsCall(
+            Call<ApiResponse<PaginatedData<BookingItem>>> call
+    ) {
+        if (isCurrentBookingsCall(call)) {
+            bookingsCall = null;
+        }
+    }
+
+    private boolean isCurrentDeleteCall(
+            int bookingId,
+            Call<ApiResponse<BookingActionData>> call
+    ) {
+        return call == deleteCalls.get(bookingId);
+    }
+
+    private void abortBookingsRequest() {
+        cancelPendingBookingsRetry();
+        if (bookingsCall != null && !bookingsCall.isCanceled()) {
+            bookingsCall.cancel();
+        }
+        bookingsCall = null;
+        hideAllLoaders();
     }
 
     private void showLoaderForRequest(int page, boolean showFullScreenLoader) {
@@ -268,34 +438,67 @@ public class HomeViewModel extends ViewModel {
         swipeRefreshingLiveData.setValue(false);
     }
 
+    private void handleUnsuccessfulBookingsResponse(
+            int page,
+            Response<ApiResponse<PaginatedData<BookingItem>>> response,
+            boolean quietFailure
+    ) {
+        int httpCode = response.code();
+
+        if (httpCode == 404 && page > FIRST_PAGE) {
+            isLastPage = true;
+            return;
+        }
+
+        if (quietFailure && hasVisibleBookings()) {
+            toastLiveData.setValue(MESSAGE_STALE_BOOKINGS);
+            return;
+        }
+
+        if (httpCode == 429) {
+            messageLiveData.setValue(ApiErrorUtils.messageFromResponse(
+                    response,
+                    ApiErrorUtils.rateLimitMessage()
+            ));
+            return;
+        }
+
+        String message = ApiErrorUtils.messageFromResponse(response, MESSAGE_LOAD_FAILED);
+        AppDiagnostics.logApiFailure("booking_list", message, null);
+        messageLiveData.setValue(message);
+    }
+
     private void handleBookingsPage(
             int page,
             PaginatedData<BookingItem> paginatedData
     ) {
-        List<BookingItem> results = paginatedData.getResults();
+        List<BookingItem> results = NullSafeCollections.copyWithoutNulls(
+                paginatedData.getResults()
+        );
 
         if (page == FIRST_PAGE) {
             handleFirstPageResults(results);
+            cacheFirstPageForCurrentFilter(results);
         } else {
             appendNextPageResults(results);
+            messageLiveData.setValue("");
         }
 
         currentPage = page;
         isLastPage = !paginatedData.hasNextPage()
-                || results == null
                 || results.isEmpty();
 
-        messageLiveData.setValue("");
     }
 
     private void handleFirstPageResults(List<BookingItem> results) {
-        if (results == null || results.isEmpty()) {
+        if (results.isEmpty()) {
             bookingsLiveData.setValue(new ArrayList<>());
             messageLiveData.setValue(MESSAGE_EMPTY_BOOKINGS);
             return;
         }
 
-        bookingsLiveData.setValue(new ArrayList<>(results));
+        bookingsLiveData.setValue(results);
+        messageLiveData.setValue("");
     }
 
     private void appendNextPageResults(List<BookingItem> results) {
@@ -307,9 +510,7 @@ public class HomeViewModel extends ViewModel {
 
         List<BookingItem> updatedList = new ArrayList<>(currentList);
 
-        if (results != null) {
-            updatedList.addAll(results);
-        }
+        updatedList.addAll(results);
 
         bookingsLiveData.setValue(updatedList);
     }
@@ -317,6 +518,113 @@ public class HomeViewModel extends ViewModel {
     private void resetPagination() {
         currentPage = FIRST_PAGE;
         isLastPage = false;
+        isLoading = false;
+        firstPageNetworkRetryCount = 0;
+    }
+
+    private void refreshBookingsAfterBookingChange() {
+        abortBookingsRequest();
+        resetPagination();
+        bookingsLiveData.setValue(new ArrayList<>());
+        swipeRefreshingLiveData.setValue(true);
+        fetchBookings(FIRST_PAGE, false, false);
+    }
+
+    private boolean shouldRetryFirstPageRequest(int page) {
+        return page == FIRST_PAGE && firstPageNetworkRetryCount < MAX_FIRST_PAGE_NETWORK_RETRIES;
+    }
+
+    private boolean shouldRetryFirstPageRequest(int page, int httpCode) {
+        return shouldRetryFirstPageRequest(page)
+                && (httpCode == 500 || httpCode == 502 || httpCode == 503 || httpCode == 504);
+    }
+
+    private void scheduleFirstPageRetry(
+            boolean showFullScreenLoader,
+            boolean quietFailure
+    ) {
+        isLoading = false;
+        firstPageNetworkRetryCount++;
+        cancelPendingBookingsRetry();
+
+        long delayMillis = FIRST_PAGE_RETRY_DELAY_MS * firstPageNetworkRetryCount;
+        pendingBookingsRetry = () -> {
+            pendingBookingsRetry = null;
+            fetchBookings(FIRST_PAGE, showFullScreenLoader, quietFailure);
+        };
+        retryHandler.postDelayed(pendingBookingsRetry, delayMillis);
+    }
+
+    private void cancelPendingBookingsRetry() {
+        if (pendingBookingsRetry != null) {
+            retryHandler.removeCallbacks(pendingBookingsRetry);
+            pendingBookingsRetry = null;
+        }
+    }
+
+    private boolean hasVisibleBookings() {
+        List<BookingItem> currentList = bookingsLiveData.getValue();
+        return currentList != null && !currentList.isEmpty();
+    }
+
+    private void cacheFirstPageForCurrentFilter(List<BookingItem> results) {
+        synchronized (CACHE_LOCK) {
+            firstPageCache.put(filterKey(), NullSafeCollections.copyWithoutNulls(results));
+        }
+    }
+
+    private List<BookingItem> getCachedBookingsForCurrentFilter() {
+        synchronized (CACHE_LOCK) {
+            List<BookingItem> cachedBookings = firstPageCache.get(filterKey());
+            return cachedBookings != null
+                    ? NullSafeCollections.copyWithoutNulls(cachedBookings)
+                    : null;
+        }
+    }
+
+    private String filterKey() {
+        return safeFilterValue(filterPrefix)
+                + "|"
+                + safeFilterValue(filterArrivalFrom)
+                + "|"
+                + safeFilterValue(filterDepartureTo)
+                + "|"
+                + safeFilterValue(filterStatus);
+    }
+
+    private String safeFilterValue(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private void logRequestStart(int page) {
+        Log.d(TAG, "booking-list request start page=" + page
+                + " status=" + filterStatus
+                + " isLoading=" + isLoading
+                + " isLastPage=" + isLastPage
+                + " activeCall=" + (bookingsCall != null));
+    }
+
+    private void logSkippedRequest(int page) {
+        Log.d(TAG, "booking-list request skipped page=" + page
+                + " status=" + filterStatus
+                + " isLoading=" + isLoading
+                + " isLastPage=" + isLastPage
+                + " activeCall=" + (bookingsCall != null));
+    }
+
+    private void logRequestResponse(int page, int httpCode) {
+        Log.d(TAG, "booking-list response page=" + page
+                + " code=" + httpCode
+                + " finalIsLoading=" + isLoading
+                + " finalIsLastPage=" + isLastPage);
+    }
+
+    private void logRequestFailure(int page, Throwable t) {
+        Log.d(TAG, "booking-list failure page=" + page
+                + " error=" + t.getClass().getSimpleName()
+                + ": " + t.getMessage()
+                + " finalIsLoading=" + isLoading
+                + " finalIsLastPage=" + isLastPage);
     }
 
     private void updateBookingFields(
@@ -340,5 +648,19 @@ public class HomeViewModel extends ViewModel {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    @Override
+    protected void onCleared() {
+        abortBookingsRequest();
+        Set<Call<ApiResponse<BookingActionData>>> calls =
+                new HashSet<>(deleteCalls.values());
+        deleteCalls.clear();
+        for (Call<?> call : calls) {
+            if (call != null && !call.isCanceled()) {
+                call.cancel();
+            }
+        }
+        super.onCleared();
     }
 }

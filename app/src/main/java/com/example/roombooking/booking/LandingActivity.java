@@ -10,25 +10,26 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
-import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.TypedValue;
 
 import com.example.roombooking.R;
-import com.example.roombooking.api.RetrofitClient;
 import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
-import com.example.roombooking.model.common.ApiResponse;
+import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.DateTimeUtils;
+import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -49,14 +50,11 @@ import android.widget.FrameLayout;
 import androidx.core.widget.NestedScrollView;
 
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class LandingActivity extends AppCompatActivity {
 
     private static final int CALENDAR_SPAN_COUNT = 7;
-    private static final String DEFAULT_ROOM_PREFIX = "Beta";
+    private static final String DEFAULT_ROOM_PREFIX = RoomPrefix.DELTA;
     private static final double LESS_THAN_HALF_PERCENTAGE = 50.0;
     private static final String STATE_SELECTED_MONTH = "selected_month";
     private static final String STATE_SELECTED_PREFIX = "selected_prefix";
@@ -78,6 +76,7 @@ public class LandingActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefreshAvailability;
     private RecyclerView rvAvailabilityGroups;
 
+    private LandingViewModel viewModel;
     private CalendarAvailabilityAdapter calendarAdapter;
 
     private final Calendar selectedMonth = Calendar.getInstance();
@@ -102,10 +101,9 @@ public class LandingActivity extends AppCompatActivity {
     private String selectedAvailableDepartureDate = null;
     private BottomSheetDialog activeBottomSheetDialog = null;
 
-    private Call<ApiResponse<RoomAvailabilityResponse>> availabilityCall;
-    private Call<ApiResponse<RoomAvailabilityDetailsResponse>> availabilityDetailsCall;
-    private Call<ApiResponse<AvailableRoomsResponse>> availableRoomsCall;
-    private Call<ApiResponse<AvailableRoomsRangeResponse>> availableRoomsRangeCall;
+    private LinearLayout pendingDeleteLayoutDetails = null;
+    private View pendingDeleteCard = null;
+    private RoomAvailabilityBookingItem pendingDeleteItem = null;
 
     private final ActivityResultLauncher<Intent> createBookingLauncher =
             registerForActivityResult(
@@ -124,14 +122,24 @@ public class LandingActivity extends AppCompatActivity {
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.main));
 
+        initViewModel();
         initViews();
         setupRecyclerView();
         restoreState(savedInstanceState);
         selectRestoredRoomTab();
         setupListeners();
         setupCalendarGestureSelection();
+        observeViewModel();
 
         loadAvailability();
+    }
+
+    private void initViewModel() {
+        AvailabilityRepository availabilityRepository =
+                new AvailabilityRepository(getApplicationContext());
+        LandingViewModelFactory factory =
+                new LandingViewModelFactory(availabilityRepository);
+        viewModel = new ViewModelProvider(this, factory).get(LandingViewModel.class);
     }
 
     private void initViews() {
@@ -298,6 +306,83 @@ public class LandingActivity extends AppCompatActivity {
         swipeRefreshAvailability.setOnRefreshListener(this::loadAvailability);
     }
 
+    private void observeViewModel() {
+        viewModel.getAvailabilityLoadingLiveData().observe(this, isLoading ->
+                swipeRefreshAvailability.setRefreshing(Boolean.TRUE.equals(isLoading))
+        );
+
+        viewModel.getAvailableRoomsLoadingLiveData().observe(
+                this,
+                isLoading -> setAvailableRoomsLoading(Boolean.TRUE.equals(isLoading))
+        );
+
+        viewModel.getAvailabilityGroupsLiveData().observe(this, groups -> {
+            allGroups.clear();
+            allGroups.addAll(NullSafeCollections.copyWithoutNulls(groups));
+            applyPrefixFilter();
+        });
+
+        viewModel.getToastLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            String message = event.getContentIfNotHandled();
+            if (message == null || message.trim().isEmpty()) return;
+
+            resetPendingDeleteCardIfNeeded();
+            showToast(message);
+        });
+
+        viewModel.getNetworkBannerLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            Boolean shouldShow = event.getContentIfNotHandled();
+            if (shouldShow == null) return;
+
+            if (shouldShow) {
+                InternetErrorBanner.show(this);
+            } else {
+                InternetErrorBanner.hide(this);
+            }
+        });
+
+        viewModel.getAvailabilityDetailsLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            RoomAvailabilityDetailsResponse data = event.getContentIfNotHandled();
+            if (data == null || !matchesSelectedPrefix(data.getPrefix())) return;
+
+            showAvailabilityDetailsDialog(data);
+        });
+
+        viewModel.getAvailableRoomsLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            AvailableRoomsResponse data = event.getContentIfNotHandled();
+            if (data == null || !matchesSelectedPrefix(data.getPrefix())) return;
+
+            showAvailableRoomsBottomSheet(data);
+        });
+
+        viewModel.getAvailableRoomsRangeLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            AvailableRoomsRangeResponse data = event.getContentIfNotHandled();
+            if (data == null || !matchesSelectedPrefix(data.getPrefix())) return;
+
+            showAvailableRoomsRangeBottomSheet(data);
+        });
+
+        viewModel.getDeleteBookingResultLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            LandingViewModel.DeleteBookingResult result =
+                    event.getContentIfNotHandled();
+            if (result == null) return;
+
+            handleDeleteBookingResult(result);
+        });
+    }
+
     private void showLandingPopupMenu(View anchor) {
         PopupMenu popupMenu = new PopupMenu(this, anchor, android.view.Gravity.END);
 
@@ -315,12 +400,11 @@ public class LandingActivity extends AppCompatActivity {
             }
 
             if (itemId == R.id.menuAvailability) {
-                showToast("Availability clicked");
                 return true;
             }
 
             if (itemId == R.id.menuAboutUs) {
-                showToast("AboutUs clicked");
+                showAboutDialog();
                 return true;
             }
 
@@ -334,6 +418,14 @@ public class LandingActivity extends AppCompatActivity {
         Intent intent = new Intent(LandingActivity.this, HomeActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
+    }
+
+    private void showAboutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.about_title)
+                .setMessage(R.string.about_message)
+                .setPositiveButton(R.string.action_close, null)
+                .show();
     }
 
     private void setupCalendarGestureSelection() {
@@ -529,100 +621,7 @@ public class LandingActivity extends AppCompatActivity {
         int year = selectedMonth.get(Calendar.YEAR);
 
         tvMonthYear.setText(monthYearFormat.format(selectedMonth.getTime()));
-        swipeRefreshAvailability.setRefreshing(true);
-
-        cancelCall(availabilityCall);
-        Call<ApiResponse<RoomAvailabilityResponse>> request = RetrofitClient.getApiService(this)
-                .getRoomAvailability(month, year);
-        availabilityCall = request;
-        request.enqueue(new Callback<ApiResponse<RoomAvailabilityResponse>>() {
-
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<RoomAvailabilityResponse>> call,
-                            @NonNull Response<ApiResponse<RoomAvailabilityResponse>> response
-                    ) {
-                        if (!isCurrentAvailabilityRequest(call, month, year)) {
-                            return;
-                        }
-
-                        availabilityCall = null;
-                        swipeRefreshAvailability.setRefreshing(false);
-
-                        if (isValidAvailabilityResponse(response)) {
-                            InternetErrorBanner.hide(LandingActivity.this);
-
-                            RoomAvailabilityResponse data = response.body().getData();
-
-                            allGroups.clear();
-
-                            if (data.hasGroups()) {
-                                allGroups.addAll(data.getGroups());
-                            }
-
-                            applyPrefixFilter();
-                            return;
-                        }
-
-                        showToast("Failed to load room availability");
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<RoomAvailabilityResponse>> call,
-                            @NonNull Throwable t
-                    ) {
-                        if (!isCurrentAvailabilityRequest(call, month, year)) {
-                            return;
-                        }
-
-                        availabilityCall = null;
-                        swipeRefreshAvailability.setRefreshing(false);
-                        if (!call.isCanceled()) {
-                            InternetErrorBanner.show(LandingActivity.this);
-                        }
-                    }
-                });
-    }
-
-    private boolean isCurrentAvailabilityRequest(
-            Call<ApiResponse<RoomAvailabilityResponse>> call,
-            int requestedMonth,
-            int requestedYear
-    ) {
-        return canUpdateUi()
-                && call == availabilityCall
-                && requestedMonth == selectedMonth.get(Calendar.MONTH) + 1
-                && requestedYear == selectedMonth.get(Calendar.YEAR);
-    }
-
-    private boolean isCurrentCall(
-            Call<?> callbackCall,
-            Call<?> trackedCall,
-            String requestedPrefix
-    ) {
-        return canUpdateUi()
-                && callbackCall == trackedCall
-                && requestedPrefix.equals(selectedPrefix);
-    }
-
-    private boolean canUpdateUi() {
-        return !isFinishing() && !isDestroyed();
-    }
-
-    private void cancelCall(Call<?> call) {
-        if (call != null && !call.isCanceled()) {
-            call.cancel();
-        }
-    }
-
-    private boolean isValidAvailabilityResponse(
-            Response<ApiResponse<RoomAvailabilityResponse>> response
-    ) {
-        return response.isSuccessful()
-                && response.body() != null
-                && response.body().isSuccess()
-                && response.body().getData() != null;
+        viewModel.loadAvailability(month, year);
     }
 
     private void applyPrefixFilter() {
@@ -795,168 +794,24 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     private void fetchAvailabilityDetails(String date) {
-        String requestedPrefix = selectedPrefix;
-        cancelCall(availabilityDetailsCall);
-        Call<ApiResponse<RoomAvailabilityDetailsResponse>> request =
-                RetrofitClient.getApiService(this)
-                        .getRoomAvailabilityDetails(date, requestedPrefix);
-        availabilityDetailsCall = request;
-        request.enqueue(new Callback<ApiResponse<RoomAvailabilityDetailsResponse>>() {
-
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<RoomAvailabilityDetailsResponse>> call,
-                            @NonNull Response<ApiResponse<RoomAvailabilityDetailsResponse>> response
-                    ) {
-                        if (!isCurrentCall(call, availabilityDetailsCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availabilityDetailsCall = null;
-                        InternetErrorBanner.hide(LandingActivity.this);
-                        if (isValidAvailabilityDetailsResponse(response)) {
-                            showAvailabilityDetailsDialog(response.body().getData());
-                            return;
-                        }
-
-                        showToast("Failed to load booking details");
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<RoomAvailabilityDetailsResponse>> call,
-                            @NonNull Throwable t
-                    ) {
-                        if (!isCurrentCall(call, availabilityDetailsCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availabilityDetailsCall = null;
-                        if (!call.isCanceled()) {
-                            InternetErrorBanner.show(LandingActivity.this);
-                        }
-                    }
-                });
-    }
-
-    private boolean isValidAvailabilityDetailsResponse(
-            Response<ApiResponse<RoomAvailabilityDetailsResponse>> response
-    ) {
-        return response.isSuccessful()
-                && response.body() != null
-                && response.body().isSuccess()
-                && response.body().getData() != null;
+        viewModel.loadAvailabilityDetails(date, selectedPrefix);
     }
 
     private void fetchAvailableRoomsForDate(String date) {
-        String requestedPrefix = selectedPrefix;
-        cancelCall(availableRoomsCall);
-        Call<ApiResponse<AvailableRoomsResponse>> request = RetrofitClient.getApiService(this)
-                .getAvailableRoomsByDate(date, requestedPrefix);
-        availableRoomsCall = request;
-        request.enqueue(new Callback<ApiResponse<AvailableRoomsResponse>>() {
-
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<AvailableRoomsResponse>> call,
-                            @NonNull Response<ApiResponse<AvailableRoomsResponse>> response
-                    ) {
-                        if (!isCurrentCall(call, availableRoomsCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availableRoomsCall = null;
-                        InternetErrorBanner.hide(LandingActivity.this);
-                        if (isValidAvailableRoomsResponse(response)) {
-                            showAvailableRoomsBottomSheet(response.body().getData());
-                            return;
-                        }
-
-                        showToast("Failed to load available rooms");
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<AvailableRoomsResponse>> call,
-                            @NonNull Throwable t
-                    ) {
-                        if (!isCurrentCall(call, availableRoomsCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availableRoomsCall = null;
-                        if (!call.isCanceled()) {
-                            InternetErrorBanner.show(LandingActivity.this);
-                        }
-                    }
-                });
-    }
-
-    private boolean isValidAvailableRoomsResponse(
-            Response<ApiResponse<AvailableRoomsResponse>> response
-    ) {
-        return response.isSuccessful()
-                && response.body() != null
-                && response.body().isSuccess()
-                && response.body().getData() != null;
+        viewModel.loadAvailableRoomsForDate(date, selectedPrefix);
     }
 
     private void fetchAvailableRoomsForDateRange(String arrivalDate, String departureDate) {
-        String requestedPrefix = selectedPrefix;
-        cancelCall(availableRoomsRangeCall);
-        Call<ApiResponse<AvailableRoomsRangeResponse>> request =
-                RetrofitClient.getApiService(this)
-                        .getAvailableRoomsByDateRange(
-                                arrivalDate,
-                                departureDate,
-                                requestedPrefix
-                        );
-        availableRoomsRangeCall = request;
-        request.enqueue(new Callback<ApiResponse<AvailableRoomsRangeResponse>>() {
-
-                    @Override
-                    public void onResponse(
-                            @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
-                            @NonNull Response<ApiResponse<AvailableRoomsRangeResponse>> response
-                    ) {
-                        if (!isCurrentCall(call, availableRoomsRangeCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availableRoomsRangeCall = null;
-                        InternetErrorBanner.hide(LandingActivity.this);
-                        if (isValidAvailableRoomsRangeResponse(response)) {
-                            showAvailableRoomsRangeBottomSheet(response.body().getData());
-                            return;
-                        }
-
-                        showToast("Failed to load available rooms");
-                    }
-
-                    @Override
-                    public void onFailure(
-                            @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
-                            @NonNull Throwable t
-                    ) {
-                        if (!isCurrentCall(call, availableRoomsRangeCall, requestedPrefix)) {
-                            return;
-                        }
-
-                        availableRoomsRangeCall = null;
-                        if (!call.isCanceled()) {
-                            InternetErrorBanner.show(LandingActivity.this);
-                        }
-                    }
-                });
+        viewModel.loadAvailableRoomsForDateRange(
+                arrivalDate,
+                departureDate,
+                selectedPrefix
+        );
     }
 
-    private boolean isValidAvailableRoomsRangeResponse(
-            Response<ApiResponse<AvailableRoomsRangeResponse>> response
-    ) {
-        return response.isSuccessful()
-                && response.body() != null
-                && response.body().isSuccess()
-                && response.body().getData() != null;
+    private void setAvailableRoomsLoading(boolean loading) {
+        btnCheckAvailability.setEnabled(!loading);
+        btnCheckAvailability.setAlpha(loading ? 0.55f : 1.0f);
     }
 
     private void showAvailableRoomsBottomSheet(AvailableRoomsResponse data) {
@@ -1095,20 +950,6 @@ public class LandingActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private int dpToPx(int dp) {
-        return Math.round(dp * getResources().getDisplayMetrics().density);
-    }
-
-    private ScrollView createScrollableBottomSheet(LinearLayout container) {
-        ScrollView scrollView = new ScrollView(this);
-        scrollView.setFillViewport(true);
-        scrollView.addView(container, new ScrollView.LayoutParams(
-                ScrollView.LayoutParams.MATCH_PARENT,
-                ScrollView.LayoutParams.WRAP_CONTENT
-        ));
-        return scrollView;
-    }
-
     private TextView createBottomSheetTitle(String text) {
         TextView title = new TextView(this);
         title.setText(text);
@@ -1139,7 +980,14 @@ public class LandingActivity extends AppCompatActivity {
             return;
         }
 
-        for (AvailableRoomItem room : rooms) {
+        List<AvailableRoomItem> validRooms = NullSafeCollections.copyWithoutNulls(rooms);
+
+        if (validRooms.isEmpty()) {
+            addEmptyMessage(container, emptyMessage);
+            return;
+        }
+
+        for (AvailableRoomItem room : validRooms) {
             TextView roomView = createAvailableRoomView(room);
             container.addView(roomView);
         }
@@ -1159,7 +1007,7 @@ public class LandingActivity extends AppCompatActivity {
 
         if (room.isPartiallyAvailable()) {
             roomView.setText(
-                    room.getSafeRoomName()
+                    room.getSafeSelectionLabel()
                             + "\nAvailable from: "
                             + room.getSafeAvailableFromDate()
                             + ", "
@@ -1169,7 +1017,7 @@ public class LandingActivity extends AppCompatActivity {
             roomView.setBackgroundColor(getColor(R.color.availability_border));
         } else {
             roomView.setText(
-                    room.getSafeRoomName()
+                    room.getSafeSelectionLabel()
                             + "\nAvailable"
             );
 
@@ -1208,7 +1056,7 @@ public class LandingActivity extends AppCompatActivity {
         Intent intent = new Intent(LandingActivity.this, CreateBookingActivity.class);
 
         intent.putExtra(CreateBookingActivity.EXTRA_ROOM_ID, room.getRoomId());
-        intent.putExtra(CreateBookingActivity.EXTRA_ROOM_NAME, room.getSafeRoomName());
+        intent.putExtra(CreateBookingActivity.EXTRA_ROOM_NAME, room.getSafeSelectionLabel());
 
         intent.putExtra(CreateBookingActivity.EXTRA_ARRIVAL_DATE, selectedAvailableArrivalDate);
         intent.putExtra(CreateBookingActivity.EXTRA_DEPARTURE_DATE, selectedAvailableDepartureDate);
@@ -1277,19 +1125,30 @@ public class LandingActivity extends AppCompatActivity {
             return;
         }
 
-        for (RoomAvailabilityBookingItem item : bookings) {
-            TextView card = createBookingDetailsCard(item);
+        List<RoomAvailabilityBookingItem> validBookings =
+                NullSafeCollections.copyWithoutNulls(bookings);
+
+        if (validBookings.isEmpty()) {
+            addEmptyMessage(layoutDetails, "No bookings found for this date.");
+            return;
+        }
+
+        for (RoomAvailabilityBookingItem item : validBookings) {
+            TextView card = createBookingDetailsCard(layoutDetails, item);
             layoutDetails.addView(card);
         }
     }
 
-    private TextView createBookingDetailsCard(RoomAvailabilityBookingItem item) {
+    private TextView createBookingDetailsCard(
+            LinearLayout layoutDetails,
+            RoomAvailabilityBookingItem item
+    ) {
         TextView card = new TextView(this);
 
         card.setText(
                 "Person Name: " + item.getSafeGuestName() + "\n"
-                        + "Room: " + item.getSafeRoomName() + "\n"
-                        + "Requestee: " + item.getSafeRequesteeName() + "\n"
+                        + "Room: " + item.getSafeSelectionLabel() + "\n"
+                        + "Requestor: " + item.getSafeRequestorName() + "\n"
                         + "Arrival: " + DateTimeUtils.formatUtcToLocal(item.getArrivalAt()) + "\n"
                         + "Departure: " + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())
         );
@@ -1305,8 +1164,91 @@ public class LandingActivity extends AppCompatActivity {
                 getDimenPx(R.dimen.space_22)
         );
         card.setLayoutParams(createBookingCardLayoutParams());
+        card.setOnLongClickListener(v -> {
+            showDeleteBookingDialog(layoutDetails, card, item);
+            return true;
+        });
 
         return card;
+    }
+
+    private void showDeleteBookingDialog(
+            LinearLayout layoutDetails,
+            View card,
+            RoomAvailabilityBookingItem item
+    ) {
+        if (item == null || item.getBookingId() <= 0) {
+            showToast("Booking details are missing.");
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Booking")
+                .setMessage("Delete booking for " + item.getSafeGuestName() + " permanently?")
+                .setPositiveButton("Delete Booking", (dialog, which) ->
+                        deleteBookingFromDetails(layoutDetails, card, item)
+                )
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void deleteBookingFromDetails(
+            LinearLayout layoutDetails,
+            View card,
+            RoomAvailabilityBookingItem item
+    ) {
+        if (pendingDeleteCard != null) {
+            showToast("Deletion is already in progress.");
+            return;
+        }
+
+        pendingDeleteLayoutDetails = layoutDetails;
+        pendingDeleteCard = card;
+        pendingDeleteItem = item;
+        setCardDeletingState(card, true);
+        viewModel.deleteBooking(item.getBookingId());
+    }
+
+    private void handleDeleteBookingResult(LandingViewModel.DeleteBookingResult result) {
+        if (pendingDeleteItem == null
+                || pendingDeleteItem.getBookingId() != result.getBookingId()) {
+            return;
+        }
+
+        if (pendingDeleteLayoutDetails != null && pendingDeleteCard != null) {
+            pendingDeleteLayoutDetails.removeView(pendingDeleteCard);
+            if (pendingDeleteLayoutDetails.getChildCount() == 0) {
+                addEmptyMessage(pendingDeleteLayoutDetails, "No bookings found for this date.");
+            }
+        }
+
+        clearPendingDeleteState();
+        loadAvailability();
+        showToast(result.getMessage());
+    }
+
+    private void resetPendingDeleteCardIfNeeded() {
+        if (pendingDeleteCard != null) {
+            setCardDeletingState(pendingDeleteCard, false);
+            clearPendingDeleteState();
+        }
+    }
+
+    private void clearPendingDeleteState() {
+        pendingDeleteLayoutDetails = null;
+        pendingDeleteCard = null;
+        pendingDeleteItem = null;
+    }
+
+    private void setCardDeletingState(View card, boolean deleting) {
+        if (card == null) {
+            return;
+        }
+
+        card.setEnabled(!deleting);
+        card.setClickable(!deleting);
+        card.setLongClickable(!deleting);
+        card.setAlpha(deleting ? 0.55f : 1.0f);
     }
 
     private LinearLayout.LayoutParams createBookingCardLayoutParams() {
@@ -1346,6 +1288,12 @@ public class LandingActivity extends AppCompatActivity {
         return value == null ? "" : value.trim();
     }
 
+    private boolean matchesSelectedPrefix(String prefix) {
+        return prefix == null
+                || prefix.trim().isEmpty()
+                || prefix.equalsIgnoreCase(selectedPrefix);
+    }
+
     @Override
     protected void onSaveInstanceState(@NonNull Bundle outState) {
         outState.putLong(STATE_SELECTED_MONTH, selectedMonth.getTimeInMillis());
@@ -1359,10 +1307,6 @@ public class LandingActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        cancelCall(availabilityCall);
-        cancelCall(availabilityDetailsCall);
-        cancelCall(availableRoomsCall);
-        cancelCall(availableRoomsRangeCall);
         super.onDestroy();
     }
 }

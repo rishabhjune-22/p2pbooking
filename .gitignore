@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local QA and deployment review artifacts
+qa_logs/
+qa_screenshots/
+deployment_review/
+dist/
+*.apk
+__pycache__/

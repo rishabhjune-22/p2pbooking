@@ -27,16 +27,39 @@ public class RoomEntity {
     @NonNull
     private String roomName;
 
+    @NonNull
+    private String hostelName;
+
+    private boolean hasAttachedBath;
+
+    @NonNull
+    private String roomType;
+
+    @NonNull
+    private String selectionLabel;
+
+    private int displayOrder;
+
     public RoomEntity(
             int id,
             @NonNull String prefix,
             @NonNull String number,
-            @NonNull String roomName
+            @NonNull String roomName,
+            @NonNull String hostelName,
+            boolean hasAttachedBath,
+            @NonNull String roomType,
+            @NonNull String selectionLabel,
+            int displayOrder
     ) {
         this.id = id;
         this.prefix = prefix;
         this.number = number;
         this.roomName = roomName;
+        this.hostelName = hostelName;
+        this.hasAttachedBath = hasAttachedBath;
+        this.roomType = roomType;
+        this.selectionLabel = selectionLabel;
+        this.displayOrder = displayOrder;
     }
 
     public int getId() {
@@ -58,6 +81,12 @@ public class RoomEntity {
         return roomName;
     }
 
+    @NonNull public String getHostelName() { return hostelName; }
+    public boolean isHasAttachedBath() { return hasAttachedBath; }
+    @NonNull public String getRoomType() { return roomType; }
+    @NonNull public String getSelectionLabel() { return selectionLabel; }
+    public int getDisplayOrder() { return displayOrder; }
+
     public void setId(int id) {
         this.id = id;
     }
@@ -73,4 +102,10 @@ public class RoomEntity {
     public void setRoomName(@NonNull String roomName) {
         this.roomName = roomName;
     }
+
+    public void setHostelName(@NonNull String hostelName) { this.hostelName = hostelName; }
+    public void setHasAttachedBath(boolean value) { this.hasAttachedBath = value; }
+    public void setRoomType(@NonNull String roomType) { this.roomType = roomType; }
+    public void setSelectionLabel(@NonNull String label) { this.selectionLabel = label; }
+    public void setDisplayOrder(int displayOrder) { this.displayOrder = displayOrder; }
 }

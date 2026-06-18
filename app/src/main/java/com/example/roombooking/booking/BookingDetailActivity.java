@@ -5,7 +5,6 @@ import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -20,12 +19,14 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import com.example.roombooking.R;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
+import com.example.roombooking.utils.ApiErrorUtils;
+import com.example.roombooking.utils.AppDiagnostics;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.InternetErrorBanner;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,9 +43,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     private static final String EXTRA_UPDATED_STATUS = "updated_status";
     private static final String EXTRA_ARRIVAL_AT = "arrival_at";
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
-
-    private static final String STATUS_CANCELLED = "cancelled";
-    private static final String STATUS_EXPIRED = "expired";
+    private static final String EXTRA_BOOKING_DELETED = "booking_deleted";
 
     private ImageButton btnBack;
 
@@ -56,19 +55,19 @@ public class BookingDetailActivity extends AppCompatActivity {
     private TextView tvVisitorCategoryDetails;
     private TextView tvRoomChargesDetails;
     private TextView tvAttenderDetails;
-    private TextView tvRequesteeDetails;
+    private TextView tvBudgetHeadDetails;
+    private TextView tvRequestorDetails;
     private TextView tvLogisticsDetails;
     private TextView tvStatusDetails;
 
-    private AppCompatButton btnCancelBooking;
+    private AppCompatButton btnDeleteBooking;
     private AppCompatButton btnEditBooking;
     private SwipeRefreshLayout swipeRefreshBookingDetail;
 
     private BookingRepository bookingRepository;
     private BookingItem bookingItem;
     private Call<ApiResponse<BookingItem>> refreshBookingCall;
-
-    private final Gson gson = new Gson();
+    private Call<ApiResponse<BookingActionData>> deleteBookingCall;
 
     private final ActivityResultLauncher<Intent> editBookingLauncher =
             registerForActivityResult(
@@ -119,11 +118,12 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvVisitorCategoryDetails = findViewById(R.id.tvVisitorCategoryDetails);
         tvRoomChargesDetails = findViewById(R.id.tvRoomChargesDetails);
         tvAttenderDetails = findViewById(R.id.tvAttenderDetails);
-        tvRequesteeDetails = findViewById(R.id.tvRequesteeDetails);
+        tvBudgetHeadDetails = findViewById(R.id.tvBudgetHeadDetails);
+        tvRequestorDetails = findViewById(R.id.tvRequestorDetails);
         tvLogisticsDetails = findViewById(R.id.tvLogisticsDetails);
         tvStatusDetails = findViewById(R.id.tvStatusDetails);
 
-        btnCancelBooking = findViewById(R.id.btnCancelBooking);
+        btnDeleteBooking = findViewById(R.id.btnDeleteBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
         swipeRefreshBookingDetail = findViewById(R.id.swipeRefreshBookingDetail);
     }
@@ -131,7 +131,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     private void setupListeners() {
         btnBack.setOnClickListener(v -> finish());
 
-        btnCancelBooking.setOnClickListener(v -> showCancelDialog());
+        btnDeleteBooking.setOnClickListener(v -> showDeleteDialog());
 
         btnEditBooking.setOnClickListener(v -> openEditBookingScreen());
 
@@ -168,14 +168,20 @@ public class BookingDetailActivity extends AppCompatActivity {
                 InternetErrorBanner.hide(BookingDetailActivity.this);
 
                 if (!response.isSuccessful() || response.body() == null) {
-                    showToast(extractErrorMessage(response));
+                    showToast(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Failed to load booking details."
+                    ));
                     return;
                 }
 
                 ApiResponse<BookingItem> apiResponse = response.body();
 
                 if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                    showToast(apiResponse.getFirstErrorMessage());
+                    showToast(ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            "Failed to load booking details."
+                    ));
                     return;
                 }
 
@@ -199,7 +205,7 @@ public class BookingDetailActivity extends AppCompatActivity {
 
                 if (!call.isCanceled()) {
                     InternetErrorBanner.show(BookingDetailActivity.this);
-                    showToast("Please check your internet connection.");
+                    showToast(ApiErrorUtils.networkMessage());
                 }
             }
         });
@@ -207,6 +213,10 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private boolean isCurrentRefreshCall(Call<ApiResponse<BookingItem>> call) {
         return call == refreshBookingCall && !isFinishing() && !isDestroyed();
+    }
+
+    private boolean canUpdateUi() {
+        return !isFinishing() && !isDestroyed();
     }
 
     private void cancelRefreshCall() {
@@ -288,7 +298,8 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvVisitorCategoryDetails.setText(buildVisitorCategoryDetails());
         tvRoomChargesDetails.setText(buildRoomChargesDetails());
         tvAttenderDetails.setText(buildAttenderDetails());
-        tvRequesteeDetails.setText(buildRequesteeDetails());
+        tvBudgetHeadDetails.setText(buildBudgetHeadDetails());
+        tvRequestorDetails.setText(buildRequestorDetails());
         tvLogisticsDetails.setText(buildLogisticsDetails());
         tvStatusDetails.setText("Status: " + getDisplayStatus());
     }
@@ -352,11 +363,17 @@ public class BookingDetailActivity extends AppCompatActivity {
         return "No";
     }
 
-    private String buildRequesteeDetails() {
-        return "Name: " + safe(bookingItem.getRequesteeName()) + "\n"
-                + "Designation: " + safe(bookingItem.getRequesteeDesignation()) + "\n"
-                + "Department: " + safe(bookingItem.getRequesteeDepartment()) + "\n"
-                + "Mobile: " + safe(bookingItem.getRequesteeMobile());
+    private String buildRequestorDetails() {
+        return "Name: " + safe(bookingItem.getRequestorName()) + "\n"
+                + "Designation: " + safe(bookingItem.getRequestorDesignation()) + "\n"
+                + "Department: " + safe(bookingItem.getRequestorDepartment()) + "\n"
+                + "Mobile: " + safe(bookingItem.getRequestorMobile());
+    }
+
+    private String buildBudgetHeadDetails() {
+        return "Type: " + getBudgetHeadTypeText(bookingItem.getBudgetHeadType()) + "\n"
+                + getBudgetHeadValueLabel(bookingItem.getBudgetHeadType()) + ": "
+                + safe(bookingItem.getBudgetHeadValue());
     }
 
     private String buildLogisticsDetails() {
@@ -385,6 +402,38 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
     }
 
+    private String getBudgetHeadTypeText(String budgetHeadType) {
+        if (budgetHeadType == null || budgetHeadType.trim().isEmpty()) {
+            return "N/A";
+        }
+
+        switch (budgetHeadType) {
+            case "institute_head":
+                return "Institute Head";
+
+            case "project_head":
+                return "Project Head";
+
+            case "individual":
+                return "Individual";
+
+            default:
+                return safe(budgetHeadType);
+        }
+    }
+
+    private String getBudgetHeadValueLabel(String budgetHeadType) {
+        if ("institute_head".equals(budgetHeadType)) {
+            return "Department Name";
+        }
+
+        if ("project_head".equals(budgetHeadType)) {
+            return "Project Code";
+        }
+
+        return "Value";
+    }
+
     private String getAttenderShiftText() {
         List<String> shifts = new ArrayList<>();
 
@@ -393,15 +442,11 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
 
         if (bookingItem.isAttenderMorningShift()) {
-            shifts.add("Morning Shift (6 AM - 2 PM)");
+            shifts.add("Morning Shift (7 AM - 3 PM)");
         }
 
         if (bookingItem.isAttenderDayShift()) {
-            shifts.add("Day Shift (2 PM - 10 PM)");
-        }
-
-        if (bookingItem.isAttenderNightShift()) {
-            shifts.add("Night Shift (10 PM - 6 AM)");
+            shifts.add("Day Shift (3 PM - 11 PM)");
         }
 
         if (shifts.isEmpty()) {
@@ -417,108 +462,99 @@ public class BookingDetailActivity extends AppCompatActivity {
             return;
         }
 
-        if (isCancelled()) {
-            btnCancelBooking.setEnabled(false);
-            btnCancelBooking.setText("Already Cancelled");
-
-            btnEditBooking.setEnabled(false);
-            btnEditBooking.setText("Edit Disabled");
-            return;
-        }
-
         if (isExpired()) {
-            btnCancelBooking.setEnabled(false);
-            btnCancelBooking.setText("Expired");
+            btnDeleteBooking.setEnabled(false);
+            btnDeleteBooking.setText("Expired");
 
             btnEditBooking.setEnabled(false);
             btnEditBooking.setText("Edit Disabled");
             return;
         }
 
-        btnCancelBooking.setEnabled(true);
-        btnCancelBooking.setText("Cancel Booking");
+        btnDeleteBooking.setEnabled(true);
+        btnDeleteBooking.setText("Delete Booking");
 
         btnEditBooking.setEnabled(true);
         btnEditBooking.setText("Edit Booking");
     }
 
     private void disableActionButtons() {
-        btnCancelBooking.setEnabled(false);
+        btnDeleteBooking.setEnabled(false);
         btnEditBooking.setEnabled(false);
     }
 
-    private void showCancelDialog() {
+    private void showDeleteDialog() {
         if (bookingItem == null) {
             showToast("No booking details found.");
             return;
         }
 
-        if (isCancelled()) {
-            showToast("Booking is already cancelled.");
-            return;
-        }
-
         if (isExpired()) {
-            showToast("Expired booking cannot be cancelled.");
+            showToast("Expired booking cannot be deleted.");
             return;
         }
-
-        EditText input = new EditText(this);
-        input.setHint("Enter cancellation reason (optional)");
-
-        int padding = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(padding, padding, padding, padding);
 
         new AlertDialog.Builder(this)
-                .setTitle("Cancel Booking")
-                .setMessage("Do you want to cancel this booking?")
-                .setView(input)
-                .setPositiveButton("Cancel Booking", (dialog, which) -> {
-                    String reason = input.getText() != null
-                            ? input.getText().toString().trim()
-                            : "";
-
-                    cancelBooking(reason);
-                })
+                .setTitle("Delete Booking")
+                .setMessage("Delete this booking permanently?")
+                .setPositiveButton("Delete Booking", (dialog, which) -> deleteBooking())
                 .setNegativeButton("Close", null)
                 .show();
     }
 
-    private void cancelBooking(String reason) {
-        if (bookingItem == null) {
+    private void deleteBooking() {
+        if (bookingItem == null || deleteBookingCall != null) {
             return;
         }
 
-        setCancellingState(true);
+        setDeletingState(true);
 
-        BookingCancelRequest request = new BookingCancelRequest(reason);
-
-        bookingRepository.cancelBooking(
-                bookingItem.getId(),
-                request
-        ).enqueue(new Callback<ApiResponse<BookingActionData>>() {
+        Call<ApiResponse<BookingActionData>> requestCall =
+                bookingRepository.deleteBooking(bookingItem.getId());
+        deleteBookingCall = requestCall;
+        requestCall.enqueue(new Callback<ApiResponse<BookingActionData>>() {
 
             @Override
             public void onResponse(
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Response<ApiResponse<BookingActionData>> response
             ) {
+                if (call != deleteBookingCall || !canUpdateUi()) return;
+                deleteBookingCall = null;
                 InternetErrorBanner.hide(BookingDetailActivity.this);
                 if (!response.isSuccessful() || response.body() == null) {
-                    resetCancelButton();
-                    showToast(extractErrorMessage(response));
+                    resetDeleteButton();
+                    String message = ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Delete failed."
+                    );
+                    AppDiagnostics.logBookingMutationFailure(
+                            "delete",
+                            bookingItem.getId(),
+                            message
+                    );
+                    showToast(message);
                     return;
                 }
 
                 ApiResponse<BookingActionData> apiResponse = response.body();
 
                 if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
-                    resetCancelButton();
-                    showToast(apiResponse.getFirstErrorMessage());
+                    resetDeleteButton();
+                    String message = ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            "Delete failed."
+                    );
+                    AppDiagnostics.logBookingMutationFailure(
+                            "delete",
+                            bookingItem.getId(),
+                            message
+                    );
+                    showToast(message);
                     return;
                 }
 
-                handleCancelSuccess(apiResponse);
+                handleDeleteSuccess(apiResponse);
             }
 
             @Override
@@ -526,41 +562,53 @@ public class BookingDetailActivity extends AppCompatActivity {
                     @NonNull Call<ApiResponse<BookingActionData>> call,
                     @NonNull Throwable t
             ) {
-                resetCancelButton();
-                InternetErrorBanner.show(BookingDetailActivity.this);
-                showToast("Please check your internet connection.");
+                if (call != deleteBookingCall || !canUpdateUi()) return;
+                deleteBookingCall = null;
+                resetDeleteButton();
+                if (!call.isCanceled()) {
+                    InternetErrorBanner.show(BookingDetailActivity.this);
+                    String message = ApiErrorUtils.networkMessage();
+                    AppDiagnostics.logBookingMutationFailure(
+                            "delete",
+                            bookingItem.getId(),
+                            message,
+                            t
+                    );
+                    showToast(message);
+                }
             }
         });
     }
 
-    private void handleCancelSuccess(ApiResponse<BookingActionData> apiResponse) {
-        BookingActionData data = apiResponse.getData();
+    private void handleDeleteSuccess(ApiResponse<BookingActionData> apiResponse) {
+        sendDeletedResult();
+        showToast(apiResponse.getSafeMessage());
+        finish();
+    }
 
-        if (data != null && data.getStatus() != null) {
-            bookingItem.setStatus(data.getStatus());
-        } else {
-            bookingItem.setStatus(STATUS_CANCELLED);
+    private void sendDeletedResult() {
+        if (bookingItem == null) {
+            return;
         }
 
-        renderBookingDetails();
-        updateButtonState();
-        sendUpdatedResult();
-
-        showToast(apiResponse.getSafeMessage());
+        Intent resultIntent = new Intent();
+        resultIntent.putExtra(EXTRA_UPDATED_BOOKING_ID, bookingItem.getId());
+        resultIntent.putExtra(EXTRA_BOOKING_DELETED, true);
+        setResult(RESULT_OK, resultIntent);
     }
 
-    private void setCancellingState(boolean cancelling) {
-        btnCancelBooking.setEnabled(!cancelling);
-        btnCancelBooking.setText(cancelling ? "Cancelling..." : "Cancel Booking");
+    private void setDeletingState(boolean deleting) {
+        btnDeleteBooking.setEnabled(!deleting);
+        btnDeleteBooking.setText(deleting ? "Deleting..." : "Delete Booking");
     }
 
-    private void resetCancelButton() {
+    private void resetDeleteButton() {
         if (isInactiveBooking()) {
             updateButtonState();
             return;
         }
 
-        setCancellingState(false);
+        setDeletingState(false);
     }
 
     private void sendUpdatedResult() {
@@ -578,35 +626,18 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private boolean isInactiveBooking() {
-        return isCancelled() || isExpired();
-    }
-
-    private boolean isCancelled() {
-        return bookingItem != null
-                && STATUS_CANCELLED.equalsIgnoreCase(bookingItem.getStatus());
+        return isExpired();
     }
 
     private boolean isExpired() {
         return bookingItem != null
-                && STATUS_EXPIRED.equalsIgnoreCase(bookingItem.getStatus());
+                && BookingStatus.isExpired(bookingItem.getStatus());
     }
 
     private String getDisplayStatus() {
-        if (bookingItem == null || bookingItem.getStatus() == null) {
-            return "Active";
-        }
-
-        String status = bookingItem.getStatus().trim();
-
-        if (STATUS_CANCELLED.equalsIgnoreCase(status)) {
-            return "Cancelled";
-        }
-
-        if (STATUS_EXPIRED.equalsIgnoreCase(status)) {
-            return "Expired";
-        }
-
-        return "Active";
+        return bookingItem == null
+                ? BookingStatus.displayName(null)
+                : BookingStatus.displayName(bookingItem.getStatus());
     }
 
     private String safe(String value) {
@@ -626,37 +657,11 @@ public class BookingDetailActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         cancelRefreshCall();
+        if (deleteBookingCall != null && !deleteBookingCall.isCanceled()) {
+            deleteBookingCall.cancel();
+        }
+        deleteBookingCall = null;
         super.onDestroy();
     }
 
-    private <T> String extractErrorMessage(Response<ApiResponse<T>> response) {
-        try {
-            if (response.errorBody() == null) {
-                return "Request failed. Code: " + response.code();
-            }
-
-            String errorJson = response.errorBody().string();
-            ApiResponse<?> errorResponse = gson.fromJson(errorJson, ApiResponse.class);
-
-            if (errorResponse == null) {
-                return "Request failed. Code: " + response.code();
-            }
-
-            String firstError = errorResponse.getFirstErrorMessage();
-
-            if (firstError != null && !firstError.trim().isEmpty()) {
-                return firstError;
-            }
-
-            if (errorResponse.getMessage() != null
-                    && !errorResponse.getMessage().trim().isEmpty()) {
-                return errorResponse.getMessage();
-            }
-
-        } catch (Exception ignored) {
-            // Return default error below.
-        }
-
-        return "Request failed. Code: " + response.code();
-    }
 }

@@ -19,6 +19,10 @@ public class BookingRepository {
         this.apiService = RetrofitClient.getApiService(context.getApplicationContext());
     }
 
+    BookingRepository(ApiService apiService) {
+        this.apiService = apiService;
+    }
+
     public Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(
             int page,
             String prefix,
@@ -50,10 +54,7 @@ public class BookingRepository {
         return apiService.updateBooking(bookingId, request);
     }
 
-    public Call<ApiResponse<BookingActionData>> cancelBooking(
-            int bookingId,
-            BookingCancelRequest request
-    ) {
-        return apiService.cancelBooking(bookingId, request);
+    public Call<ApiResponse<BookingActionData>> deleteBooking(int bookingId) {
+        return apiService.deleteBooking(bookingId);
     }
 }

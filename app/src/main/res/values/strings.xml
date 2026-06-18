@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">RoomBooking</string>
+    <string name="app_name">Visitors Room Booking</string>
     <string name="create_booking">Create Booking</string>
     <string name="filter">Filter</string>
-    <string name="toggle_cancelled">Toggle Cancelled</string>
+    <string name="toggle_booking_status">Toggle Booking Status</string>
     <string name="clear_filter">Clear Filter</string>
     <string-array name="gender_options">
         <item>Select Gender</item>
@@ -17,4 +17,7 @@
     <string name="dialog_message_enter_name">Please enter your name to continue.</string>
     <string name="action_continue">Continue</string>
     <string name="error_name_required">Name is required</string>
+    <string name="about_title">About Visitors Room Booking</string>
+    <string name="about_message">Visitors Room Booking helps IIT Bhilai manage visitor room availability, bookings, and booking updates.</string>
+    <string name="action_close">Close</string>
 </resources>

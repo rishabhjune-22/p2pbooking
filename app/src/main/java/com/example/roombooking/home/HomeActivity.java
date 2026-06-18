@@ -1,13 +1,14 @@
 package com.example.roombooking.home;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.ProgressBar;
@@ -20,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.util.Pair;
+import androidx.core.view.WindowCompat;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -31,7 +33,9 @@ import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.booking.CreateBookingActivity;
 import com.example.roombooking.booking.LandingActivity;
+import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -52,43 +56,42 @@ public class HomeActivity extends AppCompatActivity {
     private static final String EXTRA_ARRIVAL_AT = "arrival_at";
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
+    private static final String EXTRA_BOOKING_DELETED = "booking_deleted";
     private static final String STATE_COMPACT_VIEW = "compact_view";
-
-    private static final String STATUS_ACTIVE = "active";
-    private static final String STATUS_CANCELLED = "cancelled";
-    private static final String STATUS_EXPIRED = "expired";
 
     private static final String QUICK_RANGE_CUSTOM = "custom";
     private static final String QUICK_RANGE_3_MONTHS = "3_months";
     private static final String QUICK_RANGE_6_MONTHS = "6_months";
 
     private static final int PAGINATION_THRESHOLD = 2;
+    private static final long PAGINATION_DEBOUNCE_MS = 500L;
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
     private TextView tvMessage;
     private TextView tvTitle;
     private TextView tvStatusToggleLabel;
+    private TextView tvCompactToggleLabel;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     private ImageButton btnCreateBooking;
     private ImageButton btnFilter;
     private ImageButton btnToggleStatus;
     private ImageButton btnClearFilter;
-    private ImageButton btnRoomAvailability;
     private ImageButton btnToggleCompact;
 
     private MaterialToolbar materialToolbar;
 
     private BookingAdapter bookingAdapter;
     private LinearLayoutManager layoutManager;
+    private RecyclerView.OnScrollListener paginationScrollListener;
     private HomeViewModel viewModel;
 
     private String selectedPrefix = null;
     private String selectedQuickRange = QUICK_RANGE_CUSTOM;
     private String selectedArrivalFrom = null;
     private String selectedDepartureTo = null;
-    private String selectedStatus = STATUS_ACTIVE;
+    private String selectedStatus = BookingStatus.ACTIVE;
 
     private TextView activeDateRangeTextView;
 
@@ -99,6 +102,7 @@ public class HomeActivity extends AppCompatActivity {
             new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
 
     private MaterialDatePicker<Pair<Long, Long>> dateRangePicker;
+    private long lastPaginationTriggerAtMillis = 0L;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,13 +137,13 @@ public class HomeActivity extends AppCompatActivity {
         tvMessage = findViewById(R.id.tvMessage);
         tvTitle = findViewById(R.id.tvTitle);
         tvStatusToggleLabel = findViewById(R.id.tvStatusToggleLabel);
+        tvCompactToggleLabel = findViewById(R.id.tvCompactToggleLabel);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
         btnFilter = findViewById(R.id.btnFilter);
-        btnToggleStatus = findViewById(R.id.btnToggleCancelled);
+        btnToggleStatus = findViewById(R.id.btnToggleStatus);
         btnClearFilter = findViewById(R.id.btnClearFilter);
-        btnRoomAvailability = findViewById(R.id.btnRoomAvailability);
         btnToggleCompact = findViewById(R.id.btnToggleCompact);
 
         materialToolbar = findViewById(R.id.toolbar);
@@ -165,6 +169,25 @@ public class HomeActivity extends AppCompatActivity {
 
             applySelectedDateRange(selection.first, selection.second);
         });
+    }
+
+    private void configureDatePickerWindow() {
+        if (dateRangePicker.getDialog() == null) {
+            return;
+        }
+
+        Window window = dateRangePicker.getDialog().getWindow();
+        if (window == null) {
+            return;
+        }
+
+        WindowCompat.setDecorFitsSystemWindows(window, true);
+        window.setStatusBarColor(Color.WHITE);
+        window.setNavigationBarColor(Color.WHITE);
+        WindowCompat.getInsetsController(window, window.getDecorView())
+                .setAppearanceLightStatusBars(true);
+        WindowCompat.getInsetsController(window, window.getDecorView())
+                .setAppearanceLightNavigationBars(true);
     }
 
     private void applySelectedDateRange(long startMillis, long endMillis) {
@@ -196,7 +219,7 @@ public class HomeActivity extends AppCompatActivity {
 
             @Override
             public void onBookingLongClick(BookingItem bookingItem, int position) {
-                showCancelBookingDialog(bookingItem);
+                showDeleteBookingDialog(bookingItem);
             }
         });
 
@@ -205,7 +228,16 @@ public class HomeActivity extends AppCompatActivity {
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setHasFixedSize(true);
         recyclerView.setAdapter(bookingAdapter);
-        recyclerView.addOnScrollListener(createPaginationScrollListener());
+        attachPaginationScrollListenerOnce();
+    }
+
+    private void attachPaginationScrollListenerOnce() {
+        if (paginationScrollListener != null) {
+            return;
+        }
+
+        paginationScrollListener = createPaginationScrollListener();
+        recyclerView.addOnScrollListener(paginationScrollListener);
     }
 
     private RecyclerView.OnScrollListener createPaginationScrollListener() {
@@ -226,11 +258,21 @@ public class HomeActivity extends AppCompatActivity {
                     return;
                 }
 
-                if (shouldLoadNextPage()) {
+                if (shouldLoadNextPage() && canTriggerPaginationNow()) {
                     viewModel.loadNextPage();
                 }
             }
         };
+    }
+
+    private boolean canTriggerPaginationNow() {
+        long now = System.currentTimeMillis();
+        if (now - lastPaginationTriggerAtMillis < PAGINATION_DEBOUNCE_MS) {
+            return false;
+        }
+
+        lastPaginationTriggerAtMillis = now;
+        return true;
     }
 
     private boolean shouldLoadNextPage() {
@@ -289,8 +331,6 @@ public class HomeActivity extends AppCompatActivity {
             applyCurrentFilter();
         });
 
-        btnRoomAvailability.setOnClickListener(v -> openAvailabilityScreen());
-
         btnToggleCompact.setOnClickListener(v -> toggleBookingView());
     }
 
@@ -315,7 +355,7 @@ public class HomeActivity extends AppCompatActivity {
             layoutManager.scrollToPositionWithOffset(firstVisiblePosition, topOffset);
         }
 
-        ensureScrollableContent();
+        requestCompactViewportFill();
     }
 
     private void updateCompactToggleUi() {
@@ -326,11 +366,19 @@ public class HomeActivity extends AppCompatActivity {
         btnToggleCompact.setContentDescription(
                 compactView ? "Switch to detailed booking view" : "Switch to compact booking view"
         );
+        tvCompactToggleLabel.setText(
+                compactView ? "Detailed\nView" : "Compact\nView"
+        );
     }
 
-    private void ensureScrollableContent() {
+    private void requestCompactViewportFill() {
+        if (!bookingAdapter.isCompactView()) {
+            return;
+        }
+
         recyclerView.post(() -> {
-            if (bookingAdapter.getItemCount() == 0
+            if (!bookingAdapter.isCompactView()
+                    || bookingAdapter.getItemCount() == 0
                     || recyclerView.canScrollVertically(1)
                     || viewModel.isLoading()
                     || viewModel.isLastPage()) {
@@ -368,7 +416,7 @@ public class HomeActivity extends AppCompatActivity {
             }
 
             if (itemId == R.id.menuAboutUs) {
-                showToast("Logout clicked");
+                showAboutDialog();
                 return true;
             }
 
@@ -395,32 +443,31 @@ public class HomeActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    private void showAboutDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.about_title)
+                .setMessage(R.string.about_message)
+                .setPositiveButton(R.string.action_close, null)
+                .show();
+    }
+
     private void cycleBookingStatus() {
-        if (STATUS_ACTIVE.equalsIgnoreCase(selectedStatus)) {
-            selectedStatus = STATUS_CANCELLED;
-        } else if (STATUS_CANCELLED.equalsIgnoreCase(selectedStatus)) {
-            selectedStatus = STATUS_EXPIRED;
+        if (BookingStatus.isActive(selectedStatus)) {
+            selectedStatus = BookingStatus.EXPIRED;
         } else {
-            selectedStatus = STATUS_ACTIVE;
+            selectedStatus = BookingStatus.ACTIVE;
         }
     }
 
     private void updateStatusToggleUi() {
-        if (STATUS_ACTIVE.equalsIgnoreCase(selectedStatus)) {
-            btnToggleStatus.setImageResource(R.drawable.bg_icon_active);
+        if (BookingStatus.isActive(selectedStatus)) {
+            btnToggleStatus.setImageResource(R.drawable.ic_booking_status_active);
             btnToggleStatus.setContentDescription("Showing active bookings");
             tvStatusToggleLabel.setText("Active\nBookings");
             return;
         }
 
-        if (STATUS_CANCELLED.equalsIgnoreCase(selectedStatus)) {
-            btnToggleStatus.setImageResource(R.drawable.bg_icon_cancelled);
-            btnToggleStatus.setContentDescription("Showing cancelled bookings");
-            tvStatusToggleLabel.setText("Cancelled\nBookings");
-            return;
-        }
-
-        btnToggleStatus.setImageResource(R.drawable.bg_icon_expired);
+        btnToggleStatus.setImageResource(R.drawable.ic_booking_status_expired);
         btnToggleStatus.setContentDescription("Showing expired bookings");
         tvStatusToggleLabel.setText("Expired\nBookings");
     }
@@ -441,15 +488,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private String getReadableStatusText() {
-        if (STATUS_CANCELLED.equalsIgnoreCase(selectedStatus)) {
-            return "Cancelled";
-        }
-
-        if (STATUS_EXPIRED.equalsIgnoreCase(selectedStatus)) {
-            return "Expired";
-        }
-
-        return "Active";
+        return BookingStatus.displayName(selectedStatus);
     }
 
     private boolean hasSelectedDateRange() {
@@ -463,7 +502,7 @@ public class HomeActivity extends AppCompatActivity {
         selectedPrefix = null;
         selectedArrivalFrom = null;
         selectedDepartureTo = null;
-        selectedStatus = STATUS_ACTIVE;
+        selectedStatus = BookingStatus.ACTIVE;
         selectedQuickRange = QUICK_RANGE_CUSTOM;
 
         updateStatusToggleUi();
@@ -473,7 +512,7 @@ public class HomeActivity extends AppCompatActivity {
                 null,
                 null,
                 null,
-                STATUS_ACTIVE
+                BookingStatus.ACTIVE
         );
 
         showToast("Filters cleared");
@@ -524,10 +563,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private void bindBuildingDropdown(AutoCompleteTextView actBuilding) {
         List<String> buildingNames = new ArrayList<>();
-        buildingNames.add("All Buildings");
-        buildingNames.add("Beta");
-        buildingNames.add("Gamma");
-        buildingNames.add("Delta");
+        buildingNames.addAll(RoomPrefix.filterOptions());
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(
                 HomeActivity.this,
@@ -544,7 +580,7 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         if (selectedPrefix == null || selectedPrefix.trim().isEmpty()) {
-            actBuilding.setText("All Buildings", false);
+            actBuilding.setText(RoomPrefix.ALL_BUILDINGS, false);
         } else {
             actBuilding.setText(selectedPrefix, false);
         }
@@ -555,7 +591,7 @@ public class HomeActivity extends AppCompatActivity {
             AutoCompleteTextView actBuilding
     ) {
         if (selectedPrefix == null || selectedPrefix.trim().isEmpty()) {
-            actBuilding.setText("All Buildings", false);
+            actBuilding.setText(RoomPrefix.ALL_BUILDINGS, false);
         } else {
             actBuilding.setText(selectedPrefix, false);
         }
@@ -619,7 +655,7 @@ public class HomeActivity extends AppCompatActivity {
         actBuilding.setOnItemClickListener((parent, itemView, position, id) -> {
             String selectedBuilding = parent.getItemAtPosition(position).toString();
 
-            if ("All Buildings".equalsIgnoreCase(selectedBuilding)) {
+            if (RoomPrefix.isAllBuildings(selectedBuilding)) {
                 selectedPrefix = null;
             } else {
                 selectedPrefix = selectedBuilding;
@@ -635,7 +671,7 @@ public class HomeActivity extends AppCompatActivity {
         btnApply.setOnClickListener(v -> {
             String buildingText = actBuilding.getText().toString().trim();
 
-            if (buildingText.isEmpty() || "All Buildings".equalsIgnoreCase(buildingText)) {
+            if (buildingText.isEmpty() || RoomPrefix.isAllBuildings(buildingText)) {
                 selectedPrefix = null;
             } else {
                 selectedPrefix = buildingText;
@@ -653,13 +689,15 @@ public class HomeActivity extends AppCompatActivity {
                     getSupportFragmentManager(),
                     "BOOKING_DATE_RANGE_PICKER"
             );
+            getSupportFragmentManager().executePendingTransactions();
+            configureDatePickerWindow();
         }
     }
 
     private void observeViewModel() {
         viewModel.getBookingsLiveData().observe(this, bookingItems -> {
             bookingAdapter.setItems(bookingItems);
-            ensureScrollableContent();
+            requestCompactViewportFill();
         });
 
         viewModel.getFullScreenLoadingLiveData().observe(this, isLoading ->
@@ -671,7 +709,6 @@ public class HomeActivity extends AppCompatActivity {
                 bookingAdapter.showPaginationLoader();
             } else {
                 bookingAdapter.hidePaginationLoader();
-                ensureScrollableContent();
             }
         });
 
@@ -681,7 +718,14 @@ public class HomeActivity extends AppCompatActivity {
 
         viewModel.getMessageLiveData().observe(this, message -> {
             updateInternetErrorBanner(message);
-            showOrHideMessage(message);
+            if (message == null
+                    || message.trim().isEmpty()
+                    || InternetErrorBanner.isNetworkErrorMessage(message)) {
+                tvMessage.setVisibility(View.GONE);
+            } else {
+                tvMessage.setVisibility(View.VISIBLE);
+                tvMessage.setText(message);
+            }
         });
 
         viewModel.getToastLiveData().observe(this, message -> {
@@ -700,53 +744,30 @@ public class HomeActivity extends AppCompatActivity {
         }
     }
 
-    private void showOrHideMessage(String message) {
-        if (message == null || message.trim().isEmpty()) {
-            tvMessage.setVisibility(View.GONE);
-            return;
-        }
-
-        tvMessage.setVisibility(View.VISIBLE);
-        tvMessage.setText(message);
-    }
-
-    private void showCancelBookingDialog(BookingItem bookingItem) {
+    private void showDeleteBookingDialog(BookingItem bookingItem) {
         if (bookingItem == null) {
             return;
         }
 
-        if (!canCancelBooking(bookingItem)) {
+        if (!canDeleteBooking(bookingItem)) {
             return;
         }
 
         String displayName = getBookingDisplayName(bookingItem);
 
-        EditText input = new EditText(this);
-        input.setHint("Enter cancellation reason (optional)");
-
-        int margin = (int) (16 * getResources().getDisplayMetrics().density);
-        input.setPadding(margin, margin, margin, margin);
-
         new AlertDialog.Builder(this)
-                .setTitle("Cancel Booking")
-                .setMessage("Do you want to cancel booking for " + displayName + "?")
-                .setView(input)
-                .setPositiveButton("Cancel Booking", (dialog, which) -> {
-                    String reason = input.getText().toString().trim();
-                    viewModel.cancelBooking(bookingItem, reason);
-                })
+                .setTitle("Delete Booking")
+                .setMessage("Delete booking for " + displayName + " permanently?")
+                .setPositiveButton("Delete Booking", (dialog, which) ->
+                        viewModel.deleteBooking(bookingItem)
+                )
                 .setNegativeButton("Close", null)
                 .show();
     }
 
-    private boolean canCancelBooking(BookingItem bookingItem) {
-        if (STATUS_CANCELLED.equalsIgnoreCase(bookingItem.getStatus())) {
-            showToast("Booking is already cancelled");
-            return false;
-        }
-
-        if (STATUS_EXPIRED.equalsIgnoreCase(bookingItem.getStatus())) {
-            showToast("Expired booking cannot be cancelled");
+    private boolean canDeleteBooking(BookingItem bookingItem) {
+        if (BookingStatus.isExpired(bookingItem.getStatus())) {
+            showToast("Expired booking cannot be deleted");
             return false;
         }
 
@@ -768,8 +789,14 @@ public class HomeActivity extends AppCompatActivity {
         String updatedStatus = data.getStringExtra(EXTRA_UPDATED_STATUS);
         String arrivalAt = data.getStringExtra(EXTRA_ARRIVAL_AT);
         String departureAt = data.getStringExtra(EXTRA_DEPARTURE_AT);
+        boolean bookingDeleted = data.getBooleanExtra(EXTRA_BOOKING_DELETED, false);
 
         if (bookingId == -1) {
+            return;
+        }
+
+        if (bookingDeleted) {
+            viewModel.removeBookingById(bookingId);
             return;
         }
 

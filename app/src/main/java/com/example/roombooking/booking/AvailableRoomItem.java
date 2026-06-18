@@ -12,6 +12,9 @@ public class AvailableRoomItem {
     @SerializedName("room_name")
     private String roomName;
 
+    @SerializedName("selection_label")
+    private String selectionLabel;
+
     @SerializedName("prefix")
     private String prefix;
 
@@ -30,6 +33,10 @@ public class AvailableRoomItem {
 
     public String getRoomName() {
         return roomName;
+    }
+
+    public String getSelectionLabel() {
+        return selectionLabel;
     }
 
     public String getPrefix() {
@@ -55,6 +62,12 @@ public class AvailableRoomItem {
 
     public String getSafeRoomName() {
         return roomName != null ? roomName : "";
+    }
+
+    public String getSafeSelectionLabel() {
+        return selectionLabel != null && !selectionLabel.trim().isEmpty()
+                ? selectionLabel
+                : getSafeRoomName();
     }
 
     public String getSafeAvailableFromDate() {

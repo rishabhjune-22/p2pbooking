@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.roombooking.R;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingStatus;
+import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.google.android.material.card.MaterialCardView;
 
@@ -33,10 +35,6 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private static final int VIEW_TYPE_LOADING = 2;
     private static final int VIEW_TYPE_COMPACT = 3;
 
-    private static final String STATUS_ACTIVE = "active";
-    private static final String STATUS_CANCELLED = "cancelled";
-    private static final String STATUS_EXPIRED = "expired";
-
     private static final String GENDER_MALE = "male";
     private static final String GENDER_FEMALE = "female";
 
@@ -54,9 +52,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     public void setItems(List<BookingItem> newItems) {
         List<BookingItem> oldItems = new ArrayList<>(items);
-        List<BookingItem> updatedItems = newItems != null
-                ? new ArrayList<>(newItems)
-                : new ArrayList<>();
+        List<BookingItem> updatedItems = NullSafeCollections.copyWithoutNulls(newItems);
 
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
                 new BookingDiffCallback(oldItems, updatedItems)
@@ -163,11 +159,11 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             );
         }
         holder.tvPurpose.setText(safe(item.getPurposeOfVisit()));
-        String requesteeName = safe(item.getRequesteeName());
+        String requestorName = safe(item.getRequestorName());
         holder.tvRequestedBy.setText(
                 holder.tvDateRange != null
-                        ? (requesteeName.isEmpty() ? "" : "By: " + requesteeName)
-                        : "Requestee: " + requesteeName
+                        ? (requestorName.isEmpty() ? "" : "By: " + requestorName)
+                        : "Requestor: " + requestorName
         );
         holder.tvCreatedBy.setText("Created By: " + safe(item.getCreatedByName()));
     }
@@ -181,15 +177,11 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         String status = normalizeStatus(item.getStatus());
 
         switch (status) {
-            case STATUS_CANCELLED:
-                applyCancelledStatus(holder);
-                break;
-
-            case STATUS_EXPIRED:
+            case BookingStatus.EXPIRED:
                 applyExpiredStatus(holder);
                 break;
 
-            case STATUS_ACTIVE:
+            case BookingStatus.ACTIVE:
             default:
                 applyActiveStatus(holder);
                 break;
@@ -208,21 +200,6 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
                 holder,
                 R.color.booking_card_bg,
                 R.color.booking_card_active_stroke
-        );
-    }
-
-    private void applyCancelledStatus(BookingViewHolder holder) {
-        holder.tvStatus.setText("Cancelled");
-        holder.tvStatus.setTextColor(
-                ContextCompat.getColor(context, R.color.status_cancelled)
-        );
-        holder.tvStatus.setBackground(
-                ContextCompat.getDrawable(context, R.drawable.bg_status_cancelled)
-        );
-        applyCardAppearance(
-                holder,
-                R.color.booking_card_cancelled_bg,
-                R.color.booking_card_cancelled_stroke
         );
     }
 
@@ -278,21 +255,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     private String normalizeStatus(String status) {
-        if (status == null) {
-            return STATUS_ACTIVE;
-        }
-
-        String value = status.trim().toLowerCase(Locale.ROOT);
-
-        if (STATUS_CANCELLED.equals(value)) {
-            return STATUS_CANCELLED;
-        }
-
-        if (STATUS_EXPIRED.equals(value)) {
-            return STATUS_EXPIRED;
-        }
-
-        return STATUS_ACTIVE;
+        return BookingStatus.normalizeForList(status);
     }
 
     private int getAvatarRes(String gender) {
@@ -300,13 +263,13 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         switch (normalizedGender) {
             case GENDER_MALE:
-                return R.drawable.man_person_icon;
+                return R.drawable.ic_person_male;
 
             case GENDER_FEMALE:
-                return R.drawable.female_face_icon;
+                return R.drawable.ic_person_female;
 
             default:
-                return R.drawable.person_svgrepo_com;
+                return R.drawable.ic_person;
         }
     }
 

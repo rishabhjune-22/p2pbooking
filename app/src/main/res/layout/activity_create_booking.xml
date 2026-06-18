@@ -13,6 +13,7 @@
         android:background="@drawable/bg_create_booking_header" />
 
     <ScrollView
+        android:id="@+id/scrollCreateBooking"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:clipToPadding="false"
@@ -44,7 +45,7 @@
                     android:background="@android:color/transparent"
                     android:contentDescription="Back"
                     android:padding="@dimen/space_8"
-                    android:src="@drawable/back_svgrepo_com"
+                    android:src="@drawable/ic_back"
                     app:tint="@color/white" />
 
                 <LinearLayout
@@ -101,7 +102,7 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_room"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/hostel_svgrepo_com"
+                        android:src="@drawable/ic_hostel"
                         app:tint="@color/white" />
 
                     <TextView
@@ -167,10 +168,11 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_visit"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/calender_svgrepo_com"
+                        android:src="@drawable/ic_calendar"
                         app:tint="@color/white" />
 
                     <TextView
+                        android:id="@+id/tvStayDetailsTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_8"
@@ -193,7 +195,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
                     android:clickable="true"
-                    android:drawableStart="@drawable/calender_svgrepo_com"
+                    android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
                     android:hint="Arrival Date &amp; Time"
                     android:inputType="none" />
@@ -203,7 +205,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:clickable="true"
-                    android:drawableStart="@drawable/calender_svgrepo_com"
+                    android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
                     android:hint="Departure Date &amp; Time"
                     android:inputType="none" />
@@ -221,7 +223,7 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_visitor"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/user_02"
+                        android:src="@drawable/ic_user"
                         app:tint="@color/white" />
 
                     <TextView
@@ -246,21 +248,21 @@
                     android:id="@+id/etVisitorName"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
-                    android:drawableStart="@drawable/user_02"
+                    android:drawableStart="@drawable/ic_user"
                     android:hint="Visitor Name" />
 
                 <EditText
                     android:id="@+id/etVisitorDesignation"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/identification_svgrepo_com"
+                    android:drawableStart="@drawable/ic_identification"
                     android:hint="Designation" />
 
                 <EditText
                     android:id="@+id/etVisitorOrganisation"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/organisation_svgrepo_com"
+                    android:drawableStart="@drawable/ic_organization"
                     android:hint="Organisation" />
 
                 <TextView
@@ -286,14 +288,14 @@
                     android:id="@+id/etVisitorAddress"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/address_location_map_svgrepo_com"
+                    android:drawableStart="@drawable/ic_location"
                     android:hint="Address" />
 
                 <EditText
                     android:id="@+id/etVisitorMobile"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/phone_svgrepo_com"
+                    android:drawableStart="@drawable/ic_phone"
                     android:hint="Mobile Number"
                     android:inputType="phone" />
 
@@ -301,7 +303,7 @@
                     android:id="@+id/etVisitorEmail"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/mail_02"
+                    android:drawableStart="@drawable/ic_email"
                     android:hint="Email Address"
                     android:inputType="textEmailAddress" />
 
@@ -310,7 +312,7 @@
                     android:id="@+id/etPurpose"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_18"
-                    android:drawableStart="@drawable/documents_svgrepo_com"
+                    android:drawableStart="@drawable/ic_documents"
                     android:hint="Purpose of Visit" />
 
                 <!-- VISITOR CATEGORY -->
@@ -326,7 +328,7 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_visit"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/user_02"
+                        android:src="@drawable/ic_user"
                         app:tint="@color/white" />
 
                     <TextView
@@ -436,7 +438,7 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_logistics"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/user_02"
+                        android:src="@drawable/ic_user"
                         app:tint="@color/white" />
 
                     <TextView
@@ -471,7 +473,7 @@
                     android:layout_marginTop="@dimen/space_10"
                     android:alpha="0.45"
                     android:enabled="false"
-                    android:drawableStart="@drawable/attender"
+                    android:drawableStart="@drawable/ic_attendee"
                     android:hint="Number of Attenders Required Per Day"
                     android:inputType="number" />
 
@@ -500,7 +502,7 @@
                     android:layout_height="wrap_content"
                     android:alpha="0.45"
                     android:enabled="false"
-                    android:text="Morning Shift (6 AM - 2 PM)"
+                    android:text="Morning Shift (7 AM - 3 PM)"
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <CheckBox
@@ -509,16 +511,7 @@
                     android:layout_height="wrap_content"
                     android:alpha="0.45"
                     android:enabled="false"
-                    android:text="Day Shift (2 PM - 10 PM)"
-                    android:textColor="@color/create_booking_text_secondary" />
-
-                <CheckBox
-                    android:id="@+id/cbNightShift"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.45"
-                    android:enabled="false"
-                    android:text="Night Shift (10 PM - 6 AM)"
+                    android:text="Day Shift (3 PM - 11 PM)"
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <TextView
@@ -567,7 +560,7 @@
                     android:hint="Attender Charges Amount"
                     android:inputType="numberDecimal" />
 
-                <!-- REQUESTEE DETAILS -->
+                <!-- BUDGET HEAD -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -578,16 +571,16 @@
                     <ImageView
                         android:layout_width="@dimen/space_30"
                         android:layout_height="@dimen/space_30"
-                        android:background="@drawable/bg_section_icon_requestee"
+                        android:background="@drawable/bg_section_icon_requestor"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/user_02"
+                        android:src="@drawable/ic_documents"
                         app:tint="@color/white" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_8"
-                        android:text="Requestee Details"
+                        android:text="Budget Head"
                         android:textColor="@color/create_booking_text_secondary"
                         android:textSize="@dimen/text_15"
                         android:textStyle="bold" />
@@ -599,34 +592,105 @@
                     android:layout_height="@dimen/space_3"
                     android:layout_marginStart="@dimen/space_34"
                     android:layout_marginTop="@dimen/space_4"
-                    android:background="@color/section_requestee" />
+                    android:background="@color/section_requestor" />
 
-                <EditText
-                    android:id="@+id/etRequesteeName"
-                    style="@style/CreateBookingEditText"
+                <RadioGroup
+                    android:id="@+id/rgBudgetHeadType"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:drawableStart="@drawable/user_02"
-                    android:hint="Requestee Name" />
+                    android:orientation="vertical">
+
+                    <RadioButton
+                        android:id="@+id/rbBudgetIndividual"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Individual"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <RadioButton
+                        android:id="@+id/rbBudgetInstitute"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Institute Head"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <RadioButton
+                        android:id="@+id/rbBudgetProject"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Project Head"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                </RadioGroup>
 
                 <EditText
-                    android:id="@+id/etRequesteeDesignation"
+                    android:id="@+id/etBudgetHeadValue"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/identification_svgrepo_com"
+                    android:drawableStart="@drawable/ic_documents"
+                    android:hint="Name" />
+
+                <!-- REQUESTOR DETAILS -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_requestor"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_user"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Requestor Details"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_requestor" />
+
+                <EditText
+                    android:id="@+id/etRequestorName"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:drawableStart="@drawable/ic_user"
+                    android:hint="Requestor Name" />
+
+                <EditText
+                    android:id="@+id/etRequestorDesignation"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_identification"
                     android:hint="Designation" />
 
                 <EditText
-                    android:id="@+id/etRequesteeDepartment"
+                    android:id="@+id/etRequestorDepartment"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/default_department_svgrepo_com"
+                    android:drawableStart="@drawable/ic_department"
                     android:hint="Department" />
 
                 <EditText
-                    android:id="@+id/etRequesteeMobile"
+                    android:id="@+id/etRequestorMobile"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/phone_svgrepo_com"
+                    android:drawableStart="@drawable/ic_phone"
                     android:hint="Mobile Number"
                     android:inputType="phone" />
 
@@ -643,7 +707,7 @@
                         android:layout_height="@dimen/space_30"
                         android:background="@drawable/bg_section_icon_logistics"
                         android:padding="@dimen/space_5"
-                        android:src="@drawable/documents_svgrepo_com"
+                        android:src="@drawable/ic_documents"
                         app:tint="@color/white" />
 
                     <TextView
@@ -668,21 +732,21 @@
                     android:id="@+id/etLogisticsName"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
-                    android:drawableStart="@drawable/user_02"
+                    android:drawableStart="@drawable/ic_user"
                     android:hint="Logistics Name" />
 
                 <EditText
                     android:id="@+id/etLogisticsDesignation"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/identification_svgrepo_com"
+                    android:drawableStart="@drawable/ic_identification"
                     android:hint="Designation" />
 
                 <EditText
                     android:id="@+id/etLogisticsMobile"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/phone_svgrepo_com"
+                    android:drawableStart="@drawable/ic_phone"
                     android:hint="Mobile Number"
                     android:inputType="phone" />
 

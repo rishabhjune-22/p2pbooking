@@ -13,14 +13,17 @@ public class RoomAvailabilityBookingItem {
     @SerializedName("room_name")
     private String roomName;
 
+    @SerializedName("selection_label")
+    private String selectionLabel;
+
     @SerializedName("guest_name")
     private String guestName;
 
     @SerializedName("guest_gender")
     private String guestGender;
 
-    @SerializedName("requestee_name")
-    private String requesteeName;
+    @SerializedName("requestor_name")
+    private String requestorName;
 
     @SerializedName("arrival_at")
     private String arrivalAt;
@@ -43,6 +46,10 @@ public class RoomAvailabilityBookingItem {
         return roomName;
     }
 
+    public String getSelectionLabel() {
+        return selectionLabel;
+    }
+
     public String getGuestName() {
         return guestName;
     }
@@ -51,8 +58,8 @@ public class RoomAvailabilityBookingItem {
         return guestGender;
     }
 
-    public String getRequesteeName() {
-        return requesteeName;
+    public String getRequestorName() {
+        return requestorName;
     }
 
     public String getArrivalAt() {
@@ -71,12 +78,18 @@ public class RoomAvailabilityBookingItem {
         return roomName != null ? roomName : "";
     }
 
+    public String getSafeSelectionLabel() {
+        return selectionLabel != null && !selectionLabel.trim().isEmpty()
+                ? selectionLabel
+                : getSafeRoomName();
+    }
+
     public String getSafeGuestName() {
         return guestName != null ? guestName : "";
     }
 
-    public String getSafeRequesteeName() {
-        return requesteeName != null ? requesteeName : "";
+    public String getSafeRequestorName() {
+        return requestorName != null ? requestorName : "";
     }
 
     public String getSafeStatus() {

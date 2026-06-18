@@ -55,9 +55,6 @@ public class BookingUpdateRequest {
     @SerializedName("attender_day_shift")
     private final boolean attenderDayShift;
 
-    @SerializedName("attender_night_shift")
-    private final boolean attenderNightShift;
-
     @SerializedName("room_charges_status")
     private final String roomChargesStatus;
 
@@ -70,17 +67,23 @@ public class BookingUpdateRequest {
     @SerializedName("attender_charges_amount")
     private final String attenderChargesAmount;
 
-    @SerializedName("requestee_name")
-    private final String requesteeName;
+    @SerializedName("budget_head_type")
+    private final String budgetHeadType;
 
-    @SerializedName("requestee_designation")
-    private final String requesteeDesignation;
+    @SerializedName("budget_head_value")
+    private final String budgetHeadValue;
 
-    @SerializedName("requestee_department")
-    private final String requesteeDepartment;
+    @SerializedName("requestor_name")
+    private final String requestorName;
 
-    @SerializedName("requestee_mobile")
-    private final String requesteeMobile;
+    @SerializedName("requestor_designation")
+    private final String requestorDesignation;
+
+    @SerializedName("requestor_department")
+    private final String requestorDepartment;
+
+    @SerializedName("requestor_mobile")
+    private final String requestorMobile;
 
     @SerializedName("logistics_name")
     private final String logisticsName;
@@ -111,16 +114,18 @@ public class BookingUpdateRequest {
             boolean attenderGeneralShift,
             boolean attenderMorningShift,
             boolean attenderDayShift,
-            boolean attenderNightShift,
             String roomChargesStatus,
             String attenderChargesStatus,
             String roomChargesAmount,
             String attenderChargesAmount,
 
-            String requesteeName,
-            String requesteeDesignation,
-            String requesteeDepartment,
-            String requesteeMobile,
+            String budgetHeadType,
+            String budgetHeadValue,
+
+            String requestorName,
+            String requestorDesignation,
+            String requestorDepartment,
+            String requestorMobile,
 
             String logisticsName,
             String logisticsDesignation,
@@ -145,16 +150,17 @@ public class BookingUpdateRequest {
         this.attenderGeneralShift = attenderGeneralShift;
         this.attenderMorningShift = attenderMorningShift;
         this.attenderDayShift = attenderDayShift;
-        this.attenderNightShift = attenderNightShift;
         this.roomChargesStatus = roomChargesStatus;
         this.attenderChargesStatus = attenderChargesStatus;
         this.roomChargesAmount = roomChargesAmount;
         this.attenderChargesAmount = attenderChargesAmount;
+        this.budgetHeadType = budgetHeadType;
+        this.budgetHeadValue = budgetHeadValue;
 
-        this.requesteeName = requesteeName;
-        this.requesteeDesignation = requesteeDesignation;
-        this.requesteeDepartment = requesteeDepartment;
-        this.requesteeMobile = requesteeMobile;
+        this.requestorName = requestorName;
+        this.requestorDesignation = requestorDesignation;
+        this.requestorDepartment = requestorDepartment;
+        this.requestorMobile = requestorMobile;
 
         this.logisticsName = logisticsName;
         this.logisticsDesignation = logisticsDesignation;

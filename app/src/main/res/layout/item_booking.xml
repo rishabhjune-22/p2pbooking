@@ -31,7 +31,7 @@
             android:layout_marginStart="@dimen/space_14"
             android:background="@drawable/bg_status_active_soft"
             android:padding="@dimen/space_8"
-            android:src="@drawable/mens_room"
+            android:src="@drawable/ic_mens_room"
             app:layout_constraintStart_toEndOf="@id/viewAccent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -41,11 +41,11 @@
             android:gravity="center"
             android:singleLine="true"
             android:ellipsize="none"
-            android:text="Cancelled"
-            android:textColor="@color/status_cancelled"
+            android:text="Active"
+            android:textColor="@color/status_active"
             android:textSize="@dimen/text_12"
             android:textStyle="bold"
-            android:background="@drawable/bg_status_cancelled"
+            android:background="@drawable/bg_status_active_soft"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/ivAvatar" />
 
@@ -75,7 +75,7 @@
             <ImageView
                 android:layout_width="@dimen/space_22"
                 android:layout_height="@dimen/space_22"
-                android:src="@drawable/bed_svgrepo_com"
+                android:src="@drawable/ic_bed"
                 app:tint="@color/icon_tint" />
 
             <LinearLayout
@@ -157,7 +157,7 @@
             <ImageView
                 android:layout_width="@dimen/space_22"
                 android:layout_height="@dimen/space_22"
-                android:src="@drawable/calender_svgrepo_com"
+                android:src="@drawable/ic_calendar"
                 app:tint="@color/icon_tint" />
 
             <LinearLayout
@@ -198,7 +198,7 @@
             <ImageView
                 android:layout_width="@dimen/space_22"
                 android:layout_height="@dimen/space_22"
-                android:src="@drawable/calender_svgrepo_com"
+                android:src="@drawable/ic_calendar"
                 app:tint="@color/icon_tint" />
 
             <LinearLayout
@@ -320,6 +320,7 @@
             android:id="@+id/bottomSpace"
             android:layout_width="@dimen/space_1"
             android:layout_height="@dimen/space_1"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cellPurpose"
             app:layout_constraintBottom_toBottomOf="parent" />
 

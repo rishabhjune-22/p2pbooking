@@ -65,6 +65,8 @@ public class SplashActivity extends AppCompatActivity {
 
     private void preloadRooms() {
         roomRepository.getRooms(result -> {
+            if (isFinishing() || isDestroyed()) return;
+
             if (result.isSuccess()) {
                 InternetErrorBanner.hide(this);
             } else if (InternetErrorBanner.isNetworkErrorMessage(result.getErrorMessage())) {
@@ -77,6 +79,7 @@ public class SplashActivity extends AppCompatActivity {
     }
 
     private void tryNavigateNext() {
+        if (isFinishing() || isDestroyed()) return;
         if (navigationDone || userDialogShowing) return;
 
         if (!minimumDelayCompleted) return;

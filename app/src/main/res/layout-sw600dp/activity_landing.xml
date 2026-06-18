@@ -60,7 +60,7 @@
                 android:id="@+id/btnPreviousMonth"
                 style="@style/MonthNavigationButtonStyle"
                 android:contentDescription="Previous month"
-                app:icon="@drawable/back_svgrepo_com" />
+                app:icon="@drawable/ic_back" />
 
             <com.google.android.material.textview.MaterialTextView
                 android:id="@+id/tvMonthYear"
@@ -79,7 +79,7 @@
                 style="@style/MonthNavigationButtonStyle"
                 android:contentDescription="Next month"
                 android:rotation="180"
-                app:icon="@drawable/back_svgrepo_com" />
+                app:icon="@drawable/ic_back" />
         </LinearLayout>
 
         <com.google.android.material.tabs.TabLayout
@@ -94,9 +94,9 @@
             app:tabSelectedTextColor="@android:color/white"
             app:tabTextAppearance="@style/RoomTabTextStyle"
             app:tabTextColor="@color/detail_text_secondary">
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Beta" />
-            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Gamma" />
             <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Delta" />
+            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Gamma" />
+            <com.google.android.material.tabs.TabItem android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Beta" />
         </com.google.android.material.tabs.TabLayout>
 
         <LinearLayout
@@ -170,7 +170,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tabletCalendarControls">
         <LinearLayout style="@style/BookingActionItem">
-            <ImageButton android:id="@+id/btnCheckAvailability" style="@style/CheckAvailabilityIconButton" android:contentDescription="Check Availability" android:src="@drawable/check_availability2" />
+            <ImageButton android:id="@+id/btnCheckAvailability" style="@style/CheckAvailabilityIconButton" android:contentDescription="Check Availability" android:src="@drawable/ic_check_availability" />
             <TextView style="@style/BookingActionLabel" android:text="Check" />
         </LinearLayout>
     </LinearLayout>

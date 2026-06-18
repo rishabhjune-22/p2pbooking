@@ -4,14 +4,11 @@
     <color name="male_color">#2196F3</color>
     <color name="female_color">#E91E63</color>
     <color name="neutral_color">#9E9E9E</color>
-    <color name="status_cancelled">#FF0000</color> <!-- red -->
     <color name="status_active">#43A047</color>   <!-- green -->
     <!-- Card -->
     <color name="booking_card_bg">#FFFFFF</color>
-    <color name="booking_card_cancelled_bg">#FFF7F7</color>
     <color name="booking_card_expired_bg">#FFFBF2</color>
     <color name="booking_card_active_stroke">#E8ECF5</color>
-    <color name="booking_card_cancelled_stroke">#F3B8B8</color>
     <color name="booking_card_expired_stroke">#F4CEA0</color>
 
 
@@ -21,9 +18,6 @@
     <!-- Status Colors -->
     <color name="status_active_bg">#E8F5E9</color>
     <color name="status_active_text">#2E7D32</color>
-
-    <color name="status_cancelled_bg">#FFEBEE</color>
-    <color name="status_cancelled_text">#C62828</color>
 
     <color name="status_pending_bg">#FFF8E1</color>
     <color name="status_pending_text">#F57F17</color>
@@ -89,7 +83,7 @@
 
     <color name="section_visitor">#6B68F3</color>
     <color name="section_visit">#5B99FF</color>
-    <color name="section_requestee">#57C783</color>
+    <color name="section_requestor">#57C783</color>
     <color name="section_logistics">#F4A74C</color>
     <color name="section_room">#736AF2</color>
 

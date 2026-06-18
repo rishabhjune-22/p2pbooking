@@ -71,9 +71,6 @@ public class BookingItem implements Parcelable {
     @SerializedName("attender_day_shift")
     private boolean attenderDayShift;
 
-    @SerializedName("attender_night_shift")
-    private boolean attenderNightShift;
-
     @SerializedName("room_charges_status")
     private String roomChargesStatus;
 
@@ -86,17 +83,23 @@ public class BookingItem implements Parcelable {
     @SerializedName("attender_charges_amount")
     private String attenderChargesAmount;
 
-    @SerializedName("requestee_name")
-    private String requesteeName;
+    @SerializedName("budget_head_type")
+    private String budgetHeadType;
 
-    @SerializedName("requestee_designation")
-    private String requesteeDesignation;
+    @SerializedName("budget_head_value")
+    private String budgetHeadValue;
 
-    @SerializedName("requestee_department")
-    private String requesteeDepartment;
+    @SerializedName("requestor_name")
+    private String requestorName;
 
-    @SerializedName("requestee_mobile")
-    private String requesteeMobile;
+    @SerializedName("requestor_designation")
+    private String requestorDesignation;
+
+    @SerializedName("requestor_department")
+    private String requestorDepartment;
+
+    @SerializedName("requestor_mobile")
+    private String requestorMobile;
 
     @SerializedName("logistics_name")
     private String logisticsName;
@@ -137,16 +140,18 @@ public class BookingItem implements Parcelable {
         attenderGeneralShift = in.readByte() != 0;
         attenderMorningShift = in.readByte() != 0;
         attenderDayShift = in.readByte() != 0;
-        attenderNightShift = in.readByte() != 0;
         roomChargesStatus = in.readString();
         attenderChargesStatus = in.readString();
         roomChargesAmount = in.readString();
         attenderChargesAmount = in.readString();
 
-        requesteeName = in.readString();
-        requesteeDesignation = in.readString();
-        requesteeDepartment = in.readString();
-        requesteeMobile = in.readString();
+        budgetHeadType = in.readString();
+        budgetHeadValue = in.readString();
+
+        requestorName = in.readString();
+        requestorDesignation = in.readString();
+        requestorDepartment = in.readString();
+        requestorMobile = in.readString();
 
         logisticsName = in.readString();
         logisticsDesignation = in.readString();
@@ -177,7 +182,6 @@ public class BookingItem implements Parcelable {
                 && attenderGeneralShift == other.attenderGeneralShift
                 && attenderMorningShift == other.attenderMorningShift
                 && attenderDayShift == other.attenderDayShift
-                && attenderNightShift == other.attenderNightShift
                 && Objects.equals(roomName, other.roomName)
                 && Objects.equals(arrivalAt, other.arrivalAt)
                 && Objects.equals(departureAt, other.departureAt)
@@ -195,10 +199,12 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(attenderChargesStatus, other.attenderChargesStatus)
                 && Objects.equals(roomChargesAmount, other.roomChargesAmount)
                 && Objects.equals(attenderChargesAmount, other.attenderChargesAmount)
-                && Objects.equals(requesteeName, other.requesteeName)
-                && Objects.equals(requesteeDesignation, other.requesteeDesignation)
-                && Objects.equals(requesteeDepartment, other.requesteeDepartment)
-                && Objects.equals(requesteeMobile, other.requesteeMobile)
+                && Objects.equals(budgetHeadType, other.budgetHeadType)
+                && Objects.equals(budgetHeadValue, other.budgetHeadValue)
+                && Objects.equals(requestorName, other.requestorName)
+                && Objects.equals(requestorDesignation, other.requestorDesignation)
+                && Objects.equals(requestorDepartment, other.requestorDepartment)
+                && Objects.equals(requestorMobile, other.requestorMobile)
                 && Objects.equals(logisticsName, other.logisticsName)
                 && Objects.equals(logisticsDesignation, other.logisticsDesignation)
                 && Objects.equals(logisticsMobile, other.logisticsMobile)
@@ -285,10 +291,6 @@ public class BookingItem implements Parcelable {
         return attenderDayShift;
     }
 
-    public boolean isAttenderNightShift() {
-        return attenderNightShift;
-    }
-
     public String getRoomChargesStatus() {
         return roomChargesStatus;
     }
@@ -305,20 +307,28 @@ public class BookingItem implements Parcelable {
         return attenderChargesAmount;
     }
 
-    public String getRequesteeName() {
-        return requesteeName;
+    public String getBudgetHeadType() {
+        return budgetHeadType;
     }
 
-    public String getRequesteeDesignation() {
-        return requesteeDesignation;
+    public String getBudgetHeadValue() {
+        return budgetHeadValue;
     }
 
-    public String getRequesteeDepartment() {
-        return requesteeDepartment;
+    public String getRequestorName() {
+        return requestorName;
     }
 
-    public String getRequesteeMobile() {
-        return requesteeMobile;
+    public String getRequestorDesignation() {
+        return requestorDesignation;
+    }
+
+    public String getRequestorDepartment() {
+        return requestorDepartment;
+    }
+
+    public String getRequestorMobile() {
+        return requestorMobile;
     }
 
     public String getLogisticsName() {
@@ -378,16 +388,18 @@ public class BookingItem implements Parcelable {
         parcel.writeByte((byte) (attenderGeneralShift ? 1 : 0));
         parcel.writeByte((byte) (attenderMorningShift ? 1 : 0));
         parcel.writeByte((byte) (attenderDayShift ? 1 : 0));
-        parcel.writeByte((byte) (attenderNightShift ? 1 : 0));
         parcel.writeString(roomChargesStatus);
         parcel.writeString(attenderChargesStatus);
         parcel.writeString(roomChargesAmount);
         parcel.writeString(attenderChargesAmount);
 
-        parcel.writeString(requesteeName);
-        parcel.writeString(requesteeDesignation);
-        parcel.writeString(requesteeDepartment);
-        parcel.writeString(requesteeMobile);
+        parcel.writeString(budgetHeadType);
+        parcel.writeString(budgetHeadValue);
+
+        parcel.writeString(requestorName);
+        parcel.writeString(requestorDesignation);
+        parcel.writeString(requestorDepartment);
+        parcel.writeString(requestorMobile);
 
         parcel.writeString(logisticsName);
         parcel.writeString(logisticsDesignation);

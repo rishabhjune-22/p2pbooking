@@ -56,7 +56,7 @@
             android:id="@+id/btnPreviousMonth"
             style="@style/MonthNavigationButtonStyle"
             android:contentDescription="Previous month"
-            app:icon="@drawable/back_svgrepo_com" />
+            app:icon="@drawable/ic_back" />
 
         <com.google.android.material.textview.MaterialTextView
             android:id="@+id/tvMonthYear"
@@ -74,7 +74,7 @@
             style="@style/MonthNavigationButtonStyle"
             android:contentDescription="Next month"
             android:rotation="180"
-            app:icon="@drawable/back_svgrepo_com" />
+            app:icon="@drawable/ic_back" />
 
     </LinearLayout>
 
@@ -96,7 +96,7 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Beta" />
+            android:text="Delta" />
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
@@ -106,7 +106,7 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Delta" />
+            android:text="Beta" />
 
     </com.google.android.material.tabs.TabLayout>
 
@@ -329,7 +329,7 @@
                 android:id="@+id/btnCheckAvailability"
                 style="@style/CheckAvailabilityIconButton"
                 android:contentDescription="Check Availability"
-                android:src="@drawable/check_availability2" />
+                android:src="@drawable/ic_check_availability" />
 
             <TextView
                 style="@style/BookingActionLabel"

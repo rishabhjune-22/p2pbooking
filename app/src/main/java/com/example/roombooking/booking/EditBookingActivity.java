@@ -2,48 +2,44 @@ package com.example.roombooking.booking;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import java.util.TimeZone;
-import androidx.annotation.NonNull;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.core.graphics.Insets;
+import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.ViewModelProvider;
 import android.text.Editable;
 import android.text.TextWatcher;
 import com.example.roombooking.R;
-import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
-import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.room.RoomRepository;
+import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.InternetErrorBanner;
-import com.google.gson.Gson;
 
 import java.text.SimpleDateFormat;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
 
 public class EditBookingActivity extends AppCompatActivity {
 
@@ -53,13 +49,6 @@ public class EditBookingActivity extends AppCompatActivity {
     private static final String EXTRA_UPDATED_STATUS = "updated_status";
     private static final String EXTRA_ARRIVAL_AT = "arrival_at";
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
-
-    private static final long ONE_HOUR_MILLIS = 60 * 60 * 1000L;
-
-    private static final Pattern BOOKED_CONFLICT_PATTERN = Pattern.compile(
-            "(.+?) is already booked from (.+?) to (.+?)\\.",
-            Pattern.CASE_INSENSITIVE
-    );
 
     private Spinner spinnerRoom;
     private Spinner spinnerGender;
@@ -78,62 +67,55 @@ public class EditBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
+    private RadioGroup rgBudgetHeadType;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
+    private EditText etBudgetHeadValue;
     private TextView tvSelectShiftLabel;
     private CheckBox cbAttenderRequired;
     private EditText etAttenderCount;
     private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
     private CheckBox cbDayShift;
-    private CheckBox cbNightShift;
 
-    private EditText etRequesteeName;
-    private EditText etRequesteeDesignation;
-    private EditText etRequesteeDepartment;
-    private EditText etRequesteeMobile;
+    private EditText etRequestorName;
+    private EditText etRequestorDesignation;
+    private EditText etRequestorDepartment;
+    private EditText etRequestorMobile;
 
     private EditText etLogisticsName;
     private EditText etLogisticsDesignation;
     private EditText etLogisticsMobile;
 
     private TextView tvMessage;
+    private ScrollView scrollViewEditBooking;
     private AppCompatButton btnSaveBooking;
 
-    private BookingRepository bookingRepository;
-    private RoomRepository roomRepository;
+    private EditBookingViewModel viewModel;
+    private EditBookingFormState currentFormState;
     private BookingItem bookingItem;
-
-    private final Gson gson = new Gson();
-
-    private final Calendar arrivalCal = Calendar.getInstance();
-    private final Calendar departureCal = Calendar.getInstance();
+    private boolean formBound = false;
 
     private final SimpleDateFormat displayFormat =
             new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
 
-    private final SimpleDateFormat apiDateTimeFormat =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
-
-    private final SimpleDateFormat backendDateTimeFormat =
-            new SimpleDateFormat("yyyy-MM-dd HH:mm:ssXXX", Locale.getDefault());
-
-    private final List<RoomItem> roomList = new ArrayList<>();
-    private ArrayAdapter<String> roomAdapter;
+    private RoomSpinnerAdapter roomAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_booking);
-        backendDateTimeFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
         initDependencies();
         bindViews();
+        setupScrollInsets();
         AppToolbarMenu.setup(this, findViewById(R.id.appToolbar));
         setupRoomSpinner();
         setupGenderSpinner();
         setupListeners();
+        setupBackPressHandler();
+        observeViewModel();
 
         bookingItem = getBookingFromIntent();
 
@@ -143,16 +125,20 @@ public class EditBookingActivity extends AppCompatActivity {
             return;
         }
 
-        bindBookingData();
-        loadRooms();
+        viewModel.initialize(bookingItem);
+        viewModel.loadRooms();
     }
 
     private void initDependencies() {
-        bookingRepository = new BookingRepository(getApplicationContext());
-        roomRepository = new RoomRepository(getApplicationContext());
+        BookingRepository bookingRepository = new BookingRepository(getApplicationContext());
+        RoomRepository roomRepository = new RoomRepository(getApplicationContext());
+        EditBookingViewModelFactory factory =
+                new EditBookingViewModelFactory(bookingRepository, roomRepository);
+        viewModel = new ViewModelProvider(this, factory).get(EditBookingViewModel.class);
     }
 
     private void bindViews() {
+        scrollViewEditBooking = findViewById(R.id.scrollViewEditBooking);
         spinnerRoom = findViewById(R.id.spinnerRoom);
         spinnerGender = findViewById(R.id.spinnerGender);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
@@ -170,20 +156,21 @@ public class EditBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
+        rgBudgetHeadType = findViewById(R.id.rgBudgetHeadType);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
+        etBudgetHeadValue = findViewById(R.id.etBudgetHeadValue);
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         etAttenderCount = findViewById(R.id.etAttenderCount);
         cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
         cbDayShift = findViewById(R.id.cbDayShift);
-        cbNightShift = findViewById(R.id.cbNightShift);
 
-        etRequesteeName = findViewById(R.id.etRequesteeName);
-        etRequesteeDesignation = findViewById(R.id.etRequesteeDesignation);
-        etRequesteeDepartment = findViewById(R.id.etRequesteeDepartment);
-        etRequesteeMobile = findViewById(R.id.etRequesteeMobile);
+        etRequestorName = findViewById(R.id.etRequestorName);
+        etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
+        etRequestorDepartment = findViewById(R.id.etRequestorDepartment);
+        etRequestorMobile = findViewById(R.id.etRequestorMobile);
 
         etLogisticsName = findViewById(R.id.etLogisticsName);
         etLogisticsDesignation = findViewById(R.id.etLogisticsDesignation);
@@ -193,14 +180,35 @@ public class EditBookingActivity extends AppCompatActivity {
         btnSaveBooking = findViewById(R.id.btnSaveBooking);
     }
 
-    private void setupRoomSpinner() {
-        roomAdapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                new ArrayList<>()
-        );
+    private void setupScrollInsets() {
+        if (scrollViewEditBooking == null) {
+            return;
+        }
 
-        roomAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        int initialLeft = scrollViewEditBooking.getPaddingLeft();
+        int initialTop = scrollViewEditBooking.getPaddingTop();
+        int initialRight = scrollViewEditBooking.getPaddingRight();
+        int initialBottom = scrollViewEditBooking.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(scrollViewEditBooking, (view, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+
+            view.setPadding(
+                    initialLeft,
+                    initialTop,
+                    initialRight,
+                    initialBottom + Math.max(systemBars.bottom, ime.bottom)
+            );
+
+            return insets;
+        });
+
+        ViewCompat.requestApplyInsets(scrollViewEditBooking);
+    }
+
+    private void setupRoomSpinner() {
+        roomAdapter = new RoomSpinnerAdapter(this, new ArrayList<>());
         spinnerRoom.setAdapter(roomAdapter);
     }
 
@@ -216,30 +224,114 @@ public class EditBookingActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        findViewById(R.id.ivBack).setOnClickListener(v -> finish());
+        findViewById(R.id.ivBack).setOnClickListener(v -> handleBackPress());
 
         etArrivalAt.setOnClickListener(v ->
-                pickDateTime(arrivalCal, () -> {
-                    ensureDepartureAfterArrival();
-                    refreshDateTimeFields();
-                })
+                pickDateTime(
+                        viewModel.getArrivalCalendar(),
+                        viewModel::updateArrivalDateTime
+                )
         );
 
         etDepartureAt.setOnClickListener(v ->
-                pickDateTime(departureCal, () -> {
-                    if (!departureCal.getTime().after(arrivalCal.getTime())) {
-                        showError("Departure must be after arrival.");
-                        ensureDepartureAfterArrival();
-                    }
-
-                    refreshDateTimeFields();
-                })
+                pickDateTime(
+                        viewModel.getDepartureCalendar(),
+                        selectedDateTime -> {
+                            if (!viewModel.updateDepartureDateTime(selectedDateTime)) {
+                                showError("Departure must be after arrival.");
+                            }
+                        }
+                )
         );
 
         btnSaveBooking.setOnClickListener(v -> saveBooking());
-        setupChargeAmountListener(rgRoomChargesStatus, etRoomChargesAmount);
-        setupChargeAmountListener(rgAttenderChargesStatus, etAttenderChargesAmount);
+        setupChargeAmountListener(
+                rgRoomChargesStatus,
+                etRoomChargesAmount,
+                R.id.rbRoomChargesYes
+        );
+        setupChargeAmountListener(
+                rgAttenderChargesStatus,
+                etAttenderChargesAmount,
+                R.id.rbAttenderChargesYes
+        );
         setupAttenderRequirementControls();
+        setupBudgetHeadControls();
+    }
+
+    private void observeViewModel() {
+        viewModel.getFormStateLiveData().observe(this, state -> {
+            if (state == null) return;
+
+            currentFormState = state.copy();
+
+            if (!formBound) {
+                bindBookingData(currentFormState);
+                formBound = true;
+                return;
+            }
+
+            refreshDateTimeFields(currentFormState);
+        });
+
+        viewModel.getRoomsLiveData().observe(this, rooms -> {
+            InternetErrorBanner.hide(EditBookingActivity.this);
+            bindRoomsToSpinner(rooms);
+            preselectCurrentRoom();
+        });
+
+        viewModel.getSavingLiveData().observe(this, saving ->
+                setSavingState(Boolean.TRUE.equals(saving))
+        );
+
+        viewModel.getNetworkBannerLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            Boolean shouldShow = event.getContentIfNotHandled();
+            if (shouldShow == null) return;
+
+            if (shouldShow) {
+                InternetErrorBanner.show(this);
+            } else {
+                InternetErrorBanner.hide(this);
+            }
+        });
+
+        viewModel.getErrorLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            String message = event.getContentIfNotHandled();
+            if (message != null && !message.trim().isEmpty()) {
+                showError(message);
+            }
+        });
+
+        viewModel.getValidationLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            EditBookingValidationResult result = event.getContentIfNotHandled();
+            if (result != null && !result.isValid()) {
+                handleValidationError(result);
+            }
+        });
+
+        viewModel.getToastLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            String message = event.getContentIfNotHandled();
+            if (message != null && !message.trim().isEmpty()) {
+                showToast(message);
+            }
+        });
+
+        viewModel.getResultLiveData().observe(this, event -> {
+            if (event == null) return;
+
+            EditBookingResult result = event.getContentIfNotHandled();
+            if (result != null) {
+                handleUpdateSuccess(result);
+            }
+        });
     }
 
     private BookingItem getBookingFromIntent() {
@@ -256,108 +348,129 @@ public class EditBookingActivity extends AppCompatActivity {
         return intent.getParcelableExtra(EXTRA_BOOKING_DATA);
     }
 
-    private void bindBookingData() {
-        etVisitorName.setText(safe(bookingItem.getVisitorName()));
-        etVisitorDesignation.setText(safe(bookingItem.getVisitorDesignation()));
-        etVisitorOrganisation.setText(safe(bookingItem.getVisitorOrganisation()));
-        etVisitorAddress.setText(safe(bookingItem.getVisitorAddress()));
-        etVisitorMobile.setText(safe(bookingItem.getVisitorMobile()));
-        etVisitorEmail.setText(safe(bookingItem.getVisitorEmail()));
-        etPurpose.setText(safe(bookingItem.getPurposeOfVisit()));
+    private void bindBookingData(EditBookingFormState state) {
+        etVisitorName.setText(safe(state.getVisitorName()));
+        etVisitorDesignation.setText(safe(state.getVisitorDesignation()));
+        etVisitorOrganisation.setText(safe(state.getVisitorOrganisation()));
+        etVisitorAddress.setText(safe(state.getVisitorAddress()));
+        etVisitorMobile.setText(safe(state.getVisitorMobile()));
+        etVisitorEmail.setText(safe(state.getVisitorEmail()));
+        etPurpose.setText(safe(state.getPurpose()));
 
-        selectGender(bookingItem.getVisitorGender());
-        selectVisitorCategory(bookingItem.getVisitorCategory());
+        selectGender(state.getVisitorGender());
+        selectVisitorCategory(state.getVisitorCategory());
 
-        cbAttenderRequired.setChecked(bookingItem.isAttenderRequired());
-        etAttenderCount.setText(String.valueOf(bookingItem.getAttenderCountPerDay()));
-        cbGeneralShift.setChecked(bookingItem.isAttenderGeneralShift());
-        cbMorningShift.setChecked(bookingItem.isAttenderMorningShift());
-        cbDayShift.setChecked(bookingItem.isAttenderDayShift());
-        cbNightShift.setChecked(bookingItem.isAttenderNightShift());
+        cbAttenderRequired.setChecked(state.isAttenderRequired());
+        etAttenderCount.setText(String.valueOf(state.getAttenderCountPerDay()));
+        cbGeneralShift.setChecked(state.isAttenderGeneralShift());
+        cbMorningShift.setChecked(state.isAttenderMorningShift());
+        cbDayShift.setChecked(state.isAttenderDayShift());
         selectChargeStatus(
                 rgRoomChargesStatus,
-                bookingItem.getRoomChargesStatus(),
+                state.getRoomChargesStatus(),
                 R.id.rbRoomChargesYes,
                 R.id.rbRoomChargesNo,
                 R.id.rbRoomChargesWaived
         );
         selectChargeStatus(
                 rgAttenderChargesStatus,
-                bookingItem.getAttenderChargesStatus(),
+                state.getAttenderChargesStatus(),
                 R.id.rbAttenderChargesYes,
                 R.id.rbAttenderChargesNo,
                 R.id.rbAttenderChargesWaived
         );
         etRoomChargesAmount.setText(
-                "yes".equalsIgnoreCase(bookingItem.getRoomChargesStatus())
-                        ? safe(bookingItem.getRoomChargesAmount())
+                "yes".equalsIgnoreCase(state.getRoomChargesStatus())
+                        ? safe(state.getRoomChargesAmount())
                         : ""
         );
         etAttenderChargesAmount.setText(
-                "yes".equalsIgnoreCase(bookingItem.getAttenderChargesStatus())
-                        ? safe(bookingItem.getAttenderChargesAmount())
+                "yes".equalsIgnoreCase(state.getAttenderChargesStatus())
+                        ? safe(state.getAttenderChargesAmount())
                         : ""
         );
+        selectBudgetHeadType(state.getBudgetHeadType());
+        etBudgetHeadValue.setText(safe(state.getBudgetHeadValue()));
 
-        etRequesteeName.setText(safe(bookingItem.getRequesteeName()));
-        etRequesteeDesignation.setText(safe(bookingItem.getRequesteeDesignation()));
-        etRequesteeDepartment.setText(safe(bookingItem.getRequesteeDepartment()));
-        etRequesteeMobile.setText(safe(bookingItem.getRequesteeMobile()));
+        etRequestorName.setText(safe(state.getRequestorName()));
+        etRequestorDesignation.setText(safe(state.getRequestorDesignation()));
+        etRequestorDepartment.setText(safe(state.getRequestorDepartment()));
+        etRequestorMobile.setText(safe(state.getRequestorMobile()));
 
-        etLogisticsName.setText(safe(bookingItem.getLogisticsName()));
-        etLogisticsDesignation.setText(safe(bookingItem.getLogisticsDesignation()));
-        etLogisticsMobile.setText(safe(bookingItem.getLogisticsMobile()));
+        etLogisticsName.setText(safe(state.getLogisticsName()));
+        etLogisticsDesignation.setText(safe(state.getLogisticsDesignation()));
+        etLogisticsMobile.setText(safe(state.getLogisticsMobile()));
 
-        parseCalendarFromApiString(bookingItem.getArrivalAt(), arrivalCal);
-        parseCalendarFromApiString(bookingItem.getDepartureAt(), departureCal);
-
-        ensureDepartureAfterArrival();
-        refreshDateTimeFields();
+        refreshDateTimeFields(state);
     }
 
-    private void loadRooms() {
-        roomRepository.getRooms(result -> {
-            if (result.isSuccess() && result.getRooms() != null) {
-                InternetErrorBanner.hide(EditBookingActivity.this);
-                roomList.clear();
-                roomList.addAll(result.getRooms());
-
-                bindRoomsToSpinner();
-                preselectCurrentRoom();
-                return;
-            }
-
-            if (InternetErrorBanner.isNetworkErrorMessage(result.getErrorMessage())) {
-                InternetErrorBanner.show(EditBookingActivity.this);
-            }
-            showError("Rooms could not be loaded. Please try again.");
-        });
-    }
-
-    private void bindRoomsToSpinner() {
-        List<String> roomNames = new ArrayList<>();
-        roomNames.add("Select Room");
-
-        for (RoomItem roomItem : roomList) {
-            roomNames.add(roomItem.getSafeRoomName());
-        }
+    private void bindRoomsToSpinner(List<RoomItem> rooms) {
+        List<RoomItem> safeRooms = NullSafeCollections.copyWithoutNulls(rooms);
+        List<RoomSpinnerEntry> entries = RoomSpinnerEntries.build(safeRooms);
+        addCurrentRoomFallbackIfMissing(entries, safeRooms);
 
         roomAdapter.clear();
-        roomAdapter.addAll(roomNames);
+        roomAdapter.addAll(entries);
         roomAdapter.notifyDataSetChanged();
     }
 
     private void preselectCurrentRoom() {
-        int currentRoomId = bookingItem.getRoom();
+        if (currentFormState == null || currentFormState.getRoomId() == null) {
+            return;
+        }
 
-        for (int i = 0; i < roomList.size(); i++) {
-            RoomItem roomItem = roomList.get(i);
+        int currentRoomId = currentFormState.getRoomId();
 
-            if (roomItem.getId() == currentRoomId) {
-                spinnerRoom.setSelection(i + 1);
+        for (int i = 0; i < roomAdapter.getCount(); i++) {
+            RoomSpinnerEntry entry = roomAdapter.getItem(i);
+            RoomItem roomItem = entry != null ? entry.getRoom() : null;
+
+            if (roomItem != null && roomItem.getId() == currentRoomId) {
+                spinnerRoom.setSelection(i);
                 return;
             }
         }
+    }
+
+    private void addCurrentRoomFallbackIfMissing(
+            List<RoomSpinnerEntry> entries,
+            List<RoomItem> rooms
+    ) {
+        RoomItem fallbackRoom = buildCurrentRoomFallbackIfMissing(rooms);
+
+        if (fallbackRoom == null) {
+            return;
+        }
+
+        int insertPosition = entries.isEmpty() ? 0 : 1;
+        entries.add(insertPosition, RoomSpinnerEntry.room(fallbackRoom));
+    }
+
+    private RoomItem buildCurrentRoomFallbackIfMissing(List<RoomItem> rooms) {
+        if (currentFormState == null || currentFormState.getRoomId() == null) {
+            return null;
+        }
+
+        int currentRoomId = currentFormState.getRoomId();
+
+        for (RoomItem room : rooms) {
+            if (room != null && room.getId() == currentRoomId) {
+                return null;
+            }
+        }
+
+        String roomName = bookingItem != null ? safe(bookingItem.getRoomName()) : "";
+        if (roomName.isEmpty()) {
+            roomName = "Current Room";
+        }
+
+        RoomItem fallbackRoom = new RoomItem();
+        fallbackRoom.setId(currentRoomId);
+        fallbackRoom.setNumber(roomName);
+        fallbackRoom.setRoomName(roomName);
+        fallbackRoom.setSelectionLabel(roomName);
+
+        return fallbackRoom;
     }
 
     private void selectGender(String gender) {
@@ -389,6 +502,72 @@ public class EditBookingActivity extends AppCompatActivity {
         if ("other_guest".equalsIgnoreCase(category)) {
             rgVisitorCategory.check(R.id.rbOtherGuest);
         }
+    }
+
+    private void setupBudgetHeadControls() {
+        rgBudgetHeadType.setOnCheckedChangeListener((group, checkedId) -> {
+            updateBudgetHeadHint(getSelectedBudgetHeadType());
+            if (formBound && checkedId != -1) {
+                focusAndShowKeyboard(etBudgetHeadValue);
+            }
+        });
+        setupBudgetHeadRadioClick(R.id.rbBudgetIndividual);
+        setupBudgetHeadRadioClick(R.id.rbBudgetInstitute);
+        setupBudgetHeadRadioClick(R.id.rbBudgetProject);
+        updateBudgetHeadHint(getSelectedBudgetHeadType());
+    }
+
+    private void setupBudgetHeadRadioClick(int radioButtonId) {
+        View radioButton = rgBudgetHeadType.findViewById(radioButtonId);
+        if (radioButton != null) {
+            radioButton.setOnClickListener(v -> {
+                if (formBound && rgBudgetHeadType.getCheckedRadioButtonId() == radioButtonId) {
+                    updateBudgetHeadHint(getSelectedBudgetHeadType());
+                    focusAndShowKeyboard(etBudgetHeadValue);
+                }
+            });
+        }
+    }
+
+    private void selectBudgetHeadType(String budgetHeadType) {
+        if (EditBookingFormState.BUDGET_HEAD_INSTITUTE.equalsIgnoreCase(budgetHeadType)) {
+            rgBudgetHeadType.check(R.id.rbBudgetInstitute);
+        } else if (EditBookingFormState.BUDGET_HEAD_PROJECT.equalsIgnoreCase(budgetHeadType)) {
+            rgBudgetHeadType.check(R.id.rbBudgetProject);
+        } else if (EditBookingFormState.BUDGET_HEAD_INDIVIDUAL.equalsIgnoreCase(budgetHeadType)) {
+            rgBudgetHeadType.check(R.id.rbBudgetIndividual);
+        } else {
+            rgBudgetHeadType.clearCheck();
+        }
+        updateBudgetHeadHint(getSelectedBudgetHeadType());
+    }
+
+    private String getSelectedBudgetHeadType() {
+        int checkedId = rgBudgetHeadType.getCheckedRadioButtonId();
+
+        if (checkedId == R.id.rbBudgetInstitute) {
+            return EditBookingFormState.BUDGET_HEAD_INSTITUTE;
+        }
+
+        if (checkedId == R.id.rbBudgetProject) {
+            return EditBookingFormState.BUDGET_HEAD_PROJECT;
+        }
+
+        return "";
+    }
+
+    private void updateBudgetHeadHint(String budgetHeadType) {
+        if (EditBookingFormState.BUDGET_HEAD_INSTITUTE.equals(budgetHeadType)) {
+            etBudgetHeadValue.setHint("Department Name");
+            return;
+        }
+
+        if (EditBookingFormState.BUDGET_HEAD_PROJECT.equals(budgetHeadType)) {
+            etBudgetHeadValue.setHint("Project Code");
+            return;
+        }
+
+        etBudgetHeadValue.setHint("Budget Head Value");
     }
     private void setupAttenderRequirementControls() {
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -439,7 +618,6 @@ public class EditBookingActivity extends AppCompatActivity {
         setViewEnabled(cbGeneralShift, enabled);
         setViewEnabled(cbMorningShift, enabled);
         setViewEnabled(cbDayShift, enabled);
-        setViewEnabled(cbNightShift, enabled);
         setViewEnabled(tvSelectShiftLabel, enabled);
     }
 
@@ -456,111 +634,85 @@ public class EditBookingActivity extends AppCompatActivity {
         cbGeneralShift.setChecked(false);
         cbMorningShift.setChecked(false);
         cbDayShift.setChecked(false);
-        cbNightShift.setChecked(false);
     }
+
     private void saveBooking() {
-        hideMessage();
-
-        EditBookingFormData formData = collectFormData();
-
-        if (!validateInputs(formData)) {
+        if (viewModel.isSaving()) {
             return;
         }
 
-        BookingUpdateRequest request = createUpdateRequest(formData);
+        hideMessage();
+        viewModel.save(collectFormData());
+    }
 
-        setSavingState(true);
+    private void handleBackPress() {
+        if (viewModel.isSaving()) {
+            showMessage("Please wait for the update request to finish.", false);
+            return;
+        }
+        finish();
+    }
 
-        bookingRepository.updateBooking(
-                bookingItem.getId(),
-                request
-        ).enqueue(new Callback<ApiResponse<BookingActionData>>() {
-
+    private void setupBackPressHandler() {
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
-            public void onResponse(
-                    @NonNull Call<ApiResponse<BookingActionData>> call,
-                    @NonNull Response<ApiResponse<BookingActionData>> response
-            ) {
-                InternetErrorBanner.hide(EditBookingActivity.this);
-                setSavingState(false);
-
-                if (!response.isSuccessful() || response.body() == null) {
-                    showError(extractErrorMessage(response));
-                    return;
-                }
-
-                ApiResponse<BookingActionData> apiResponse = response.body();
-
-                if (!apiResponse.isSuccess()) {
-                    showError(apiResponse.getFirstErrorMessage());
-                    return;
-                }
-
-                handleUpdateSuccess(formData, apiResponse);
-            }
-
-            @Override
-            public void onFailure(
-                    @NonNull Call<ApiResponse<BookingActionData>> call,
-                    @NonNull Throwable t
-            ) {
-                setSavingState(false);
-                InternetErrorBanner.show(EditBookingActivity.this);
-                showError("Please check your internet connection.");
+            public void handleOnBackPressed() {
+                handleBackPress();
             }
         });
     }
 
-    private EditBookingFormData collectFormData() {
-        EditBookingFormData data = new EditBookingFormData();
+    private EditBookingFormState collectFormData() {
+        EditBookingFormState data = currentFormState != null
+                ? currentFormState.copy()
+                : new EditBookingFormState();
 
-        data.roomId = getSelectedRoomId();
+        data.setRoomId(getSelectedRoomId());
 
-        data.arrivalAt = apiDateTimeFormat.format(arrivalCal.getTime());
-        data.departureAt = apiDateTimeFormat.format(departureCal.getTime());
+        data.setVisitorName(getText(etVisitorName));
+        data.setVisitorDesignation(getText(etVisitorDesignation));
+        data.setVisitorOrganisation(getText(etVisitorOrganisation));
+        data.setVisitorGender(getSelectedGender());
+        data.setVisitorAddress(getText(etVisitorAddress));
+        data.setVisitorMobile(getText(etVisitorMobile));
+        data.setVisitorEmail(getText(etVisitorEmail));
+        data.setPurpose(getText(etPurpose));
 
-        data.visitorName = getText(etVisitorName);
-        data.visitorDesignation = getText(etVisitorDesignation);
-        data.visitorOrganisation = getText(etVisitorOrganisation);
-        data.visitorGender = getSelectedGender();
-        data.visitorAddress = getText(etVisitorAddress);
-        data.visitorMobile = getText(etVisitorMobile);
-        data.visitorEmail = getText(etVisitorEmail);
-        data.purpose = getText(etPurpose);
+        data.setVisitorCategory(getSelectedVisitorCategory());
 
-        data.visitorCategory = getSelectedVisitorCategory();
-
-        data.attenderRequired = cbAttenderRequired.isChecked();
-        data.attenderCountPerDay = getAttenderCount();
-        data.attenderGeneralShift = cbGeneralShift.isChecked();
-        data.attenderMorningShift = cbMorningShift.isChecked();
-        data.attenderDayShift = cbDayShift.isChecked();
-        data.attenderNightShift = cbNightShift.isChecked();
-        data.roomChargesStatus = getChargeStatus(
+        data.setAttenderRequired(cbAttenderRequired.isChecked());
+        data.setAttenderCountPerDay(getAttenderCount());
+        data.setAttenderGeneralShift(cbGeneralShift.isChecked());
+        data.setAttenderMorningShift(cbMorningShift.isChecked());
+        data.setAttenderDayShift(cbDayShift.isChecked());
+        data.setRoomChargesStatus(getChargeStatus(
                 rgRoomChargesStatus,
                 R.id.rbRoomChargesYes,
                 R.id.rbRoomChargesWaived
-        );
-        data.attenderChargesStatus = getChargeStatus(
+        ));
+        data.setAttenderChargesStatus(getChargeStatus(
                 rgAttenderChargesStatus,
                 R.id.rbAttenderChargesYes,
                 R.id.rbAttenderChargesWaived
-        );
-        data.roomChargesAmount = "yes".equals(data.roomChargesStatus)
+        ));
+        data.setRoomChargesAmount("yes".equals(data.getRoomChargesStatus())
                 ? getText(etRoomChargesAmount)
-                : "0";
-        data.attenderChargesAmount = "yes".equals(data.attenderChargesStatus)
+                : "0");
+        data.setAttenderChargesAmount("yes".equals(data.getAttenderChargesStatus())
                 ? getText(etAttenderChargesAmount)
-                : "0";
+                : "0");
 
-        data.requesteeName = getText(etRequesteeName);
-        data.requesteeDesignation = getText(etRequesteeDesignation);
-        data.requesteeDepartment = getText(etRequesteeDepartment);
-        data.requesteeMobile = getText(etRequesteeMobile);
+        data.setBudgetHeadType(getSelectedBudgetHeadType());
+        data.setBudgetHeadValue(getText(etBudgetHeadValue));
 
-        data.logisticsName = getText(etLogisticsName);
-        data.logisticsDesignation = getText(etLogisticsDesignation);
-        data.logisticsMobile = getText(etLogisticsMobile);
+        data.setRequestorName(getText(etRequestorName));
+        data.setRequestorDesignation(getText(etRequestorDesignation));
+        data.setRequestorDepartment(getText(etRequestorDepartment));
+        data.setRequestorMobile(getText(etRequestorMobile));
+
+        data.setLogisticsName(getText(etLogisticsName));
+        data.setLogisticsDesignation(getText(etLogisticsDesignation));
+        data.setLogisticsMobile(getText(etLogisticsMobile));
 
         return data;
     }
@@ -568,11 +720,11 @@ public class EditBookingActivity extends AppCompatActivity {
     private Integer getSelectedRoomId() {
         int position = spinnerRoom.getSelectedItemPosition();
 
-        if (position <= 0 || position - 1 >= roomList.size()) {
-            return null;
+        RoomSpinnerEntry entry = roomAdapter.getItem(position);
+        if (entry == null || entry.getRoom() == null) {
+            return currentFormState != null ? currentFormState.getRoomId() : null;
         }
-
-        return roomList.get(position - 1).getId();
+        return entry.getRoom().getId();
     }
 
     private String getSelectedGender() {
@@ -617,134 +769,37 @@ public class EditBookingActivity extends AppCompatActivity {
         }
     }
 
-    private boolean validateInputs(EditBookingFormData data) {
-        if (data.roomId == null) {
-            showError("Please select a room.");
-            return false;
-        }
-
-        if (TextUtils.isEmpty(data.visitorName)
-                || TextUtils.isEmpty(data.visitorGender)
-                || TextUtils.isEmpty(data.arrivalAt)
-                || TextUtils.isEmpty(data.departureAt)) {
-
-            showError("Please fill all required fields.");
-            return false;
-        }
-
-        if (!TextUtils.isEmpty(data.visitorMobile)
-                && !data.visitorMobile.matches("\\d{10}")) {
-            showError("Visitor mobile must be 10 digits.");
-            return false;
-        }
-
-        if (!TextUtils.isEmpty(data.requesteeMobile)
-                && !data.requesteeMobile.matches("\\d{10}")) {
-            showError("Requestee mobile must be 10 digits.");
-            return false;
-        }
-
-        if (!TextUtils.isEmpty(data.logisticsMobile)
-                && !data.logisticsMobile.matches("\\d{10}")) {
-            showError("Logistics mobile must be 10 digits.");
-            return false;
-        }
-
-        if (!departureCal.getTime().after(arrivalCal.getTime())) {
-            showError("Departure must be after arrival.");
-            return false;
-        }
-
-        if (data.attenderRequired && data.attenderCountPerDay <= 0) {
-            showError("Enter number of attenders required per day.");
-            return false;
-        }
-
-        if (data.attenderRequired
-                && !data.attenderGeneralShift
-                && !data.attenderMorningShift
-                && !data.attenderDayShift
-                && !data.attenderNightShift) {
-
-            showError("Please select at least one attender shift.");
-            return false;
-        }
-
-        if ("yes".equals(data.roomChargesStatus)
-                && !isPositiveAmount(data.roomChargesAmount)) {
+    private void handleValidationError(EditBookingValidationResult result) {
+        if (EditBookingFormState.FIELD_ROOM_CHARGES_AMOUNT.equals(result.getField())) {
             etRoomChargesAmount.setError("Room charges amount is required.");
-            etRoomChargesAmount.requestFocus();
-            showError("Enter room charges amount.");
-            return false;
+            focusAndShowKeyboard(etRoomChargesAmount);
+            showError(result.getMessage());
+            return;
         }
 
-        if ("yes".equals(data.attenderChargesStatus)
-                && !isPositiveAmount(data.attenderChargesAmount)) {
+        if (EditBookingFormState.FIELD_ATTENDER_CHARGES_AMOUNT.equals(result.getField())) {
             etAttenderChargesAmount.setError("Attender charges amount is required.");
-            etAttenderChargesAmount.requestFocus();
-            showError("Enter attender charges amount.");
-            return false;
+            focusAndShowKeyboard(etAttenderChargesAmount);
+            showError(result.getMessage());
+            return;
         }
 
-        return true;
-    }
-
-    private BookingUpdateRequest createUpdateRequest(EditBookingFormData data) {
-        return new BookingUpdateRequest(
-                data.roomId,
-                data.arrivalAt,
-                data.departureAt,
-
-                data.visitorName,
-                data.visitorDesignation,
-                data.visitorOrganisation,
-                data.visitorGender,
-                data.visitorAddress,
-                data.visitorMobile,
-                data.visitorEmail,
-                data.purpose,
-
-                data.visitorCategory,
-                data.attenderRequired,
-                data.attenderCountPerDay,
-                data.attenderGeneralShift,
-                data.attenderMorningShift,
-                data.attenderDayShift,
-                data.attenderNightShift,
-                data.roomChargesStatus,
-                data.attenderChargesStatus,
-                data.roomChargesAmount,
-                data.attenderChargesAmount,
-
-                data.requesteeName,
-                data.requesteeDesignation,
-                data.requesteeDepartment,
-                data.requesteeMobile,
-
-                data.logisticsName,
-                data.logisticsDesignation,
-                data.logisticsMobile
-        );
-    }
-
-    private void handleUpdateSuccess(
-            EditBookingFormData formData,
-            ApiResponse<BookingActionData> apiResponse
-    ) {
-        bookingItem.setArrivalAt(formData.arrivalAt);
-        bookingItem.setDepartureAt(formData.departureAt);
-
-        BookingActionData data = apiResponse.getData();
-
-        if (data != null && data.getStatus() != null) {
-            bookingItem.setStatus(data.getStatus());
+        if (EditBookingFormState.FIELD_BUDGET_HEAD_VALUE.equals(result.getField())) {
+            etBudgetHeadValue.setError("Budget head value is required.");
+            focusAndShowKeyboard(etBudgetHeadValue);
+            showError(result.getMessage());
+            return;
         }
 
+        showError(result.getMessage());
+    }
+
+    private void handleUpdateSuccess(EditBookingResult result) {
         Intent resultIntent = new Intent();
-        resultIntent.putExtra(EXTRA_UPDATED_BOOKING_ID, bookingItem.getId());
-        resultIntent.putExtra(EXTRA_UPDATED_STATUS, bookingItem.getStatus());
-        resultIntent.putExtra(EXTRA_ARRIVAL_AT, formData.arrivalAt);
-        resultIntent.putExtra(EXTRA_DEPARTURE_AT, formData.departureAt);
+        resultIntent.putExtra(EXTRA_UPDATED_BOOKING_ID, result.getBookingId());
+        resultIntent.putExtra(EXTRA_UPDATED_STATUS, result.getUpdatedStatus());
+        resultIntent.putExtra(EXTRA_ARRIVAL_AT, result.getArrivalAt());
+        resultIntent.putExtra(EXTRA_DEPARTURE_AT, result.getDepartureAt());
 
         setResult(RESULT_OK, resultIntent);
         showToast("Booking updated successfully.");
@@ -765,24 +820,86 @@ public class EditBookingActivity extends AppCompatActivity {
         return "no";
     }
 
-    private void setupChargeAmountListener(RadioGroup group, EditText amountField) {
+    private void setupChargeAmountListener(RadioGroup group, EditText amountField, int yesId) {
         group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
-            boolean enabled = checkedId == R.id.rbRoomChargesYes
-                    || checkedId == R.id.rbAttenderChargesYes;
+            boolean enabled = checkedId == yesId;
             amountField.setEnabled(enabled);
 
-            if (!enabled) {
+            if (enabled) {
+                if (formBound) {
+                    focusAndShowKeyboard(amountField);
+                }
+            } else {
                 amountField.setText("");
                 amountField.setError(null);
+                amountField.clearFocus();
+                hideKeyboard(amountField);
             }
+        });
+
+        View yesButton = group.findViewById(yesId);
+        if (yesButton != null) {
+            yesButton.setOnClickListener(v -> {
+                if (formBound
+                        && group.getCheckedRadioButtonId() == yesId
+                        && amountField.isEnabled()) {
+                    focusAndShowKeyboard(amountField);
+                }
+            });
+        }
+    }
+
+    private void focusAndShowKeyboard(EditText field) {
+        field.requestFocus();
+        field.setSelection(field.getText().length());
+        field.post(() -> {
+            InputMethodManager inputMethodManager =
+                    (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            if (inputMethodManager != null) {
+                inputMethodManager.showSoftInput(field, InputMethodManager.SHOW_IMPLICIT);
+            }
+            scrollFieldIntoView(field);
+            field.postDelayed(() -> scrollFieldIntoView(field), 300);
         });
     }
 
-    private boolean isPositiveAmount(String amount) {
-        try {
-            return !TextUtils.isEmpty(amount) && new BigDecimal(amount).signum() > 0;
-        } catch (NumberFormatException exception) {
-            return false;
+    private void scrollFieldIntoView(EditText field) {
+        if (scrollViewEditBooking == null) {
+            return;
+        }
+
+        Rect fieldRect = new Rect();
+        field.getDrawingRect(fieldRect);
+        scrollViewEditBooking.offsetDescendantRectToMyCoords(field, fieldRect);
+
+        int viewportTop = scrollViewEditBooking.getScrollY() + scrollViewEditBooking.getPaddingTop();
+        int viewportBottom = scrollViewEditBooking.getScrollY()
+                + scrollViewEditBooking.getHeight()
+                - scrollViewEditBooking.getPaddingBottom();
+        int spacing = getResources().getDimensionPixelSize(R.dimen.space_24);
+
+        if (fieldRect.bottom + spacing > viewportBottom) {
+            int scrollY = fieldRect.bottom
+                    + spacing
+                    - scrollViewEditBooking.getHeight()
+                    + scrollViewEditBooking.getPaddingBottom();
+            scrollViewEditBooking.smoothScrollTo(0, Math.max(0, scrollY));
+            return;
+        }
+
+        if (fieldRect.top - spacing < viewportTop) {
+            scrollViewEditBooking.smoothScrollTo(
+                    0,
+                    Math.max(0, fieldRect.top - spacing - scrollViewEditBooking.getPaddingTop())
+            );
+        }
+    }
+
+    private void hideKeyboard(View field) {
+        InputMethodManager inputMethodManager =
+                (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (inputMethodManager != null) {
+            inputMethodManager.hideSoftInputFromWindow(field.getWindowToken(), 0);
         }
     }
 
@@ -802,7 +919,7 @@ public class EditBookingActivity extends AppCompatActivity {
         }
     }
 
-    private void pickDateTime(Calendar target, Runnable onDone) {
+    private void pickDateTime(Calendar target, DateTimeSelectionListener listener) {
         int year = target.get(Calendar.YEAR);
         int month = target.get(Calendar.MONTH);
         int day = target.get(Calendar.DAY_OF_MONTH);
@@ -814,7 +931,7 @@ public class EditBookingActivity extends AppCompatActivity {
                     target.set(Calendar.MONTH, selectedMonth);
                     target.set(Calendar.DAY_OF_MONTH, selectedDay);
 
-                    showTimePicker(target, onDone);
+                    showTimePicker(target, listener);
                 },
                 year,
                 month,
@@ -825,7 +942,7 @@ public class EditBookingActivity extends AppCompatActivity {
         datePickerDialog.show();
     }
 
-    private void showTimePicker(Calendar target, Runnable onDone) {
+    private void showTimePicker(Calendar target, DateTimeSelectionListener listener) {
         int hour = target.get(Calendar.HOUR_OF_DAY);
         int minute = target.get(Calendar.MINUTE);
 
@@ -837,7 +954,7 @@ public class EditBookingActivity extends AppCompatActivity {
                     target.set(Calendar.SECOND, 0);
                     target.set(Calendar.MILLISECOND, 0);
 
-                    onDone.run();
+                    listener.onSelected(target);
                 },
                 hour,
                 minute,
@@ -847,41 +964,19 @@ public class EditBookingActivity extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-    private void parseCalendarFromApiString(String value, Calendar calendar) {
-        try {
-            if (value == null || value.trim().isEmpty()) {
-                return;
-            }
-
-            Date date = apiDateTimeFormat.parse(value);
-
-            if (date != null) {
-                calendar.setTime(date);
-            }
-
-        } catch (Exception ignored) {
-            // Keep current default date/time.
-        }
-    }
-
-    private void ensureDepartureAfterArrival() {
-        if (!departureCal.getTime().after(arrivalCal.getTime())) {
-            departureCal.setTimeInMillis(arrivalCal.getTimeInMillis() + ONE_HOUR_MILLIS);
-        }
-    }
-
-    private void refreshDateTimeFields() {
-        etArrivalAt.setText(displayFormat.format(arrivalCal.getTime()));
-        etDepartureAt.setText(displayFormat.format(departureCal.getTime()));
+    private void refreshDateTimeFields(EditBookingFormState state) {
+        etArrivalAt.setText(displayFormat.format(new java.util.Date(state.getArrivalAtMillis())));
+        etDepartureAt.setText(displayFormat.format(new java.util.Date(state.getDepartureAtMillis())));
     }
 
     private void setSavingState(boolean saving) {
         btnSaveBooking.setEnabled(!saving);
+        btnSaveBooking.setAlpha(saving ? 0.65f : 1.0f);
         btnSaveBooking.setText(saving ? "Saving..." : "Save Booking");
     }
 
     private void showError(String message) {
-        showMessage(makeFriendlyMessage(message), true);
+        showMessage(EditBookingFormMapper.makeFriendlyMessage(message), true);
     }
 
     private void showMessage(String message, boolean isError) {
@@ -903,115 +998,6 @@ public class EditBookingActivity extends AppCompatActivity {
         }
     }
 
-    private String makeFriendlyMessage(String message) {
-        if (message == null || message.trim().isEmpty()) {
-            return "Something went wrong. Please try again.";
-        }
-
-        String conflictMessage = buildFriendlyConflictMessage(message);
-
-        if (!conflictMessage.isEmpty()) {
-            return conflictMessage;
-        }
-
-        String lowerMessage = message.toLowerCase(Locale.ROOT).trim();
-
-        if (lowerMessage.contains("cooling period")) {
-            return buildFriendlyCoolingMessage(message);
-        }
-
-        if (lowerMessage.contains("unavailable")) {
-            return buildFriendlyUnavailableMessage(message);
-        }
-
-        if (lowerMessage.contains("arrival")
-                && lowerMessage.contains("departure")) {
-            return "Please check the arrival and departure date/time. Departure must be after arrival.";
-        }
-
-        if (lowerMessage.contains("mobile")
-                || lowerMessage.contains("phone")) {
-            return "Please enter a valid 10-digit mobile number.";
-        }
-
-        if (lowerMessage.contains("required")
-                || lowerMessage.contains("blank")
-                || lowerMessage.contains("empty")
-                || lowerMessage.contains("null")) {
-            return "Please fill all required details before saving the booking.";
-        }
-
-        if (lowerMessage.contains("network")
-                || lowerMessage.contains("internet")
-                || lowerMessage.contains("timeout")
-                || lowerMessage.contains("failed to connect")) {
-            return "Internet connection seems slow or unavailable. Please check your connection and try again.";
-        }
-
-        if (lowerMessage.contains("failed")) {
-            return "Booking could not be updated. Please check the details and try again.";
-        }
-
-        return message.trim();
-    }
-
-    private String buildFriendlyConflictMessage(String message) {
-        Matcher matcher = BOOKED_CONFLICT_PATTERN.matcher(message.trim());
-
-        if (!matcher.find()) {
-            return "";
-        }
-
-        String roomName = matcher.group(1).trim();
-        String startTime = formatBackendDateTime(matcher.group(2).trim());
-        String endTime = formatBackendDateTime(matcher.group(3).trim());
-
-        return roomName
-                + " is already booked from "
-                + startTime
-                + " to "
-                + endTime
-                + ". Please choose another room or change the timing.";
-    }
-
-    private String buildFriendlyCoolingMessage(String message) {
-        String lowerMessage = message.toLowerCase(Locale.ROOT);
-
-        if (!lowerMessage.contains("booked after")) {
-            return "This room is in cooling period after a previous booking. Please choose a later time or another room.";
-        }
-
-        int index = lowerMessage.indexOf("booked after");
-        String dateTimeText = message.substring(index + "booked after".length()).replace(".", "").trim();
-        String availableAfter = formatBackendDateTime(dateTimeText);
-
-        return "This room is in cooling period after a previous booking. It can be booked after "
-                + availableAfter
-                + ".";
-    }
-
-    private String buildFriendlyUnavailableMessage(String message) {
-        return message
-                .replace("+00:00", "")
-                .replace(" 00:00:00", "")
-                .trim();
-    }
-
-    private String formatBackendDateTime(String value) {
-        try {
-            Date date = backendDateTimeFormat.parse(value);
-
-            if (date != null) {
-                return displayFormat.format(date);
-            }
-
-        } catch (Exception ignored) {
-            // Return original value below.
-        }
-
-        return value;
-    }
-
     private String getText(EditText editText) {
         return editText.getText() != null
                 ? editText.getText().toString().trim()
@@ -1030,72 +1016,7 @@ public class EditBookingActivity extends AppCompatActivity {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    private <T> String extractErrorMessage(Response<ApiResponse<T>> response) {
-        try {
-            if (response.errorBody() == null) {
-                return "Update failed.";
-            }
-
-            String errorJson = response.errorBody().string();
-            ApiResponse<?> errorResponse = gson.fromJson(errorJson, ApiResponse.class);
-
-            if (errorResponse == null) {
-                return "Update failed.";
-            }
-
-            String message = errorResponse.getSafeMessage();
-
-            if (message != null && !message.trim().isEmpty()) {
-                return message;
-            }
-
-            String firstError = errorResponse.getFirstErrorMessage();
-
-            if (firstError != null && !firstError.trim().isEmpty()) {
-                return firstError;
-            }
-
-        } catch (Exception ignored) {
-            // Return default message below.
-        }
-
-        return "Update failed.";
-    }
-
-    private static class EditBookingFormData {
-        private Integer roomId;
-
-        private String arrivalAt;
-        private String departureAt;
-
-        private String visitorName;
-        private String visitorDesignation;
-        private String visitorOrganisation;
-        private String visitorGender;
-        private String visitorAddress;
-        private String visitorMobile;
-        private String visitorEmail;
-        private String purpose;
-        private String visitorCategory;
-
-        private boolean attenderRequired;
-        private int attenderCountPerDay;
-        private boolean attenderGeneralShift;
-        private boolean attenderMorningShift;
-        private boolean attenderDayShift;
-        private boolean attenderNightShift;
-        private String roomChargesStatus;
-        private String attenderChargesStatus;
-        private String roomChargesAmount;
-        private String attenderChargesAmount;
-
-        private String requesteeName;
-        private String requesteeDesignation;
-        private String requesteeDepartment;
-        private String requesteeMobile;
-
-        private String logisticsName;
-        private String logisticsDesignation;
-        private String logisticsMobile;
+    private interface DateTimeSelectionListener {
+        void onSelected(Calendar selectedDateTime);
     }
 }

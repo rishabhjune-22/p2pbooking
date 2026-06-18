@@ -6,7 +6,8 @@ import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
-import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
 
 import com.example.roombooking.R;
 import com.example.roombooking.booking.LandingActivity;
@@ -58,7 +59,11 @@ public final class AppToolbarMenu {
         }
 
         if (itemId == R.id.menuAboutUs) {
-            Toast.makeText(activity, "Logout clicked", Toast.LENGTH_SHORT).show();
+            new AlertDialog.Builder(activity)
+                    .setTitle(R.string.about_title)
+                    .setMessage(R.string.about_message)
+                    .setPositiveButton(R.string.action_close, null)
+                    .show();
             return true;
         }
 

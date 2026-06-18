@@ -4,7 +4,7 @@
 
     <item
         android:id="@+id/actionBreadcrumb"
-        android:icon="@drawable/outline_menu_open_24"
+        android:icon="@drawable/ic_menu"
         android:title="Menu"
         app:showAsAction="always"
         android:iconTint="@color/white"

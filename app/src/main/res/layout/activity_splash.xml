@@ -33,7 +33,7 @@
             android:layout_height="@dimen/space_76"
             android:contentDescription="IIT Bhilai Logo"
             android:scaleType="fitCenter"
-            android:src="@drawable/iit_bhilai_logo" />
+            android:src="@drawable/logo_iit_bhilai" />
 
         <!-- IIT BHILAI TEXT -->
         <TextView
@@ -72,7 +72,7 @@
             android:background="@drawable/bg_icon_circle"
             android:contentDescription="Room Booking Logo"
             android:padding="@dimen/space_18"
-            android:src="@drawable/hostel_svgrepo_com"
+            android:src="@drawable/ic_hostel"
             app:tint="@color/white" />
 
         <!-- APP TITLE -->

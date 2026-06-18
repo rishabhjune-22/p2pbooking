@@ -1,6 +1,7 @@
 package com.example.roombooking.booking;
 
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
+import com.example.roombooking.utils.NullSafeCollections;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.List;
@@ -36,6 +37,6 @@ public class RoomAvailabilityDetailsResponse {
     }
 
     public boolean hasBookings() {
-        return bookings != null && !bookings.isEmpty();
+        return NullSafeCollections.hasNonNullItems(bookings);
     }
 }

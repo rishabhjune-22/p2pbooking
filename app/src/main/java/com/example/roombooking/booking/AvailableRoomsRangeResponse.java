@@ -1,6 +1,7 @@
 package com.example.roombooking.booking;
 
 import com.google.gson.annotations.SerializedName;
+import com.example.roombooking.utils.NullSafeCollections;
 
 import java.util.List;
 
@@ -42,6 +43,6 @@ public class AvailableRoomsRangeResponse {
     }
 
     public boolean hasRooms() {
-        return rooms != null && !rooms.isEmpty();
+        return NullSafeCollections.hasNonNullItems(rooms);
     }
 }

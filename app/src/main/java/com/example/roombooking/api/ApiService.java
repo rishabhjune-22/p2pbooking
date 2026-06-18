@@ -2,7 +2,6 @@ package com.example.roombooking.api;
 
 import com.example.roombooking.booking.AvailableRoomsRangeResponse;
 import com.example.roombooking.booking.AvailableRoomsResponse;
-import com.example.roombooking.booking.BookingCancelRequest;
 import com.example.roombooking.booking.BookingCreateRequest;
 import com.example.roombooking.booking.BookingUpdateRequest;
 import com.example.roombooking.booking.RoomAvailabilityDetailsResponse;
@@ -15,6 +14,7 @@ import com.example.roombooking.model.room.RoomItem;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.DELETE;
 import retrofit2.http.GET;
 import retrofit2.http.PATCH;
 import retrofit2.http.POST;
@@ -48,15 +48,15 @@ public interface ApiService {
             @Body BookingUpdateRequest request
     );
 
-    @POST("api/bookings/{pk}/cancel/")
-    Call<ApiResponse<BookingActionData>> cancelBooking(
-            @Path("pk") int bookingId,
-            @Body BookingCancelRequest request
+    @DELETE("api/bookings/{pk}/delete/")
+    Call<ApiResponse<BookingActionData>> deleteBooking(
+            @Path("pk") int bookingId
     );
 
     @GET("api/rooms/")
     Call<ApiResponse<PaginatedData<RoomItem>>> getRooms(
-            @Query("page") int page
+            @Query("page") int page,
+            @Query("page_size") int pageSize
     );
 
     @GET("api/bookings/availability/")

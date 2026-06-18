@@ -45,29 +45,6 @@
         app:layout_constraintStart_toStartOf="@id/headerView"
         app:layout_constraintTop_toTopOf="@id/headerView" />
 
-    <FrameLayout
-        android:id="@+id/layoutCompactToggle"
-        style="@style/BookingListIconButton"
-        android:layout_width="@dimen/space_56"
-        android:layout_height="@dimen/space_56"
-        android:layout_marginEnd="@dimen/space_16"
-        android:elevation="4dp"
-        android:padding="@dimen/space_8"
-        app:layout_constraintBottom_toBottomOf="@id/headerView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/headerView">
-
-        <ImageButton
-            android:id="@+id/btnToggleCompact"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            android:contentDescription="Switch booking view"
-            android:padding="@dimen/space_8"
-            android:src="@drawable/ic_compact_view"
-            app:tint="@color/white" />
-    </FrameLayout>
-
     <LinearLayout
         android:id="@+id/layoutBookingActions"
         android:layout_width="@dimen/space_180"
@@ -82,28 +59,28 @@
         app:layout_constraintTop_toBottomOf="@id/headerView">
 
         <LinearLayout style="@style/BookingActionItem">
-            <ImageButton android:id="@+id/btnCreateBooking" style="@style/BookingListIconButton" android:contentDescription="@string/create_booking" android:src="@drawable/create_note_svgrepo_com" />
+            <ImageButton android:id="@+id/btnCreateBooking" style="@style/BookingListIconButton" android:contentDescription="@string/create_booking" android:src="@drawable/ic_create_booking" />
             <TextView style="@style/BookingActionLabel" android:text="Create\nNew Booking" />
         </LinearLayout>
 
         <LinearLayout style="@style/TabletBookingActionItem">
-            <ImageButton android:id="@+id/btnFilter" style="@style/BookingListIconButton" android:contentDescription="@string/filter" android:src="@drawable/filter_svgrepo_com" />
+            <ImageButton android:id="@+id/btnFilter" style="@style/BookingListIconButton" android:contentDescription="@string/filter" android:src="@drawable/ic_filter" />
             <TextView style="@style/BookingActionLabel" android:text="Filter" />
         </LinearLayout>
 
         <LinearLayout style="@style/TabletBookingActionItem">
-            <ImageButton android:id="@+id/btnToggleCancelled" style="@style/BookingStatusIconButton" android:contentDescription="@string/toggle_cancelled" />
+            <ImageButton android:id="@+id/btnToggleStatus" style="@style/BookingStatusIconButton" android:contentDescription="@string/toggle_booking_status" />
             <TextView android:id="@+id/tvStatusToggleLabel" style="@style/BookingActionLabel" android:text="Active\nBookings" />
         </LinearLayout>
 
         <LinearLayout style="@style/TabletBookingActionItem">
-            <ImageButton android:id="@+id/btnClearFilter" style="@style/BookingListIconButton" android:contentDescription="@string/clear_filter" android:src="@drawable/remove_filter_icon" />
+            <ImageButton android:id="@+id/btnClearFilter" style="@style/BookingListIconButton" android:contentDescription="@string/clear_filter" android:src="@drawable/ic_clear_filter" />
             <TextView style="@style/BookingActionLabel" android:text="Clear\nFilter" />
         </LinearLayout>
 
         <LinearLayout style="@style/TabletBookingActionItem">
-            <ImageButton android:id="@+id/btnRoomAvailability" style="@style/BookingListIconButton" android:contentDescription="Room Availability Calendar" android:src="@drawable/calender_svgrepo_com" />
-            <TextView style="@style/BookingActionLabel" android:text="Rooms\nAvailability" />
+            <ImageButton android:id="@+id/btnToggleCompact" style="@style/BookingListIconButton" android:contentDescription="Switch booking view" android:src="@drawable/ic_compact_view" />
+            <TextView android:id="@+id/tvCompactToggleLabel" style="@style/BookingActionLabel" android:text="Compact\nView" />
         </LinearLayout>
     </LinearLayout>
 

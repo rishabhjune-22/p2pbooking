@@ -27,7 +27,7 @@
         android:layout_marginTop="@dimen/space_12"
         android:contentDescription="Back"
         android:padding="@dimen/space_12"
-        android:src="@drawable/back_svgrepo_com"
+        android:src="@drawable/ic_back"
         android:background="@android:color/transparent"
 
         app:layout_constraintStart_toStartOf="parent"
@@ -229,8 +229,28 @@
                     style="@style/DetailContentText" />
 
 
+                <!-- BUDGET HEAD -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
 
-                <!-- REQUESTEE -->
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Budget Head" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvBudgetHeadDetails"
+                    style="@style/DetailContentText" />
+
+
+                <!-- REQUESTOR -->
                 <LinearLayout
                     style="@style/DetailSectionHeader"
                     android:layout_marginTop="@dimen/space_20">
@@ -241,13 +261,13 @@
 
                     <TextView
                         style="@style/DetailSectionTitle"
-                        android:text="Requestee Details" />
+                        android:text="Requestor Details" />
                 </LinearLayout>
 
                 <View style="@style/DetailDivider" />
 
                 <TextView
-                    android:id="@+id/tvRequesteeDetails"
+                    android:id="@+id/tvRequestorDetails"
                     style="@style/DetailContentText" />
 
                 <!-- LOGISTICS -->
@@ -305,7 +325,7 @@
                     android:id="@+id/btnEditBooking"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/space_48"
-                    android:background="@drawable/bg_btn_gradient"
+                    android:background="@drawable/bg_button_gradient"
                     android:text="Edit Booking"
                     android:textAllCaps="false"
                     android:textColor="@color/white"
@@ -313,12 +333,12 @@
                     android:textStyle="bold" />
 
                 <androidx.appcompat.widget.AppCompatButton
-                    android:id="@+id/btnCancelBooking"
+                    android:id="@+id/btnDeleteBooking"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/space_48"
                     android:layout_marginTop="@dimen/space_12"
-                    android:background="@drawable/bg_btn_cancel"
-                    android:text="Cancel Booking"
+                    android:background="@drawable/bg_button_cancel"
+                    android:text="Delete Booking"
                     android:textAllCaps="false"
                     android:textColor="@color/detail_cancel_red"
                     android:textSize="@dimen/text_16"

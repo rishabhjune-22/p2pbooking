@@ -11,9 +11,12 @@ import com.example.roombooking.api.RetrofitClient;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
+import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.room.local.AppDatabase;
 import com.example.roombooking.room.local.RoomDao;
 import com.example.roombooking.room.local.RoomEntity;
+import com.example.roombooking.utils.ApiErrorUtils;
+import com.example.roombooking.utils.AppDiagnostics;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,9 +34,18 @@ public class RoomRepository {
     }
 
     private static final int FIRST_PAGE = 1;
+    private static final int ROOM_PAGE_SIZE = 100;
+    private static final long ROOM_REFRESH_INTERVAL_MS = 6L * 60L * 60L * 1000L;
+    private static final long FAILED_REFRESH_RETRY_INTERVAL_MS = 5L * 60L * 1000L;
 
     private static final String MESSAGE_LOAD_FAILED = "Failed to load rooms.";
     private static final String MESSAGE_NETWORK_ERROR = "Please check your internet connection.";
+    private static final Object REQUEST_LOCK = new Object();
+    private static final List<RoomRepositoryCallback> pendingCallbacks = new ArrayList<>();
+    private static Call<ApiResponse<PaginatedData<RoomItem>>> activeRoomsCall;
+    private static boolean roomsRequestInFlight = false;
+    private static long lastApiRefreshSucceededAtMillis = 0L;
+    private static long lastApiRefreshAttemptedAtMillis = 0L;
 
     private final ApiService apiService;
     private final RoomDao roomDao;
@@ -52,7 +64,7 @@ public class RoomRepository {
     public void getRooms(RoomRepositoryCallback callback) {
         if (RoomMemoryCache.hasRooms()) {
             sendSuccess(callback, RoomMemoryCache.getRooms(), true);
-            refreshRoomsSilently();
+            refreshRoomsSilentlyIfStale();
             return;
         }
 
@@ -65,6 +77,7 @@ public class RoomRepository {
 
     public void clearCache() {
         RoomMemoryCache.clear();
+        resetRefreshTimestamps();
 
         diskExecutor.execute(roomDao::clearRooms);
     }
@@ -77,7 +90,7 @@ public class RoomRepository {
             if (!cachedRooms.isEmpty()) {
                 RoomMemoryCache.setRooms(cachedRooms);
                 sendSuccess(callback, cachedRooms, true);
-                refreshRoomsSilently();
+                refreshRoomsSilentlyIfStale();
                 return;
             }
 
@@ -85,28 +98,88 @@ public class RoomRepository {
         });
     }
 
-    private void refreshRoomsSilently() {
+    private void refreshRoomsSilentlyIfStale() {
+        if (!shouldRefreshRoomsSilently()) {
+            return;
+        }
+
         fetchRoomsFromApi(null);
     }
 
+    private boolean shouldRefreshRoomsSilently() {
+        long now = System.currentTimeMillis();
+
+        synchronized (REQUEST_LOCK) {
+            if (roomsRequestInFlight) {
+                return false;
+            }
+
+            if (lastApiRefreshSucceededAtMillis > 0
+                    && now - lastApiRefreshSucceededAtMillis < ROOM_REFRESH_INTERVAL_MS) {
+                return false;
+            }
+
+            if (lastApiRefreshAttemptedAtMillis > 0
+                    && now - lastApiRefreshAttemptedAtMillis < FAILED_REFRESH_RETRY_INTERVAL_MS) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
     private void fetchRoomsFromApi(RoomRepositoryCallback callback) {
-        fetchRoomsPage(FIRST_PAGE, new ArrayList<>(), callback);
+        synchronized (REQUEST_LOCK) {
+            if (roomsRequestInFlight) {
+                if (callback != null) {
+                    pendingCallbacks.add(callback);
+                }
+                return;
+            }
+
+            roomsRequestInFlight = true;
+            lastApiRefreshAttemptedAtMillis = System.currentTimeMillis();
+            if (callback != null) {
+                pendingCallbacks.add(callback);
+            }
+        }
+
+        fetchRoomsPage(FIRST_PAGE, new ArrayList<>());
     }
 
     private void fetchRoomsPage(
             int page,
-            List<RoomItem> accumulatedRooms,
-            RoomRepositoryCallback callback
+            List<RoomItem> accumulatedRooms
     ) {
-        apiService.getRooms(page).enqueue(new Callback<ApiResponse<PaginatedData<RoomItem>>>() {
+        Call<ApiResponse<PaginatedData<RoomItem>>> request =
+                apiService.getRooms(page, ROOM_PAGE_SIZE);
+        synchronized (REQUEST_LOCK) {
+            activeRoomsCall = request;
+        }
+
+        request.enqueue(new Callback<ApiResponse<PaginatedData<RoomItem>>>() {
 
             @Override
             public void onResponse(
                     @NonNull Call<ApiResponse<PaginatedData<RoomItem>>> call,
                     @NonNull Response<ApiResponse<PaginatedData<RoomItem>>> response
             ) {
+                if (call.isCanceled() || !isCurrentRoomsCall(call)) {
+                    return;
+                }
+
                 if (!isValidRoomsResponse(response)) {
-                    sendErrorIfNeeded(callback, MESSAGE_LOAD_FAILED);
+                    if (response.code() == 404 && page > FIRST_PAGE) {
+                        saveRoomsToCache(accumulatedRooms, finishRoomRequest());
+                        return;
+                    }
+
+                    String message = ApiErrorUtils.messageFromResponse(
+                            response,
+                            MESSAGE_LOAD_FAILED
+                    );
+                    AppDiagnostics.logApiFailure("rooms", message, null);
+                    finishRoomRequestWithError(message);
                     return;
                 }
 
@@ -114,16 +187,14 @@ public class RoomRepository {
 
                 List<RoomItem> pageResults = paginatedData.getResults();
 
-                if (pageResults != null && !pageResults.isEmpty()) {
-                    accumulatedRooms.addAll(pageResults);
-                }
+                accumulatedRooms.addAll(NullSafeCollections.copyWithoutNulls(pageResults));
 
                 if (paginatedData.hasNextPage()) {
-                    fetchRoomsPage(page + 1, accumulatedRooms, callback);
+                    fetchRoomsPage(page + 1, accumulatedRooms);
                     return;
                 }
 
-                saveRoomsToCache(accumulatedRooms, callback);
+                saveRoomsToCache(accumulatedRooms, finishRoomRequest());
             }
 
             @Override
@@ -131,9 +202,35 @@ public class RoomRepository {
                     @NonNull Call<ApiResponse<PaginatedData<RoomItem>>> call,
                     @NonNull Throwable t
             ) {
-                sendErrorIfNeeded(callback, MESSAGE_NETWORK_ERROR);
+                if (call.isCanceled() || !isCurrentRoomsCall(call)) {
+                    return;
+                }
+
+                AppDiagnostics.logApiFailure("rooms", MESSAGE_NETWORK_ERROR, t);
+                finishRoomRequestWithError(ApiErrorUtils.networkMessage());
             }
         });
+    }
+
+    private boolean isCurrentRoomsCall(Call<ApiResponse<PaginatedData<RoomItem>>> call) {
+        synchronized (REQUEST_LOCK) {
+            return call == activeRoomsCall;
+        }
+    }
+
+    private List<RoomRepositoryCallback> finishRoomRequest() {
+        synchronized (REQUEST_LOCK) {
+            List<RoomRepositoryCallback> callbacks = new ArrayList<>(pendingCallbacks);
+            pendingCallbacks.clear();
+            activeRoomsCall = null;
+            roomsRequestInFlight = false;
+            return callbacks;
+        }
+    }
+
+    private void finishRoomRequestWithError(String errorMessage) {
+        List<RoomRepositoryCallback> callbacks = finishRoomRequest();
+        sendErrorIfNeeded(callbacks, errorMessage);
     }
 
     private boolean isValidRoomsResponse(
@@ -147,11 +244,10 @@ public class RoomRepository {
 
     private void saveRoomsToCache(
             List<RoomItem> apiRooms,
-            RoomRepositoryCallback callback
+            List<RoomRepositoryCallback> callbacks
     ) {
-        List<RoomItem> finalRooms = apiRooms != null
-                ? new ArrayList<>(apiRooms)
-                : new ArrayList<>();
+        List<RoomItem> finalRooms = NullSafeCollections.copyWithoutNulls(apiRooms);
+        markRoomsApiRefreshSucceeded();
 
         diskExecutor.execute(() -> {
             roomDao.clearRooms();
@@ -159,8 +255,31 @@ public class RoomRepository {
 
             RoomMemoryCache.setRooms(finalRooms);
 
-            sendSuccess(callback, finalRooms, false);
+            sendSuccess(callbacks, finalRooms, false);
         });
+    }
+
+    private void markRoomsApiRefreshSucceeded() {
+        synchronized (REQUEST_LOCK) {
+            lastApiRefreshSucceededAtMillis = System.currentTimeMillis();
+        }
+    }
+
+    private void resetRefreshTimestamps() {
+        synchronized (REQUEST_LOCK) {
+            lastApiRefreshSucceededAtMillis = 0L;
+            lastApiRefreshAttemptedAtMillis = 0L;
+        }
+    }
+
+    private void sendSuccess(
+            List<RoomRepositoryCallback> callbacks,
+            List<RoomItem> rooms,
+            boolean fromCache
+    ) {
+        for (RoomRepositoryCallback callback : callbacks) {
+            sendSuccess(callback, rooms, fromCache);
+        }
     }
 
     private void sendSuccess(
@@ -184,5 +303,14 @@ public class RoomRepository {
         mainHandler.post(() ->
                 callback.onResult(RoomResult.error(errorMessage))
         );
+    }
+
+    private void sendErrorIfNeeded(
+            List<RoomRepositoryCallback> callbacks,
+            String errorMessage
+    ) {
+        for (RoomRepositoryCallback callback : callbacks) {
+            sendErrorIfNeeded(callback, errorMessage);
+        }
     }
 }
