@@ -2,11 +2,19 @@ plugins {
     alias(libs.plugins.android.application)
 }
 
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new java.util.Properties()
+if (keystorePropertiesFile.exists()) {
+    keystorePropertiesFile.withInputStream { stream ->
+        keystoreProperties.load(stream)
+    }
+}
+
 def debugApiBaseUrl = providers.gradleProperty("ROOM_BOOKING_DEBUG_API_BASE_URL")
         .orElse("http://10.50.48.251:8000/")
         .get()
 def releaseApiBaseUrl = providers.gradleProperty("ROOM_BOOKING_API_BASE_URL")
-        .orElse("https://booking.internal.example/")
+        .orElse("http://13.235.231.5/")
         .get()
 
 if (!debugApiBaseUrl.endsWith("/")) {
@@ -17,8 +25,32 @@ if (!releaseApiBaseUrl.endsWith("/")) {
     releaseApiBaseUrl += "/"
 }
 
-if (!releaseApiBaseUrl.startsWith("https://")) {
-    throw new GradleException("ROOM_BOOKING_API_BASE_URL must use HTTPS")
+def requiredSigningProperties = [
+        "storeFile",
+        "storePassword",
+        "keyAlias",
+        "keyPassword"
+]
+def hasReleaseSigning = keystorePropertiesFile.exists()
+        && requiredSigningProperties.every { key ->
+    keystoreProperties.getProperty(key) != null
+            && !keystoreProperties.getProperty(key).trim().isEmpty()
+}
+def resolveSigningFile = { String path ->
+    if (path.startsWith("~/")) {
+        return file(System.getProperty("user.home") + path.substring(1))
+    }
+
+    return rootProject.file(path)
+}
+def requestedReleaseBuild = gradle.startParameter.taskNames.any { taskName ->
+    taskName.toLowerCase(java.util.Locale.ROOT).contains("release")
+}
+if (requestedReleaseBuild && !hasReleaseSigning) {
+    throw new GradleException(
+            "Release signing requires root keystore.properties with "
+                    + "storeFile, storePassword, keyAlias, and keyPassword."
+    )
 }
 
 android {
@@ -41,14 +73,26 @@ android {
         buildConfig true
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile resolveSigningFile(keystoreProperties.getProperty("storeFile"))
+                storePassword keystoreProperties.getProperty("storePassword")
+                keyAlias keystoreProperties.getProperty("keyAlias")
+                keyPassword keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField "String", "API_BASE_URL", "\"${debugApiBaseUrl}\""
         }
         release {
             buildConfigField "String", "API_BASE_URL", "\"${releaseApiBaseUrl}\""
-            minifyEnabled true
-            shrinkResources true
+            signingConfig signingConfigs.release
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
