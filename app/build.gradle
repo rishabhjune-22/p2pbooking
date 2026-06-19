@@ -28,7 +28,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.p2proombooking"
+        applicationId "com.example.roombooking"
         minSdk 24
         targetSdk 36
         versionCode 1
