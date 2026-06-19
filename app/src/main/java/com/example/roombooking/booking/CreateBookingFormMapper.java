@@ -100,6 +100,9 @@ final class CreateBookingFormMapper {
 
                 data.getBudgetHeadType(),
                 data.getBudgetHeadValue(),
+                data.getBudgetHeadName(),
+                data.getBudgetHeadDepartmentName(),
+                data.getBudgetHeadProjectCode(),
 
                 data.getRequestorName(),
                 data.getRequestorDesignation(),
@@ -176,13 +179,6 @@ final class CreateBookingFormMapper {
             return CreateBookingValidationResult.invalid(
                     "Enter attender charges amount.",
                     CreateBookingFormState.FIELD_ATTENDER_CHARGES_AMOUNT
-            );
-        }
-
-        if (!isEmpty(data.getBudgetHeadType()) && isEmpty(data.getBudgetHeadValue())) {
-            return CreateBookingValidationResult.invalid(
-                    "Enter budget head value.",
-                    CreateBookingFormState.FIELD_BUDGET_HEAD_VALUE
             );
         }
 

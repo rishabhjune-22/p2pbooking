@@ -67,10 +67,11 @@ public class EditBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
-    private RadioGroup rgBudgetHeadType;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
-    private EditText etBudgetHeadValue;
+    private EditText etBudgetHeadName;
+    private EditText etBudgetHeadDepartmentName;
+    private EditText etBudgetHeadProjectCode;
     private TextView tvSelectShiftLabel;
     private CheckBox cbAttenderRequired;
     private EditText etAttenderCount;
@@ -156,10 +157,11 @@ public class EditBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
-        rgBudgetHeadType = findViewById(R.id.rgBudgetHeadType);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
-        etBudgetHeadValue = findViewById(R.id.etBudgetHeadValue);
+        etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
+        etBudgetHeadDepartmentName = findViewById(R.id.etBudgetHeadDepartmentName);
+        etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         etAttenderCount = findViewById(R.id.etAttenderCount);
@@ -256,7 +258,6 @@ public class EditBookingActivity extends AppCompatActivity {
                 R.id.rbAttenderChargesYes
         );
         setupAttenderRequirementControls();
-        setupBudgetHeadControls();
     }
 
     private void observeViewModel() {
@@ -389,8 +390,9 @@ public class EditBookingActivity extends AppCompatActivity {
                         ? safe(state.getAttenderChargesAmount())
                         : ""
         );
-        selectBudgetHeadType(state.getBudgetHeadType());
-        etBudgetHeadValue.setText(safe(state.getBudgetHeadValue()));
+        etBudgetHeadName.setText(safe(state.getBudgetHeadName()));
+        etBudgetHeadDepartmentName.setText(safe(state.getBudgetHeadDepartmentName()));
+        etBudgetHeadProjectCode.setText(safe(state.getBudgetHeadProjectCode()));
 
         etRequestorName.setText(safe(state.getRequestorName()));
         etRequestorDesignation.setText(safe(state.getRequestorDesignation()));
@@ -504,71 +506,6 @@ public class EditBookingActivity extends AppCompatActivity {
         }
     }
 
-    private void setupBudgetHeadControls() {
-        rgBudgetHeadType.setOnCheckedChangeListener((group, checkedId) -> {
-            updateBudgetHeadHint(getSelectedBudgetHeadType());
-            if (formBound && checkedId != -1) {
-                focusAndShowKeyboard(etBudgetHeadValue);
-            }
-        });
-        setupBudgetHeadRadioClick(R.id.rbBudgetIndividual);
-        setupBudgetHeadRadioClick(R.id.rbBudgetInstitute);
-        setupBudgetHeadRadioClick(R.id.rbBudgetProject);
-        updateBudgetHeadHint(getSelectedBudgetHeadType());
-    }
-
-    private void setupBudgetHeadRadioClick(int radioButtonId) {
-        View radioButton = rgBudgetHeadType.findViewById(radioButtonId);
-        if (radioButton != null) {
-            radioButton.setOnClickListener(v -> {
-                if (formBound && rgBudgetHeadType.getCheckedRadioButtonId() == radioButtonId) {
-                    updateBudgetHeadHint(getSelectedBudgetHeadType());
-                    focusAndShowKeyboard(etBudgetHeadValue);
-                }
-            });
-        }
-    }
-
-    private void selectBudgetHeadType(String budgetHeadType) {
-        if (EditBookingFormState.BUDGET_HEAD_INSTITUTE.equalsIgnoreCase(budgetHeadType)) {
-            rgBudgetHeadType.check(R.id.rbBudgetInstitute);
-        } else if (EditBookingFormState.BUDGET_HEAD_PROJECT.equalsIgnoreCase(budgetHeadType)) {
-            rgBudgetHeadType.check(R.id.rbBudgetProject);
-        } else if (EditBookingFormState.BUDGET_HEAD_INDIVIDUAL.equalsIgnoreCase(budgetHeadType)) {
-            rgBudgetHeadType.check(R.id.rbBudgetIndividual);
-        } else {
-            rgBudgetHeadType.clearCheck();
-        }
-        updateBudgetHeadHint(getSelectedBudgetHeadType());
-    }
-
-    private String getSelectedBudgetHeadType() {
-        int checkedId = rgBudgetHeadType.getCheckedRadioButtonId();
-
-        if (checkedId == R.id.rbBudgetInstitute) {
-            return EditBookingFormState.BUDGET_HEAD_INSTITUTE;
-        }
-
-        if (checkedId == R.id.rbBudgetProject) {
-            return EditBookingFormState.BUDGET_HEAD_PROJECT;
-        }
-
-        return "";
-    }
-
-    private void updateBudgetHeadHint(String budgetHeadType) {
-        if (EditBookingFormState.BUDGET_HEAD_INSTITUTE.equals(budgetHeadType)) {
-            etBudgetHeadValue.setHint("Department Name");
-            return;
-        }
-
-        if (EditBookingFormState.BUDGET_HEAD_PROJECT.equals(budgetHeadType)) {
-            etBudgetHeadValue.setHint("Project Code");
-            return;
-        }
-
-        etBudgetHeadValue.setHint("Budget Head Value");
-    }
     private void setupAttenderRequirementControls() {
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isChecked) {
@@ -702,8 +639,11 @@ public class EditBookingActivity extends AppCompatActivity {
                 ? getText(etAttenderChargesAmount)
                 : "0");
 
-        data.setBudgetHeadType(getSelectedBudgetHeadType());
-        data.setBudgetHeadValue(getText(etBudgetHeadValue));
+        data.setBudgetHeadType("");
+        data.setBudgetHeadValue("");
+        data.setBudgetHeadName(getText(etBudgetHeadName));
+        data.setBudgetHeadDepartmentName(getText(etBudgetHeadDepartmentName));
+        data.setBudgetHeadProjectCode(getText(etBudgetHeadProjectCode));
 
         data.setRequestorName(getText(etRequestorName));
         data.setRequestorDesignation(getText(etRequestorDesignation));
@@ -780,13 +720,6 @@ public class EditBookingActivity extends AppCompatActivity {
         if (EditBookingFormState.FIELD_ATTENDER_CHARGES_AMOUNT.equals(result.getField())) {
             etAttenderChargesAmount.setError("Attender charges amount is required.");
             focusAndShowKeyboard(etAttenderChargesAmount);
-            showError(result.getMessage());
-            return;
-        }
-
-        if (EditBookingFormState.FIELD_BUDGET_HEAD_VALUE.equals(result.getField())) {
-            etBudgetHeadValue.setError("Budget head value is required.");
-            focusAndShowKeyboard(etBudgetHeadValue);
             showError(result.getMessage());
             return;
         }

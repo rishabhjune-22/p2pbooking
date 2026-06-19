@@ -37,6 +37,9 @@ final class EditBookingFormState {
 
     private String budgetHeadType;
     private String budgetHeadValue;
+    private String budgetHeadName;
+    private String budgetHeadDepartmentName;
+    private String budgetHeadProjectCode;
 
     private String requestorName;
     private String requestorDesignation;
@@ -74,6 +77,9 @@ final class EditBookingFormState {
         copy.attenderChargesAmount = attenderChargesAmount;
         copy.budgetHeadType = budgetHeadType;
         copy.budgetHeadValue = budgetHeadValue;
+        copy.budgetHeadName = budgetHeadName;
+        copy.budgetHeadDepartmentName = budgetHeadDepartmentName;
+        copy.budgetHeadProjectCode = budgetHeadProjectCode;
         copy.requestorName = requestorName;
         copy.requestorDesignation = requestorDesignation;
         copy.requestorDepartment = requestorDepartment;
@@ -134,6 +140,12 @@ final class EditBookingFormState {
     void setBudgetHeadType(String budgetHeadType) { this.budgetHeadType = clean(budgetHeadType); }
     String getBudgetHeadValue() { return budgetHeadValue; }
     void setBudgetHeadValue(String budgetHeadValue) { this.budgetHeadValue = clean(budgetHeadValue); }
+    String getBudgetHeadName() { return budgetHeadName; }
+    void setBudgetHeadName(String budgetHeadName) { this.budgetHeadName = clean(budgetHeadName); }
+    String getBudgetHeadDepartmentName() { return budgetHeadDepartmentName; }
+    void setBudgetHeadDepartmentName(String budgetHeadDepartmentName) { this.budgetHeadDepartmentName = clean(budgetHeadDepartmentName); }
+    String getBudgetHeadProjectCode() { return budgetHeadProjectCode; }
+    void setBudgetHeadProjectCode(String budgetHeadProjectCode) { this.budgetHeadProjectCode = clean(budgetHeadProjectCode); }
     String getRequestorName() { return requestorName; }
     void setRequestorName(String requestorName) { this.requestorName = clean(requestorName); }
     String getRequestorDesignation() { return requestorDesignation; }

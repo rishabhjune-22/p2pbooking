@@ -462,41 +462,23 @@
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
 
-                <RadioGroup
-                    android:id="@+id/rgBudgetHeadType"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:orientation="vertical">
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetIndividual"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Individual"
-                        android:textColor="@color/detail_text_primary" />
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetInstitute"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Institute Head"
-                        android:textColor="@color/detail_text_primary" />
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetProject"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Project Head"
-                        android:textColor="@color/detail_text_primary" />
-
-                </RadioGroup>
-
                 <EditText
-                    android:id="@+id/etBudgetHeadValue"
+                    android:id="@+id/etBudgetHeadName"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:hint="Name" />
+
+                <EditText
+                    android:id="@+id/etBudgetHeadDepartmentName"
+                    style="@style/EditBookingInput"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:hint="Department Name" />
+
+                <EditText
+                    android:id="@+id/etBudgetHeadProjectCode"
+                    style="@style/EditBookingInput"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:hint="Project Code" />
 
             </LinearLayout>
 

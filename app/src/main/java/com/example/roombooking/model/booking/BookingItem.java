@@ -89,6 +89,15 @@ public class BookingItem implements Parcelable {
     @SerializedName("budget_head_value")
     private String budgetHeadValue;
 
+    @SerializedName("budget_head_name")
+    private String budgetHeadName;
+
+    @SerializedName("budget_head_department_name")
+    private String budgetHeadDepartmentName;
+
+    @SerializedName("budget_head_project_code")
+    private String budgetHeadProjectCode;
+
     @SerializedName("requestor_name")
     private String requestorName;
 
@@ -147,6 +156,9 @@ public class BookingItem implements Parcelable {
 
         budgetHeadType = in.readString();
         budgetHeadValue = in.readString();
+        budgetHeadName = in.readString();
+        budgetHeadDepartmentName = in.readString();
+        budgetHeadProjectCode = in.readString();
 
         requestorName = in.readString();
         requestorDesignation = in.readString();
@@ -201,6 +213,9 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(attenderChargesAmount, other.attenderChargesAmount)
                 && Objects.equals(budgetHeadType, other.budgetHeadType)
                 && Objects.equals(budgetHeadValue, other.budgetHeadValue)
+                && Objects.equals(budgetHeadName, other.budgetHeadName)
+                && Objects.equals(budgetHeadDepartmentName, other.budgetHeadDepartmentName)
+                && Objects.equals(budgetHeadProjectCode, other.budgetHeadProjectCode)
                 && Objects.equals(requestorName, other.requestorName)
                 && Objects.equals(requestorDesignation, other.requestorDesignation)
                 && Objects.equals(requestorDepartment, other.requestorDepartment)
@@ -315,6 +330,18 @@ public class BookingItem implements Parcelable {
         return budgetHeadValue;
     }
 
+    public String getBudgetHeadName() {
+        return budgetHeadName;
+    }
+
+    public String getBudgetHeadDepartmentName() {
+        return budgetHeadDepartmentName;
+    }
+
+    public String getBudgetHeadProjectCode() {
+        return budgetHeadProjectCode;
+    }
+
     public String getRequestorName() {
         return requestorName;
     }
@@ -395,6 +422,9 @@ public class BookingItem implements Parcelable {
 
         parcel.writeString(budgetHeadType);
         parcel.writeString(budgetHeadValue);
+        parcel.writeString(budgetHeadName);
+        parcel.writeString(budgetHeadDepartmentName);
+        parcel.writeString(budgetHeadProjectCode);
 
         parcel.writeString(requestorName);
         parcel.writeString(requestorDesignation);

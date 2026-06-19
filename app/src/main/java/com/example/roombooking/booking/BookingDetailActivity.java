@@ -371,9 +371,48 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private String buildBudgetHeadDetails() {
-        return "Type: " + getBudgetHeadTypeText(bookingItem.getBudgetHeadType()) + "\n"
-                + getBudgetHeadValueLabel(bookingItem.getBudgetHeadType()) + ": "
-                + safe(bookingItem.getBudgetHeadValue());
+        return "Budget Head Name: " + safe(resolveBudgetHeadName()) + "\n"
+                + "Department Name: " + safe(resolveBudgetHeadDepartmentName()) + "\n"
+                + "Project Code: " + safe(resolveBudgetHeadProjectCode());
+    }
+
+    private String resolveBudgetHeadName() {
+        String value = bookingItem.getBudgetHeadName();
+        if (!isBlank(value)) {
+            return value;
+        }
+
+        if ("individual".equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
+    }
+
+    private String resolveBudgetHeadDepartmentName() {
+        String value = bookingItem.getBudgetHeadDepartmentName();
+        if (!isBlank(value)) {
+            return value;
+        }
+
+        if ("institute_head".equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
+    }
+
+    private String resolveBudgetHeadProjectCode() {
+        String value = bookingItem.getBudgetHeadProjectCode();
+        if (!isBlank(value)) {
+            return value;
+        }
+
+        if ("project_head".equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
     }
 
     private String buildLogisticsDetails() {
@@ -400,38 +439,6 @@ public class BookingDetailActivity extends AppCompatActivity {
             default:
                 return safe(category);
         }
-    }
-
-    private String getBudgetHeadTypeText(String budgetHeadType) {
-        if (budgetHeadType == null || budgetHeadType.trim().isEmpty()) {
-            return "N/A";
-        }
-
-        switch (budgetHeadType) {
-            case "institute_head":
-                return "Institute Head";
-
-            case "project_head":
-                return "Project Head";
-
-            case "individual":
-                return "Individual";
-
-            default:
-                return safe(budgetHeadType);
-        }
-    }
-
-    private String getBudgetHeadValueLabel(String budgetHeadType) {
-        if ("institute_head".equals(budgetHeadType)) {
-            return "Department Name";
-        }
-
-        if ("project_head".equals(budgetHeadType)) {
-            return "Project Code";
-        }
-
-        return "Value";
     }
 
     private String getAttenderShiftText() {
@@ -646,6 +653,10 @@ public class BookingDetailActivity extends AppCompatActivity {
         return value == null || value.trim().isEmpty()
                 ? "N/A"
                 : value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private void showToast(String message) {

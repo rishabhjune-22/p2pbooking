@@ -622,42 +622,26 @@
                     android:layout_marginTop="@dimen/space_4"
                     android:background="@color/section_requestor" />
 
-                <RadioGroup
-                    android:id="@+id/rgBudgetHeadType"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                <EditText
+                    android:id="@+id/etBudgetHeadName"
+                    style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
-                    android:orientation="vertical">
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetIndividual"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Individual"
-                        android:textColor="@color/create_booking_text_secondary" />
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetInstitute"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Institute Head"
-                        android:textColor="@color/create_booking_text_secondary" />
-
-                    <RadioButton
-                        android:id="@+id/rbBudgetProject"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Project Head"
-                        android:textColor="@color/create_booking_text_secondary" />
-
-                </RadioGroup>
+                    android:drawableStart="@drawable/ic_documents"
+                    android:hint="Name" />
 
                 <EditText
-                    android:id="@+id/etBudgetHeadValue"
+                    android:id="@+id/etBudgetHeadDepartmentName"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_department"
+                    android:hint="Department Name" />
+
+                <EditText
+                    android:id="@+id/etBudgetHeadProjectCode"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_documents"
-                    android:hint="Name" />
+                    android:hint="Project Code" />
 
                 <!-- REQUESTOR DETAILS -->
                 <LinearLayout

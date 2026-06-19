@@ -56,6 +56,9 @@ final class EditBookingFormMapper {
         );
         state.setBudgetHeadType(bookingItem.getBudgetHeadType());
         state.setBudgetHeadValue(bookingItem.getBudgetHeadValue());
+        state.setBudgetHeadName(resolveBudgetHeadName(bookingItem));
+        state.setBudgetHeadDepartmentName(resolveBudgetHeadDepartmentName(bookingItem));
+        state.setBudgetHeadProjectCode(resolveBudgetHeadProjectCode(bookingItem));
         state.setRequestorName(bookingItem.getRequestorName());
         state.setRequestorDesignation(bookingItem.getRequestorDesignation());
         state.setRequestorDepartment(bookingItem.getRequestorDepartment());
@@ -72,6 +75,45 @@ final class EditBookingFormMapper {
 
         applyDateTimes(state, arrival, departure, apiDateTimeFormat);
         return state;
+    }
+
+    private static String resolveBudgetHeadName(BookingItem bookingItem) {
+        String value = bookingItem.getBudgetHeadName();
+        if (!isEmpty(value)) {
+            return value;
+        }
+
+        if (EditBookingFormState.BUDGET_HEAD_INDIVIDUAL.equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
+    }
+
+    private static String resolveBudgetHeadDepartmentName(BookingItem bookingItem) {
+        String value = bookingItem.getBudgetHeadDepartmentName();
+        if (!isEmpty(value)) {
+            return value;
+        }
+
+        if (EditBookingFormState.BUDGET_HEAD_INSTITUTE.equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
+    }
+
+    private static String resolveBudgetHeadProjectCode(BookingItem bookingItem) {
+        String value = bookingItem.getBudgetHeadProjectCode();
+        if (!isEmpty(value)) {
+            return value;
+        }
+
+        if (EditBookingFormState.BUDGET_HEAD_PROJECT.equals(bookingItem.getBudgetHeadType())) {
+            return bookingItem.getBudgetHeadValue();
+        }
+
+        return "";
     }
 
     static void applyDateTimes(
@@ -126,6 +168,9 @@ final class EditBookingFormMapper {
 
                 data.getBudgetHeadType(),
                 data.getBudgetHeadValue(),
+                data.getBudgetHeadName(),
+                data.getBudgetHeadDepartmentName(),
+                data.getBudgetHeadProjectCode(),
 
                 data.getRequestorName(),
                 data.getRequestorDesignation(),
@@ -196,13 +241,6 @@ final class EditBookingFormMapper {
             return EditBookingValidationResult.invalid(
                     "Enter attender charges amount.",
                     EditBookingFormState.FIELD_ATTENDER_CHARGES_AMOUNT
-            );
-        }
-
-        if (!isEmpty(data.getBudgetHeadType()) && isEmpty(data.getBudgetHeadValue())) {
-            return EditBookingValidationResult.invalid(
-                    "Enter budget head value.",
-                    EditBookingFormState.FIELD_BUDGET_HEAD_VALUE
             );
         }
 

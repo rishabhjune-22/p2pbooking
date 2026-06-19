@@ -80,12 +80,11 @@ public class CreateBookingFormMapperTest {
         assertFalse(result.isValid());
         assertEquals(CreateBookingFormState.FIELD_ROOM_CHARGES_AMOUNT, result.getField());
 
-        CreateBookingFormState missingBudgetHeadValue = validState();
-        missingBudgetHeadValue.setBudgetHeadType(CreateBookingFormState.BUDGET_HEAD_PROJECT);
-        missingBudgetHeadValue.setBudgetHeadValue("");
-        result = CreateBookingFormMapper.validate(missingBudgetHeadValue);
-        assertFalse(result.isValid());
-        assertEquals(CreateBookingFormState.FIELD_BUDGET_HEAD_VALUE, result.getField());
+        CreateBookingFormState partialBudgetHead = validState();
+        partialBudgetHead.setBudgetHeadName("");
+        partialBudgetHead.setBudgetHeadDepartmentName("Computer Science");
+        partialBudgetHead.setBudgetHeadProjectCode("");
+        assertTrue(CreateBookingFormMapper.validate(partialBudgetHead).isValid());
     }
 
     @Test
@@ -98,8 +97,9 @@ public class CreateBookingFormMapperTest {
         state.setAttenderMorningShift(true);
         state.setRoomChargesStatus("yes");
         state.setRoomChargesAmount("1500");
-        state.setBudgetHeadType(CreateBookingFormState.BUDGET_HEAD_PROJECT);
-        state.setBudgetHeadValue("PRJ-2026-001");
+        state.setBudgetHeadName("Project Travel");
+        state.setBudgetHeadDepartmentName("Computer Science");
+        state.setBudgetHeadProjectCode("PRJ-2026-001");
 
         BookingCreateRequest request = CreateBookingFormMapper.toCreateRequest(state);
         JsonObject json = JsonParser.parseString(new Gson().toJson(request)).getAsJsonObject();
@@ -114,8 +114,12 @@ public class CreateBookingFormMapperTest {
         assertFalse(json.has("attender_night_shift"));
         assertEquals("yes", json.get("room_charges_status").getAsString());
         assertEquals("1500", json.get("room_charges_amount").getAsString());
-        assertEquals("project_head", json.get("budget_head_type").getAsString());
-        assertEquals("PRJ-2026-001", json.get("budget_head_value").getAsString());
+        assertEquals("Project Travel", json.get("budget_head_name").getAsString());
+        assertEquals(
+                "Computer Science",
+                json.get("budget_head_department_name").getAsString()
+        );
+        assertEquals("PRJ-2026-001", json.get("budget_head_project_code").getAsString());
     }
 
     private static void assertInvalid(CreateBookingFormState state, String message) {

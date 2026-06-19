@@ -76,6 +76,15 @@ public class BookingCreateRequest {
     @SerializedName("budget_head_value")
     private final String budgetHeadValue;
 
+    @SerializedName("budget_head_name")
+    private final String budgetHeadName;
+
+    @SerializedName("budget_head_department_name")
+    private final String budgetHeadDepartmentName;
+
+    @SerializedName("budget_head_project_code")
+    private final String budgetHeadProjectCode;
+
     @SerializedName("requestor_name")
     private final String requestorName;
 
@@ -125,6 +134,9 @@ public class BookingCreateRequest {
 
             String budgetHeadType,
             String budgetHeadValue,
+            String budgetHeadName,
+            String budgetHeadDepartmentName,
+            String budgetHeadProjectCode,
 
             String requestorName,
             String requestorDesignation,
@@ -161,6 +173,9 @@ public class BookingCreateRequest {
         this.attenderChargesAmount = attenderChargesAmount;
         this.budgetHeadType = budgetHeadType;
         this.budgetHeadValue = budgetHeadValue;
+        this.budgetHeadName = budgetHeadName;
+        this.budgetHeadDepartmentName = budgetHeadDepartmentName;
+        this.budgetHeadProjectCode = budgetHeadProjectCode;
 
         this.requestorName = requestorName;
         this.requestorDesignation = requestorDesignation;
