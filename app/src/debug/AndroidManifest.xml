@@ -4,5 +4,14 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application
         android:usesCleartextTraffic="true"
-        tools:replace="android:usesCleartextTraffic" />
+        tools:replace="android:usesCleartextTraffic">
+
+        <receiver
+            android:name=".sync.DebugBackgroundSyncReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.example.roombooking.DEBUG_RUN_BACKGROUND_SYNC" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

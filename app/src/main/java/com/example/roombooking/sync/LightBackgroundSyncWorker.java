@@ -95,6 +95,7 @@ public class LightBackgroundSyncWorker extends Worker {
 
     private SyncOutcome syncRooms() {
         String operation = "background_sync_rooms";
+        String failureEvent = "background_sync_rooms_failure";
         String cacheKey = RoomRepository.ROOM_CACHE_KEY;
         long startedAtMillis = System.currentTimeMillis();
         AppDiagnostics.logNetworkStart(operation, cacheKey);
@@ -110,7 +111,7 @@ public class LightBackgroundSyncWorker extends Worker {
             );
 
             if (!isValidPageResponse(response)) {
-                logHttpFailure(operation, response);
+                logSyncFailure(failureEvent, operation, "HTTP " + response.code(), null);
                 return outcomeForHttpCode(response.code());
             }
 
@@ -121,14 +122,17 @@ public class LightBackgroundSyncWorker extends Worker {
             AppDiagnostics.logEvent("background_sync_rooms_success count=" + rooms.size());
             return SyncOutcome.success();
         } catch (IOException exception) {
-            return handleException(operation, exception, true);
+            return handleException(failureEvent, operation, exception, true);
         } catch (RuntimeException exception) {
-            return handleException(operation, exception, false);
+            return handleException(failureEvent, operation, exception, false);
         }
     }
 
     private SyncOutcome syncBookingPageOne(String status) {
-        String operation = "background_sync_bookings_" + safe(status);
+        String normalizedStatus = safe(status);
+        String operation = "background_sync_" + normalizedStatus + "_bookings";
+        String successEvent = "background_sync_" + normalizedStatus + "_bookings_success";
+        String failureEvent = "background_sync_" + normalizedStatus + "_bookings_failure";
         String cacheKey = bookingPageOneCacheKey(status);
         long startedAtMillis = System.currentTimeMillis();
         AppDiagnostics.logNetworkStart(operation, cacheKey);
@@ -144,7 +148,7 @@ public class LightBackgroundSyncWorker extends Worker {
             );
 
             if (!isValidPageResponse(response)) {
-                logHttpFailure(operation, response);
+                logSyncFailure(failureEvent, operation, "HTTP " + response.code(), null);
                 return outcomeForHttpCode(response.code());
             }
 
@@ -152,16 +156,12 @@ public class LightBackgroundSyncWorker extends Worker {
                     response.body().getData().getResults()
             );
             writeJsonCache(cacheKey, bookings);
-            AppDiagnostics.logEvent(
-                    "background_sync_bookings_success"
-                            + " status=" + safe(status)
-                            + " count=" + bookings.size()
-            );
+            AppDiagnostics.logEvent(successEvent + " count=" + bookings.size());
             return SyncOutcome.success();
         } catch (IOException exception) {
-            return handleException(operation, exception, true);
+            return handleException(failureEvent, operation, exception, true);
         } catch (RuntimeException exception) {
-            return handleException(operation, exception, false);
+            return handleException(failureEvent, operation, exception, false);
         }
     }
 
@@ -171,6 +171,7 @@ public class LightBackgroundSyncWorker extends Worker {
         int year = calendar.get(Calendar.YEAR);
         String cacheKey = calendarAvailabilityCacheKey(calendar);
         String operation = "background_sync_calendar";
+        String failureEvent = "background_sync_calendar_failure";
         long startedAtMillis = System.currentTimeMillis();
         AppDiagnostics.logNetworkStart(operation, cacheKey);
 
@@ -185,7 +186,7 @@ public class LightBackgroundSyncWorker extends Worker {
             );
 
             if (!isValidDataResponse(response)) {
-                logHttpFailure(operation, response);
+                logSyncFailure(failureEvent, operation, "HTTP " + response.code(), null);
                 return outcomeForHttpCode(response.code());
             }
 
@@ -202,9 +203,9 @@ public class LightBackgroundSyncWorker extends Worker {
             );
             return SyncOutcome.success();
         } catch (IOException exception) {
-            return handleException(operation, exception, true);
+            return handleException(failureEvent, operation, exception, true);
         } catch (RuntimeException exception) {
-            return handleException(operation, exception, false);
+            return handleException(failureEvent, operation, exception, false);
         }
     }
 
@@ -253,19 +254,24 @@ public class LightBackgroundSyncWorker extends Worker {
                 && response.body().getData() != null;
     }
 
-    private <T> void logHttpFailure(
+    private void logSyncFailure(
+            String eventName,
             String operation,
-            Response<ApiResponse<T>> response
+            String message,
+            Throwable exception
     ) {
-        AppDiagnostics.logApiFailure(
-                operation,
-                "HTTP " + response.code(),
-                null
-        );
+        AppDiagnostics.logEvent(eventName + " message=" + safe(message));
+        AppDiagnostics.logApiFailure(operation, message, exception);
     }
 
-    private SyncOutcome handleException(String operation, Throwable exception, boolean retryable) {
-        AppDiagnostics.logApiFailure(
+    private SyncOutcome handleException(
+            String eventName,
+            String operation,
+            Throwable exception,
+            boolean retryable
+    ) {
+        logSyncFailure(
+                eventName,
                 operation,
                 exception.getClass().getSimpleName(),
                 exception
