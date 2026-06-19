@@ -30,6 +30,9 @@
         <item name="android:textSize">@dimen/text_14</item>
         <item name="android:lineSpacingExtra">@dimen/space_6</item>
         <item name="android:paddingStart">@dimen/space_8</item>
+        <item name="android:paddingEnd">@dimen/space_8</item>
+        <item name="android:scrollHorizontally">false</item>
+        <item name="android:singleLine">false</item>
     </style>
 
 

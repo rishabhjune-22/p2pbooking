@@ -262,54 +262,70 @@
                 app:layout_constraintTop_toTopOf="parent"
                 app:tint="@color/icon_tint" />
 
-                <TextView
-                    android:id="@+id/tvPurposeLabel"
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/purposeColumnGuide"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    app:layout_constraintGuide_percent="0.50" />
+
+                <TextView
+                    android:id="@+id/tvPurposeLabel"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
+                    android:ellipsize="end"
+                    android:maxLines="1"
                     android:text="Purpose"
                     android:textColor="@color/palette_9c9caa"
                     android:textSize="@dimen/text_12"
+                    app:layout_constraintEnd_toStartOf="@id/purposeColumnGuide"
                     app:layout_constraintStart_toEndOf="@id/ivPurposeIcon"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/tvRequestedBy"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_12"
                     android:ellipsize="end"
+                    android:gravity="end"
                     android:maxLines="1"
                     android:text="By: nehas"
                     android:textColor="@color/palette_8f8f99"
                     android:textSize="@dimen/text_12"
                     android:textStyle="italic"
                     app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/purposeColumnGuide"
                     app:layout_constraintTop_toTopOf="@id/tvPurposeLabel" />
                 <TextView
                     android:id="@+id/tvCreatedBy"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
                     android:ellipsize="end"
+                    android:gravity="end"
                     android:maxLines="1"
                     android:text="Created By: Admin"
                     android:textColor="@color/palette_8f8f99"
                     android:textSize="@dimen/text_12"
                     android:textStyle="italic"
                     app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="@id/tvRequestedBy"
                     app:layout_constraintTop_toBottomOf="@id/tvRequestedBy" />
+
                 <TextView
                     android:id="@+id/tvPurpose"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
+                    android:layout_marginTop="@dimen/space_4"
                     android:ellipsize="end"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:text="Project Discussion"
-                    android:textColor="@color/palette_3d3d47"
-                    android:textSize="@dimen/text_14"
-                    android:textStyle="bold"
-                    app:layout_constraintEnd_toEndOf="parent"
+                    android:textColor="@color/palette_8f8f99"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="italic"
+                    app:layout_constraintEnd_toStartOf="@id/purposeColumnGuide"
                     app:layout_constraintStart_toStartOf="@id/tvPurposeLabel"
                     app:layout_constraintTop_toBottomOf="@id/tvPurposeLabel" />
 

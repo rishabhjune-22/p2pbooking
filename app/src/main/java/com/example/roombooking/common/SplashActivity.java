@@ -4,11 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
-import android.widget.EditText;
 
 import androidx.appcompat.app.AppCompatDelegate;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
@@ -88,7 +85,7 @@ public class SplashActivity extends AppCompatActivity {
 
         if (!canMoveAhead) return;
 
-        if (!localUserManager.hasUserName()) {
+        if (!localUserManager.hasValidUserName()) {
             showUserNameDialog();
             return;
         }
@@ -100,44 +97,8 @@ public class SplashActivity extends AppCompatActivity {
         if (navigationDone || userDialogShowing) return;
 
         userDialogShowing = true;
-
-        EditText input = new EditText(this);
-        input.setHint(getString(R.string.hint_enter_name));
-        input.setSingleLine(true);
-
-        int padding = getDialogInputPadding();
-        input.setPadding(padding, padding, padding, padding);
-
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.dialog_title_welcome)
-                .setMessage(R.string.dialog_message_enter_name)
-                .setView(input)
-                .setCancelable(false)
-                .setPositiveButton(R.string.action_continue, null)
-                .create();
-
-        dialog.setOnShowListener(d -> {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-                String name = input.getText() != null
-                        ? input.getText().toString().trim()
-                        : "";
-
-                if (TextUtils.isEmpty(name)) {
-                    input.setError(getString(R.string.error_name_required));
-                    return;
-                }
-
-                localUserManager.saveUserName(name);
-                dialog.dismiss();
-                navigateToLanding();
-            });
-        });
-
-        dialog.show();
-    }
-
-    private int getDialogInputPadding() {
-        return (int) (20 * getResources().getDisplayMetrics().density);
+        RequiredUserNamePrompt.show(this, localUserManager, name -> navigateToLanding())
+                .setOnDismissListener(dialog -> userDialogShowing = false);
     }
 
     private void navigateToLanding() {

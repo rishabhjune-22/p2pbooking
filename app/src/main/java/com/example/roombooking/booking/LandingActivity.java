@@ -27,6 +27,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.TypedValue;
 
 import com.example.roombooking.R;
+import com.example.roombooking.common.LocalUserManager;
+import com.example.roombooking.common.RequiredUserNamePrompt;
 import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
@@ -83,6 +85,7 @@ public class LandingActivity extends AppCompatActivity {
 
     private LandingViewModel viewModel;
     private CalendarAvailabilityAdapter calendarAdapter;
+    private LocalUserManager localUserManager;
 
     private final Calendar selectedMonth = Calendar.getInstance();
 
@@ -108,6 +111,7 @@ public class LandingActivity extends AppCompatActivity {
     private String activeAvailabilitySheetKey = null;
     private boolean replacingAvailabilitySheet = false;
     private boolean hasHandledInitialResume = false;
+    private boolean userNamePromptShowing = false;
     private TextView activeAvailabilitySheetStatus = null;
     private AvailableRoomsResponse activeAvailableRoomsResponse = null;
     private AvailableRoomsRangeResponse activeAvailableRoomsRangeResponse = null;
@@ -141,6 +145,7 @@ public class LandingActivity extends AppCompatActivity {
         setContentView(R.layout.activity_landing);
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.main));
+        localUserManager = new LocalUserManager(getApplicationContext());
 
         initViewModel();
         initViews();
@@ -150,6 +155,7 @@ public class LandingActivity extends AppCompatActivity {
         setupListeners();
         setupCalendarGestureSelection();
         observeViewModel();
+        ensureLocalUserName();
 
         loadAvailability();
     }
@@ -1457,6 +1463,7 @@ public class LandingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        ensureLocalUserName();
         startSyncStatusTimer();
         if (!hasHandledInitialResume) {
             hasHandledInitialResume = true;
@@ -1464,6 +1471,24 @@ public class LandingActivity extends AppCompatActivity {
         }
 
         refreshAvailabilityIfStaleOnForeground();
+    }
+
+    private void ensureLocalUserName() {
+        if (localUserManager == null || localUserManager.hasValidUserName()) {
+            return;
+        }
+
+        showRequiredUserNamePrompt();
+    }
+
+    private void showRequiredUserNamePrompt() {
+        if (isFinishing() || isDestroyed() || userNamePromptShowing) {
+            return;
+        }
+
+        userNamePromptShowing = true;
+        RequiredUserNamePrompt.show(this, localUserManager, null)
+                .setOnDismissListener(d -> userNamePromptShowing = false);
     }
 
     @Override

@@ -325,9 +325,14 @@
                 <EditText
                     android:id="@+id/etPurpose"
                     style="@style/CreateBookingEditText"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_18"
                     android:drawableStart="@drawable/ic_documents"
-                    android:hint="Purpose of Visit" />
+                    android:gravity="top|start"
+                    android:hint="Purpose of Visit"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="5"
+                    android:minLines="3" />
 
                 <!-- VISITOR CATEGORY -->
                 <LinearLayout

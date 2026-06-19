@@ -28,6 +28,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.roombooking.R;
 import com.example.roombooking.common.LocalUserManager;
+import com.example.roombooking.common.RequiredUserNamePrompt;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.NullSafeCollections;
@@ -101,6 +102,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private CreateBookingViewModel viewModel;
     private CreateBookingFormState currentFormState;
+    private LocalUserManager localUserManager;
+    private boolean userNamePromptShowing = false;
 
     private final Random random = new Random();
 
@@ -133,7 +136,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void initDependencies() {
         BookingRepository bookingRepository = new BookingRepository(getApplicationContext());
         RoomRepository roomRepository = new RoomRepository(getApplicationContext());
-        LocalUserManager localUserManager = new LocalUserManager(getApplicationContext());
+        localUserManager = new LocalUserManager(getApplicationContext());
         CreateBookingViewModelFactory factory = new CreateBookingViewModelFactory(
                 bookingRepository,
                 roomRepository,
@@ -674,7 +677,27 @@ public class CreateBookingActivity extends AppCompatActivity {
         }
 
         tvMessage.setVisibility(View.GONE);
+
+        if (!localUserManager.hasValidUserName()) {
+            showRequiredUserNamePrompt(this::submitBooking);
+            return;
+        }
+
         viewModel.create(collectFormData());
+    }
+
+    private void showRequiredUserNamePrompt(Runnable afterSaved) {
+        if (isFinishing() || isDestroyed() || userNamePromptShowing) {
+            return;
+        }
+
+        userNamePromptShowing = true;
+
+        RequiredUserNamePrompt.show(this, localUserManager, name -> {
+            if (afterSaved != null && !isFinishing() && !isDestroyed()) {
+                afterSaved.run();
+            }
+        }).setOnDismissListener(d -> userNamePromptShowing = false);
     }
 
     private void handleBackPress() {

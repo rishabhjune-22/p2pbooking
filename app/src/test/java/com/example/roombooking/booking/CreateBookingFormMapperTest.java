@@ -57,6 +57,10 @@ public class CreateBookingFormMapperTest {
         missingRoom.setRoomId(null);
         assertInvalid(missingRoom, "Please select a room.");
 
+        CreateBookingFormState missingCreatedBy = validState();
+        missingCreatedBy.setCreatedByName("   ");
+        assertInvalid(missingCreatedBy, "Name is required");
+
         CreateBookingFormState invalidMobile = validState();
         invalidMobile.setVisitorMobile("12345");
         assertInvalid(invalidMobile, "Visitor mobile must be 10 digits.");
@@ -87,7 +91,7 @@ public class CreateBookingFormMapperTest {
     @Test
     public void toCreateRequestSerializesMutationPayload() {
         CreateBookingFormState state = validState();
-        state.setCreatedByName("Admin User");
+        state.setCreatedByName("  Admin User  ");
         state.setVisitorCategory("conference_workshop_guest");
         state.setAttenderRequired(true);
         state.setAttenderCountPerDay(2);
@@ -123,6 +127,7 @@ public class CreateBookingFormMapperTest {
     private static CreateBookingFormState validState() {
         CreateBookingFormState state = new CreateBookingFormState();
         state.setRoomId(7);
+        state.setCreatedByName("Admin User");
         state.setVisitorName("Visitor One");
         state.setVisitorMobile("9876543210");
         state.setVisitorGender("Male");

@@ -27,7 +27,11 @@ public final class LocalUserManager {
     }
 
     public boolean hasUserName() {
-        return !TextUtils.isEmpty(getUserName());
+        return hasValidUserName();
+    }
+
+    public boolean hasValidUserName() {
+        return isValidUserName(getUserName());
     }
 
     public void clearUserName() {
@@ -36,7 +40,11 @@ public final class LocalUserManager {
                 .apply();
     }
 
-    private String cleanText(String value) {
+    public static boolean isValidUserName(String name) {
+        return !TextUtils.isEmpty(cleanText(name));
+    }
+
+    private static String cleanText(String value) {
         return value != null ? value.trim() : "";
     }
 }
