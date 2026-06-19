@@ -247,6 +247,7 @@ public class HomeViewModel extends ViewModel {
                 }
 
                 toastLiveData.setValue(apiResponse.getSafeMessage());
+                bookingRepository.clearAvailabilityCachesForBookingMutation();
                 removeBookingById(bookingId);
                 refreshBookingsAfterBookingChange();
             }

@@ -103,11 +103,19 @@ public class BookingRepository {
     }
 
     public void clearFirstPageCaches() {
+        clearFirstPageCaches(cacheStore);
+    }
+
+    static void clearFirstPageCaches(LocalJsonCacheStore cacheStore) {
         if (cacheStore == null) {
             return;
         }
 
         cacheStore.deleteByPrefix(BOOKING_PAGE_ONE_CACHE_PREFIX);
+    }
+
+    public void clearAvailabilityCachesForBookingMutation() {
+        AvailabilityRepository.clearAvailabilityCaches(cacheStore);
     }
 
     public static String firstPageCacheKey(

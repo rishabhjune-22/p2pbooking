@@ -14,6 +14,10 @@ public class CachePolicyTest {
         assertTrue(CachePolicy.BOOKING_PAGE_ONE_TTL_MS <= 60L * 1000L);
         assertTrue(CachePolicy.CALENDAR_AVAILABILITY_TTL_MS >= 15L * 1000L);
         assertTrue(CachePolicy.CALENDAR_AVAILABILITY_TTL_MS <= 30L * 1000L);
+        assertTrue(CachePolicy.AVAILABLE_ROOMS_TTL_MS >= 10L * 1000L);
+        assertTrue(CachePolicy.AVAILABLE_ROOMS_TTL_MS <= 15L * 1000L);
+        assertTrue(CachePolicy.AVAILABLE_ROOMS_RANGE_TTL_MS >= 10L * 1000L);
+        assertTrue(CachePolicy.AVAILABLE_ROOMS_RANGE_TTL_MS <= 15L * 1000L);
     }
 
     @Test

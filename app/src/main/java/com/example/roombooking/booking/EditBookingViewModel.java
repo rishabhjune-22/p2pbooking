@@ -229,6 +229,8 @@ public class EditBookingViewModel extends ViewModel {
                     bookingStatus = data.getStatus();
                 }
 
+                bookingRepository.clearFirstPageCaches();
+                bookingRepository.clearAvailabilityCachesForBookingMutation();
                 resultLiveData.setValue(new UiEvent<>(new EditBookingResult(
                         bookingId,
                         bookingStatus,
