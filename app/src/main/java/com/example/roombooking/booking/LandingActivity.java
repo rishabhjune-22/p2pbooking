@@ -32,6 +32,7 @@ import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
+import com.example.roombooking.utils.AppDiagnostics;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -100,6 +101,8 @@ public class LandingActivity extends AppCompatActivity {
     private String selectedAvailableArrivalDate = null;
     private String selectedAvailableDepartureDate = null;
     private BottomSheetDialog activeBottomSheetDialog = null;
+    private String activeAvailabilitySheetKey = null;
+    private boolean replacingAvailabilitySheet = false;
 
     private LinearLayout pendingDeleteLayoutDetails = null;
     private View pendingDeleteCard = null;
@@ -358,7 +361,10 @@ public class LandingActivity extends AppCompatActivity {
             if (event == null) return;
 
             AvailableRoomsResponse data = event.getContentIfNotHandled();
-            if (data == null || !matchesSelectedPrefix(data.getPrefix())) return;
+            if (data == null || !matchesSelectedPrefix(data.getPrefix())) {
+                AppDiagnostics.logEvent("available_rooms_ui_update_skipped");
+                return;
+            }
 
             showAvailableRoomsBottomSheet(data);
         });
@@ -367,7 +373,10 @@ public class LandingActivity extends AppCompatActivity {
             if (event == null) return;
 
             AvailableRoomsRangeResponse data = event.getContentIfNotHandled();
-            if (data == null || !matchesSelectedPrefix(data.getPrefix())) return;
+            if (data == null || !matchesSelectedPrefix(data.getPrefix())) {
+                AppDiagnostics.logEvent("available_rooms_range_ui_update_skipped");
+                return;
+            }
 
             showAvailableRoomsRangeBottomSheet(data);
         });
@@ -817,9 +826,15 @@ public class LandingActivity extends AppCompatActivity {
     private void showAvailableRoomsBottomSheet(AvailableRoomsResponse data) {
         selectedAvailableArrivalDate = data.getDate();
         selectedAvailableDepartureDate = data.getDate();
+        String sheetKey = AvailabilityRepository.availableRoomsCacheKey(
+                data.getPrefix(),
+                data.getDate()
+        );
+        replaceActiveAvailabilitySheet(sheetKey);
 
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeBottomSheetDialog = dialog;
+        activeAvailabilitySheetKey = sheetKey;
 
         LinearLayout container = createBottomSheetContainer();
 
@@ -843,8 +858,7 @@ public class LandingActivity extends AppCompatActivity {
         View scrollableContent = createScrollableBottomSheetContent(container);
 
         dialog.setOnDismissListener(d -> {
-            activeBottomSheetDialog = null;
-            clearRangeSelectionAndEnableRefresh();
+            handleAvailabilitySheetDismissed(dialog);
         });
 
         showExpandedBottomSheet(dialog, scrollableContent);
@@ -853,9 +867,16 @@ public class LandingActivity extends AppCompatActivity {
     private void showAvailableRoomsRangeBottomSheet(AvailableRoomsRangeResponse data) {
         selectedAvailableArrivalDate = data.getArrivalDate();
         selectedAvailableDepartureDate = data.getDepartureDate();
+        String sheetKey = AvailabilityRepository.availableRoomsRangeCacheKey(
+                data.getPrefix(),
+                data.getArrivalDate(),
+                data.getDepartureDate()
+        );
+        replaceActiveAvailabilitySheet(sheetKey);
 
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeBottomSheetDialog = dialog;
+        activeAvailabilitySheetKey = sheetKey;
 
         LinearLayout container = createBottomSheetContainer();
 
@@ -880,11 +901,33 @@ public class LandingActivity extends AppCompatActivity {
         View scrollableContent = createScrollableBottomSheetContent(container);
 
         dialog.setOnDismissListener(d -> {
-            activeBottomSheetDialog = null;
-            clearRangeSelectionAndEnableRefresh();
+            handleAvailabilitySheetDismissed(dialog);
         });
 
         showExpandedBottomSheet(dialog, scrollableContent);
+    }
+
+    private void replaceActiveAvailabilitySheet(String nextSheetKey) {
+        if (activeBottomSheetDialog == null || !activeBottomSheetDialog.isShowing()) {
+            return;
+        }
+
+        replacingAvailabilitySheet = true;
+        activeBottomSheetDialog.dismiss();
+        replacingAvailabilitySheet = false;
+        AppDiagnostics.logEvent("availability_sheet_replaced key=" + safe(nextSheetKey));
+    }
+
+    private void handleAvailabilitySheetDismissed(BottomSheetDialog dialog) {
+        if (dialog != activeBottomSheetDialog) {
+            return;
+        }
+
+        activeBottomSheetDialog = null;
+        activeAvailabilitySheetKey = null;
+        if (!replacingAvailabilitySheet) {
+            clearRangeSelectionAndEnableRefresh();
+        }
     }
 
     private LinearLayout createBottomSheetContainer() {

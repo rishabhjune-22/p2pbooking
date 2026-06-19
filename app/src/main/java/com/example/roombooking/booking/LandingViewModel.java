@@ -52,6 +52,10 @@ public class LandingViewModel extends ViewModel {
             "Failed to load booking details.";
     private static final String MESSAGE_AVAILABLE_ROOMS_FAILED =
             "Failed to load available rooms.";
+    private static final String MESSAGE_CACHED_AVAILABILITY_REFRESHING =
+            "Showing cached availability. Refreshing...";
+    private static final String MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK =
+            "Showing cached availability. Final booking will be verified by server.";
     private static final String MESSAGE_DELETE_FAILED =
             "Failed to delete booking.";
     private static final String MESSAGE_DELETE_IN_FLIGHT =
@@ -60,6 +64,10 @@ public class LandingViewModel extends ViewModel {
     private static final long RETRY_DELAY_MS = 700L;
     private static final Object CACHE_LOCK = new Object();
     private static final Map<String, CachedAvailability> availabilityCache =
+            new HashMap<>();
+    private static final Map<String, CachedAvailableRooms> availableRoomsCache =
+            new HashMap<>();
+    private static final Map<String, CachedAvailableRoomsRange> availableRoomsRangeCache =
             new HashMap<>();
 
     private final AvailabilityRepository availabilityRepository;
@@ -92,6 +100,10 @@ public class LandingViewModel extends ViewModel {
     private Runnable pendingAvailableRoomsRetry;
     private Runnable pendingAvailableRoomsRangeRetry;
     private int availabilityCacheGeneration = 0;
+    private int availableRoomsCacheGeneration = 0;
+    private int availableRoomsRangeCacheGeneration = 0;
+    private int observedCacheInvalidationVersion =
+            AvailabilityRepository.getCacheInvalidationVersion();
     private boolean forceNextAvailabilityNetworkRefresh = false;
 
     private int requestedMonth = -1;
@@ -99,6 +111,8 @@ public class LandingViewModel extends ViewModel {
     private String requestedDetailsPrefix = "";
     private String requestedAvailableRoomsPrefix = "";
     private String requestedRangePrefix = "";
+    private String requestedAvailableRoomsCacheKey = "";
+    private String requestedAvailableRoomsRangeCacheKey = "";
 
     public LandingViewModel(AvailabilityRepository availabilityRepository) {
         this.availabilityRepository = availabilityRepository;
@@ -113,6 +127,32 @@ public class LandingViewModel extends ViewModel {
                 long updatedAtMillis
         ) {
             this.groups = NullSafeCollections.copyWithoutNulls(groups);
+            this.updatedAtMillis = updatedAtMillis;
+        }
+    }
+
+    private static final class CachedAvailableRooms {
+        private final AvailableRoomsResponse response;
+        private final long updatedAtMillis;
+
+        private CachedAvailableRooms(
+                AvailableRoomsResponse response,
+                long updatedAtMillis
+        ) {
+            this.response = response;
+            this.updatedAtMillis = updatedAtMillis;
+        }
+    }
+
+    private static final class CachedAvailableRoomsRange {
+        private final AvailableRoomsRangeResponse response;
+        private final long updatedAtMillis;
+
+        private CachedAvailableRoomsRange(
+                AvailableRoomsRangeResponse response,
+                long updatedAtMillis
+        ) {
+            this.response = response;
             this.updatedAtMillis = updatedAtMillis;
         }
     }
@@ -161,6 +201,9 @@ public class LandingViewModel extends ViewModel {
 
     public void loadAvailability(int month, int year) {
         long actionStartedAtMillis = System.currentTimeMillis();
+        if (syncCacheInvalidationVersion()) {
+            forceNextAvailabilityNetworkRefresh = true;
+        }
         requestedMonth = month;
         requestedYear = year;
         cancelPendingAvailabilityRetry();
@@ -389,20 +432,94 @@ public class LandingViewModel extends ViewModel {
     }
 
     public void loadAvailableRoomsForDate(String date, String prefix) {
-        cancelAvailableRoomsRequests();
+        syncCacheInvalidationVersion();
         cancelPendingAvailableRoomsRetry();
         cancelPendingAvailableRoomsRangeRetry();
+        cancelCall(availableRoomsRangeCall);
+        availableRoomsRangeCall = null;
+        requestedRangePrefix = "";
         requestedAvailableRoomsPrefix = safe(prefix);
-        loadAvailableRoomsForDateInternal(date, requestedAvailableRoomsPrefix, 0);
+        String cacheKey = AvailabilityRepository.availableRoomsCacheKey(
+                requestedAvailableRoomsPrefix,
+                date
+        );
+
+        if (availableRoomsCall != null && cacheKey.equals(requestedAvailableRoomsCacheKey)) {
+            AppDiagnostics.logEvent("available_rooms_single_flight_skipped key=" + cacheKey);
+            return;
+        }
+
+        if (availableRoomsCall != null) {
+            cancelCall(availableRoomsCall);
+            availableRoomsCall = null;
+        }
+
+        requestedAvailableRoomsCacheKey = cacheKey;
+        long actionStartedAtMillis = System.currentTimeMillis();
+        CachedAvailableRooms memoryResponse = getCachedAvailableRooms(cacheKey);
+        if (memoryResponse != null && memoryResponse.response != null) {
+            showCachedAvailableRooms(memoryResponse.response, "memory", actionStartedAtMillis);
+            if (isFresh(memoryResponse.updatedAtMillis, CachePolicy.AVAILABLE_ROOMS_TTL_MS)) {
+                return;
+            }
+
+            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
+            loadAvailableRoomsForDateInternal(
+                    date,
+                    requestedAvailableRoomsPrefix,
+                    cacheKey,
+                    0,
+                    false,
+                    true,
+                    actionStartedAtMillis
+            );
+            return;
+        }
+
+        int generation = ++availableRoomsCacheGeneration;
+        availableRoomsLoadingLiveData.setValue(true);
+        availabilityRepository.getCachedAvailableRoomsByDate(
+                date,
+                requestedAvailableRoomsPrefix,
+                result -> {
+                    if (generation != availableRoomsCacheGeneration
+                            || !cacheKey.equals(requestedAvailableRoomsCacheKey)) {
+                        AppDiagnostics.logEvent(
+                                "available_rooms_cache_result_skipped key=" + cacheKey
+                        );
+                        return;
+                    }
+
+                    handleCachedAvailableRoomsResult(
+                            result,
+                            date,
+                            requestedAvailableRoomsPrefix,
+                            actionStartedAtMillis
+                    );
+                }
+        );
     }
 
     private void loadAvailableRoomsForDateInternal(
             String date,
             String prefix,
-            int retryAttempt
+            String cacheKey,
+            int retryAttempt,
+            boolean showLoading,
+            boolean quietFailure,
+            long actionStartedAtMillis
     ) {
-        availableRoomsLoadingLiveData.setValue(true);
+        if (availableRoomsCall != null && cacheKey.equals(requestedAvailableRoomsCacheKey)) {
+            AppDiagnostics.logEvent("available_rooms_single_flight_skipped key=" + cacheKey);
+            return;
+        }
 
+        if (showLoading) {
+            availableRoomsLoadingLiveData.setValue(true);
+        }
+
+        long requestStartedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart("available_rooms", cacheKey);
         Call<ApiResponse<AvailableRoomsResponse>> request =
                 availabilityRepository.getAvailableRoomsByDate(
                         date,
@@ -415,7 +532,7 @@ public class LandingViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<AvailableRoomsResponse>> call,
                     @NonNull Response<ApiResponse<AvailableRoomsResponse>> response
             ) {
-                if (!isCurrentPrefixCall(call, availableRoomsCall, requestedAvailableRoomsPrefix)) {
+                if (!isCurrentAvailableRoomsCall(call, cacheKey)) {
                     return;
                 }
 
@@ -423,7 +540,15 @@ public class LandingViewModel extends ViewModel {
 
                 if (!isValidAvailableRoomsResponse(response)) {
                     if (shouldRetry(retryAttempt, response.code())) {
-                        scheduleAvailableRoomsRetry(date, prefix, retryAttempt + 1);
+                        scheduleAvailableRoomsRetry(
+                                date,
+                                prefix,
+                                cacheKey,
+                                retryAttempt + 1,
+                                showLoading,
+                                quietFailure,
+                                actionStartedAtMillis
+                        );
                         return;
                     }
 
@@ -433,13 +558,29 @@ public class LandingViewModel extends ViewModel {
                             MESSAGE_AVAILABLE_ROOMS_FAILED
                     );
                     AppDiagnostics.logApiFailure("available_rooms", message, null);
-                    toastLiveData.setValue(new UiEvent<>(message));
+                    if (quietFailure) {
+                        toastLiveData.setValue(new UiEvent<>(
+                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
+                        ));
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                    } else {
+                        toastLiveData.setValue(new UiEvent<>(message));
+                    }
+                    logAvailableRoomsNetworkResponse(cacheKey, response.code(), requestStartedAtMillis);
                     return;
                 }
 
                 availableRoomsLoadingLiveData.setValue(false);
                 networkBannerLiveData.setValue(new UiEvent<>(false));
-                availableRoomsLiveData.setValue(new UiEvent<>(response.body().getData()));
+                AvailableRoomsResponse data = response.body().getData();
+                cacheAvailableRooms(cacheKey, date, prefix, data);
+                availableRoomsLiveData.setValue(new UiEvent<>(data));
+                AppDiagnostics.logUiUpdated(
+                        "available_rooms",
+                        "network",
+                        System.currentTimeMillis() - actionStartedAtMillis
+                );
+                logAvailableRoomsNetworkResponse(cacheKey, response.code(), requestStartedAtMillis);
             }
 
             @Override
@@ -447,14 +588,22 @@ public class LandingViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<AvailableRoomsResponse>> call,
                     @NonNull Throwable t
             ) {
-                if (!isCurrentPrefixCall(call, availableRoomsCall, requestedAvailableRoomsPrefix)) {
+                if (!isCurrentAvailableRoomsCall(call, cacheKey)) {
                     return;
                 }
 
                 availableRoomsCall = null;
                 if (!call.isCanceled()) {
                     if (shouldRetry(retryAttempt)) {
-                        scheduleAvailableRoomsRetry(date, prefix, retryAttempt + 1);
+                        scheduleAvailableRoomsRetry(
+                                date,
+                                prefix,
+                                cacheKey,
+                                retryAttempt + 1,
+                                showLoading,
+                                quietFailure,
+                                actionStartedAtMillis
+                        );
                         return;
                     }
 
@@ -465,6 +614,12 @@ public class LandingViewModel extends ViewModel {
                             t
                     );
                     networkBannerLiveData.setValue(new UiEvent<>(true));
+                    if (quietFailure) {
+                        toastLiveData.setValue(new UiEvent<>(
+                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
+                        ));
+                    }
+                    logAvailableRoomsNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
             }
         });
@@ -475,15 +630,83 @@ public class LandingViewModel extends ViewModel {
             String departureDate,
             String prefix
     ) {
-        cancelAvailableRoomsRequests();
+        syncCacheInvalidationVersion();
         cancelPendingAvailableRoomsRetry();
         cancelPendingAvailableRoomsRangeRetry();
+        cancelCall(availableRoomsCall);
+        availableRoomsCall = null;
+        requestedAvailableRoomsPrefix = "";
         requestedRangePrefix = safe(prefix);
-        loadAvailableRoomsForDateRangeInternal(
+        String cacheKey = AvailabilityRepository.availableRoomsRangeCacheKey(
+                requestedRangePrefix,
+                arrivalDate,
+                departureDate
+        );
+
+        if (availableRoomsRangeCall != null
+                && cacheKey.equals(requestedAvailableRoomsRangeCacheKey)) {
+            AppDiagnostics.logEvent("available_rooms_range_single_flight_skipped key=" + cacheKey);
+            return;
+        }
+
+        if (availableRoomsRangeCall != null) {
+            cancelCall(availableRoomsRangeCall);
+            availableRoomsRangeCall = null;
+        }
+
+        requestedAvailableRoomsRangeCacheKey = cacheKey;
+        long actionStartedAtMillis = System.currentTimeMillis();
+        CachedAvailableRoomsRange memoryResponse = getCachedAvailableRoomsRange(cacheKey);
+        if (memoryResponse != null && memoryResponse.response != null) {
+            showCachedAvailableRoomsRange(
+                    memoryResponse.response,
+                    "memory",
+                    actionStartedAtMillis
+            );
+            if (isFresh(
+                    memoryResponse.updatedAtMillis,
+                    CachePolicy.AVAILABLE_ROOMS_RANGE_TTL_MS
+            )) {
+                return;
+            }
+
+            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
+            loadAvailableRoomsForDateRangeInternal(
+                    arrivalDate,
+                    departureDate,
+                    requestedRangePrefix,
+                    cacheKey,
+                    0,
+                    false,
+                    true,
+                    actionStartedAtMillis
+            );
+            return;
+        }
+
+        int generation = ++availableRoomsRangeCacheGeneration;
+        availableRoomsLoadingLiveData.setValue(true);
+        availabilityRepository.getCachedAvailableRoomsByDateRange(
                 arrivalDate,
                 departureDate,
                 requestedRangePrefix,
-                0
+                result -> {
+                    if (generation != availableRoomsRangeCacheGeneration
+                            || !cacheKey.equals(requestedAvailableRoomsRangeCacheKey)) {
+                        AppDiagnostics.logEvent(
+                                "available_rooms_range_cache_result_skipped key=" + cacheKey
+                        );
+                        return;
+                    }
+
+                    handleCachedAvailableRoomsRangeResult(
+                            result,
+                            arrivalDate,
+                            departureDate,
+                            requestedRangePrefix,
+                            actionStartedAtMillis
+                    );
+                }
         );
     }
 
@@ -491,10 +714,24 @@ public class LandingViewModel extends ViewModel {
             String arrivalDate,
             String departureDate,
             String prefix,
-            int retryAttempt
+            String cacheKey,
+            int retryAttempt,
+            boolean showLoading,
+            boolean quietFailure,
+            long actionStartedAtMillis
     ) {
-        availableRoomsLoadingLiveData.setValue(true);
+        if (availableRoomsRangeCall != null
+                && cacheKey.equals(requestedAvailableRoomsRangeCacheKey)) {
+            AppDiagnostics.logEvent("available_rooms_range_single_flight_skipped key=" + cacheKey);
+            return;
+        }
 
+        if (showLoading) {
+            availableRoomsLoadingLiveData.setValue(true);
+        }
+
+        long requestStartedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart("available_rooms_range", cacheKey);
         Call<ApiResponse<AvailableRoomsRangeResponse>> request =
                 availabilityRepository.getAvailableRoomsByDateRange(
                         arrivalDate,
@@ -508,7 +745,7 @@ public class LandingViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
                     @NonNull Response<ApiResponse<AvailableRoomsRangeResponse>> response
             ) {
-                if (!isCurrentPrefixCall(call, availableRoomsRangeCall, requestedRangePrefix)) {
+                if (!isCurrentAvailableRoomsRangeCall(call, cacheKey)) {
                     return;
                 }
 
@@ -520,7 +757,11 @@ public class LandingViewModel extends ViewModel {
                                 arrivalDate,
                                 departureDate,
                                 prefix,
-                                retryAttempt + 1
+                                cacheKey,
+                                retryAttempt + 1,
+                                showLoading,
+                                quietFailure,
+                                actionStartedAtMillis
                         );
                         return;
                     }
@@ -531,13 +772,37 @@ public class LandingViewModel extends ViewModel {
                             MESSAGE_AVAILABLE_ROOMS_FAILED
                     );
                     AppDiagnostics.logApiFailure("available_rooms_range", message, null);
-                    toastLiveData.setValue(new UiEvent<>(message));
+                    if (quietFailure) {
+                        toastLiveData.setValue(new UiEvent<>(
+                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
+                        ));
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                    } else {
+                        toastLiveData.setValue(new UiEvent<>(message));
+                    }
+                    logAvailableRoomsRangeNetworkResponse(
+                            cacheKey,
+                            response.code(),
+                            requestStartedAtMillis
+                    );
                     return;
                 }
 
                 availableRoomsLoadingLiveData.setValue(false);
                 networkBannerLiveData.setValue(new UiEvent<>(false));
-                availableRoomsRangeLiveData.setValue(new UiEvent<>(response.body().getData()));
+                AvailableRoomsRangeResponse data = response.body().getData();
+                cacheAvailableRoomsRange(cacheKey, arrivalDate, departureDate, prefix, data);
+                availableRoomsRangeLiveData.setValue(new UiEvent<>(data));
+                AppDiagnostics.logUiUpdated(
+                        "available_rooms_range",
+                        "network",
+                        System.currentTimeMillis() - actionStartedAtMillis
+                );
+                logAvailableRoomsRangeNetworkResponse(
+                        cacheKey,
+                        response.code(),
+                        requestStartedAtMillis
+                );
             }
 
             @Override
@@ -545,7 +810,7 @@ public class LandingViewModel extends ViewModel {
                     @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
                     @NonNull Throwable t
             ) {
-                if (!isCurrentPrefixCall(call, availableRoomsRangeCall, requestedRangePrefix)) {
+                if (!isCurrentAvailableRoomsRangeCall(call, cacheKey)) {
                     return;
                 }
 
@@ -556,7 +821,11 @@ public class LandingViewModel extends ViewModel {
                                 arrivalDate,
                                 departureDate,
                                 prefix,
-                                retryAttempt + 1
+                                cacheKey,
+                                retryAttempt + 1,
+                                showLoading,
+                                quietFailure,
+                                actionStartedAtMillis
                         );
                         return;
                     }
@@ -568,6 +837,12 @@ public class LandingViewModel extends ViewModel {
                             t
                     );
                     networkBannerLiveData.setValue(new UiEvent<>(true));
+                    if (quietFailure) {
+                        toastLiveData.setValue(new UiEvent<>(
+                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
+                        ));
+                    }
+                    logAvailableRoomsRangeNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
             }
         });
@@ -607,6 +882,7 @@ public class LandingViewModel extends ViewModel {
 
                 networkBannerLiveData.setValue(new UiEvent<>(false));
                 clearAvailabilityCaches();
+                availabilityRepository.clearBookingFirstPageCachesForMutation();
                 forceNextAvailabilityNetworkRefresh = true;
                 deleteBookingResultLiveData.setValue(new UiEvent<>(
                         new DeleteBookingResult(
@@ -654,6 +930,22 @@ public class LandingViewModel extends ViewModel {
         return callbackCall == trackedCall && requestedPrefix != null;
     }
 
+    private boolean isCurrentAvailableRoomsCall(
+            Call<ApiResponse<AvailableRoomsResponse>> callbackCall,
+            String cacheKey
+    ) {
+        return callbackCall == availableRoomsCall
+                && cacheKey.equals(requestedAvailableRoomsCacheKey);
+    }
+
+    private boolean isCurrentAvailableRoomsRangeCall(
+            Call<ApiResponse<AvailableRoomsRangeResponse>> callbackCall,
+            String cacheKey
+    ) {
+        return callbackCall == availableRoomsRangeCall
+                && cacheKey.equals(requestedAvailableRoomsRangeCacheKey);
+    }
+
     private boolean shouldRetry(int retryAttempt) {
         return retryAttempt < MAX_NETWORK_RETRIES;
     }
@@ -690,13 +982,25 @@ public class LandingViewModel extends ViewModel {
     private void scheduleAvailableRoomsRetry(
             String date,
             String prefix,
-            int retryAttempt
+            String cacheKey,
+            int retryAttempt,
+            boolean showLoading,
+            boolean quietFailure,
+            long actionStartedAtMillis
     ) {
         cancelPendingAvailableRoomsRetry();
         long delayMillis = RETRY_DELAY_MS * retryAttempt;
         pendingAvailableRoomsRetry = () -> {
             pendingAvailableRoomsRetry = null;
-            loadAvailableRoomsForDateInternal(date, prefix, retryAttempt);
+            loadAvailableRoomsForDateInternal(
+                    date,
+                    prefix,
+                    cacheKey,
+                    retryAttempt,
+                    showLoading,
+                    quietFailure,
+                    actionStartedAtMillis
+            );
         };
         retryHandler.postDelayed(pendingAvailableRoomsRetry, delayMillis);
     }
@@ -705,7 +1009,11 @@ public class LandingViewModel extends ViewModel {
             String arrivalDate,
             String departureDate,
             String prefix,
-            int retryAttempt
+            String cacheKey,
+            int retryAttempt,
+            boolean showLoading,
+            boolean quietFailure,
+            long actionStartedAtMillis
     ) {
         cancelPendingAvailableRoomsRangeRetry();
         long delayMillis = RETRY_DELAY_MS * retryAttempt;
@@ -715,7 +1023,11 @@ public class LandingViewModel extends ViewModel {
                     arrivalDate,
                     departureDate,
                     prefix,
-                    retryAttempt
+                    cacheKey,
+                    retryAttempt,
+                    showLoading,
+                    quietFailure,
+                    actionStartedAtMillis
             );
         };
         retryHandler.postDelayed(pendingAvailableRoomsRangeRetry, delayMillis);
@@ -814,6 +1126,93 @@ public class LandingViewModel extends ViewModel {
                 actionStartedAtMillis);
     }
 
+    private void handleCachedAvailableRoomsResult(
+            CacheReadResult<AvailableRoomsResponse> result,
+            String date,
+            String prefix,
+            long actionStartedAtMillis
+    ) {
+        if (result.isHit() && result.getValue() != null) {
+            cacheAvailableRoomsInMemory(
+                    result.getKey(),
+                    result.getValue(),
+                    result.getUpdatedAtMillis()
+            );
+            showCachedAvailableRooms(result.getValue(), "disk", actionStartedAtMillis);
+
+            if (result.isFresh()) {
+                return;
+            }
+
+            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
+            loadAvailableRoomsForDateInternal(
+                    date,
+                    prefix,
+                    result.getKey(),
+                    0,
+                    false,
+                    true,
+                    actionStartedAtMillis
+            );
+            return;
+        }
+
+        loadAvailableRoomsForDateInternal(
+                date,
+                prefix,
+                result.getKey(),
+                0,
+                true,
+                false,
+                actionStartedAtMillis
+        );
+    }
+
+    private void handleCachedAvailableRoomsRangeResult(
+            CacheReadResult<AvailableRoomsRangeResponse> result,
+            String arrivalDate,
+            String departureDate,
+            String prefix,
+            long actionStartedAtMillis
+    ) {
+        if (result.isHit() && result.getValue() != null) {
+            cacheAvailableRoomsRangeInMemory(
+                    result.getKey(),
+                    result.getValue(),
+                    result.getUpdatedAtMillis()
+            );
+            showCachedAvailableRoomsRange(result.getValue(), "disk", actionStartedAtMillis);
+
+            if (result.isFresh()) {
+                return;
+            }
+
+            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
+            loadAvailableRoomsForDateRangeInternal(
+                    arrivalDate,
+                    departureDate,
+                    prefix,
+                    result.getKey(),
+                    0,
+                    false,
+                    true,
+                    actionStartedAtMillis
+            );
+            return;
+        }
+
+        loadAvailableRoomsForDateRangeInternal(
+                arrivalDate,
+                departureDate,
+                prefix,
+                result.getKey(),
+                0,
+                true,
+                false,
+                actionStartedAtMillis
+        );
+    }
+
     private void showCachedAvailability(
             List<RoomAvailabilityGroup> groups,
             String source,
@@ -824,6 +1223,36 @@ public class LandingViewModel extends ViewModel {
         availabilityGroupsLiveData.setValue(NullSafeCollections.copyWithoutNulls(groups));
         AppDiagnostics.logUiUpdated(
                 "availability_calendar",
+                "cache_" + source,
+                System.currentTimeMillis() - actionStartedAtMillis
+        );
+    }
+
+    private void showCachedAvailableRooms(
+            AvailableRoomsResponse response,
+            String source,
+            long actionStartedAtMillis
+    ) {
+        availableRoomsLoadingLiveData.setValue(false);
+        networkBannerLiveData.setValue(new UiEvent<>(false));
+        availableRoomsLiveData.setValue(new UiEvent<>(response));
+        AppDiagnostics.logUiUpdated(
+                "available_rooms",
+                "cache_" + source,
+                System.currentTimeMillis() - actionStartedAtMillis
+        );
+    }
+
+    private void showCachedAvailableRoomsRange(
+            AvailableRoomsRangeResponse response,
+            String source,
+            long actionStartedAtMillis
+    ) {
+        availableRoomsLoadingLiveData.setValue(false);
+        networkBannerLiveData.setValue(new UiEvent<>(false));
+        availableRoomsRangeLiveData.setValue(new UiEvent<>(response));
+        AppDiagnostics.logUiUpdated(
+                "available_rooms_range",
                 "cache_" + source,
                 System.currentTimeMillis() - actionStartedAtMillis
         );
@@ -841,8 +1270,113 @@ public class LandingViewModel extends ViewModel {
     private void clearAvailabilityCaches() {
         synchronized (CACHE_LOCK) {
             availabilityCache.clear();
+            availableRoomsCache.clear();
+            availableRoomsRangeCache.clear();
         }
-        availabilityRepository.clearCalendarAvailabilityCache();
+        availabilityRepository.clearAvailabilityCaches();
+        observedCacheInvalidationVersion = AvailabilityRepository.getCacheInvalidationVersion();
+    }
+
+    private boolean syncCacheInvalidationVersion() {
+        int currentVersion = AvailabilityRepository.getCacheInvalidationVersion();
+        if (currentVersion == observedCacheInvalidationVersion) {
+            return false;
+        }
+
+        synchronized (CACHE_LOCK) {
+            availabilityCache.clear();
+            availableRoomsCache.clear();
+            availableRoomsRangeCache.clear();
+        }
+        availabilityCacheGeneration++;
+        availableRoomsCacheGeneration++;
+        availableRoomsRangeCacheGeneration++;
+        observedCacheInvalidationVersion = currentVersion;
+        AppDiagnostics.logCacheInvalidated("availability_memory");
+        return true;
+    }
+
+    private void cacheAvailableRooms(
+            String cacheKey,
+            String date,
+            String prefix,
+            AvailableRoomsResponse response
+    ) {
+        long updatedAtMillis = System.currentTimeMillis();
+        cacheAvailableRoomsInMemory(cacheKey, response, updatedAtMillis);
+        availabilityRepository.saveCachedAvailableRoomsByDate(date, prefix, response);
+    }
+
+    private void cacheAvailableRoomsInMemory(
+            String cacheKey,
+            AvailableRoomsResponse response,
+            long updatedAtMillis
+    ) {
+        synchronized (CACHE_LOCK) {
+            availableRoomsCache.put(cacheKey, new CachedAvailableRooms(
+                    response,
+                    updatedAtMillis
+            ));
+        }
+    }
+
+    private CachedAvailableRooms getCachedAvailableRooms(String cacheKey) {
+        synchronized (CACHE_LOCK) {
+            CachedAvailableRooms cachedResponse = availableRoomsCache.get(cacheKey);
+            if (cachedResponse == null) {
+                return null;
+            }
+
+            return new CachedAvailableRooms(
+                    cachedResponse.response,
+                    cachedResponse.updatedAtMillis
+            );
+        }
+    }
+
+    private void cacheAvailableRoomsRange(
+            String cacheKey,
+            String arrivalDate,
+            String departureDate,
+            String prefix,
+            AvailableRoomsRangeResponse response
+    ) {
+        long updatedAtMillis = System.currentTimeMillis();
+        cacheAvailableRoomsRangeInMemory(cacheKey, response, updatedAtMillis);
+        availabilityRepository.saveCachedAvailableRoomsByDateRange(
+                arrivalDate,
+                departureDate,
+                prefix,
+                response
+        );
+    }
+
+    private void cacheAvailableRoomsRangeInMemory(
+            String cacheKey,
+            AvailableRoomsRangeResponse response,
+            long updatedAtMillis
+    ) {
+        synchronized (CACHE_LOCK) {
+            availableRoomsRangeCache.put(cacheKey, new CachedAvailableRoomsRange(
+                    response,
+                    updatedAtMillis
+            ));
+        }
+    }
+
+    private CachedAvailableRoomsRange getCachedAvailableRoomsRange(String cacheKey) {
+        synchronized (CACHE_LOCK) {
+            CachedAvailableRoomsRange cachedResponse =
+                    availableRoomsRangeCache.get(cacheKey);
+            if (cachedResponse == null) {
+                return null;
+            }
+
+            return new CachedAvailableRoomsRange(
+                    cachedResponse.response,
+                    cachedResponse.updatedAtMillis
+            );
+        }
     }
 
     private void logAvailabilityNetworkResponse(
@@ -852,6 +1386,32 @@ public class LandingViewModel extends ViewModel {
     ) {
         AppDiagnostics.logNetworkResponse(
                 "availability_calendar",
+                cacheKey,
+                httpCode,
+                System.currentTimeMillis() - requestStartedAtMillis
+        );
+    }
+
+    private void logAvailableRoomsNetworkResponse(
+            String cacheKey,
+            int httpCode,
+            long requestStartedAtMillis
+    ) {
+        AppDiagnostics.logNetworkResponse(
+                "available_rooms",
+                cacheKey,
+                httpCode,
+                System.currentTimeMillis() - requestStartedAtMillis
+        );
+    }
+
+    private void logAvailableRoomsRangeNetworkResponse(
+            String cacheKey,
+            int httpCode,
+            long requestStartedAtMillis
+    ) {
+        AppDiagnostics.logNetworkResponse(
+                "available_rooms_range",
                 cacheKey,
                 httpCode,
                 System.currentTimeMillis() - requestStartedAtMillis

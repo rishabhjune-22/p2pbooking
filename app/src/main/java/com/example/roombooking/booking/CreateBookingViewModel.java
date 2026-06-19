@@ -205,6 +205,8 @@ public class CreateBookingViewModel extends ViewModel {
                     return;
                 }
 
+                bookingRepository.clearFirstPageCaches();
+                bookingRepository.clearAvailabilityCachesForBookingMutation();
                 resultLiveData.setValue(new UiEvent<>(
                         new CreateBookingResult(apiResponse.getSafeMessage())
                 ));

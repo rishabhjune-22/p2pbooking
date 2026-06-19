@@ -581,6 +581,8 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private void handleDeleteSuccess(ApiResponse<BookingActionData> apiResponse) {
+        bookingRepository.clearFirstPageCaches();
+        bookingRepository.clearAvailabilityCachesForBookingMutation();
         sendDeletedResult();
         showToast(apiResponse.getSafeMessage());
         finish();

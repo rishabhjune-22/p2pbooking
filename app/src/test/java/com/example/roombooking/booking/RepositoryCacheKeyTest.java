@@ -33,4 +33,33 @@ public class RepositoryCacheKeyTest {
                 AvailabilityRepository.calendarAvailabilityCacheKey(6, 2026)
         );
     }
+
+    @Test
+    public void availableRoomsCacheKeyIsDateAndPrefixScoped() {
+        assertEquals(
+                "available_rooms:Beta:2026-06-20",
+                AvailabilityRepository.availableRoomsCacheKey("Beta", "2026-06-20")
+        );
+    }
+
+    @Test
+    public void availableRoomsRangeCacheKeyIsRangeAndPrefixScoped() {
+        assertEquals(
+                "available_rooms_range:Gamma:2026-06-20:2026-06-22",
+                AvailabilityRepository.availableRoomsRangeCacheKey(
+                        "Gamma",
+                        "2026-06-20",
+                        "2026-06-22"
+                )
+        );
+    }
+
+    @Test
+    public void availabilityCacheInvalidationUpdatesSharedVersion() {
+        int before = AvailabilityRepository.getCacheInvalidationVersion();
+
+        AvailabilityRepository.clearAvailabilityCaches(null);
+
+        assertEquals(before + 1, AvailabilityRepository.getCacheInvalidationVersion());
+    }
 }
