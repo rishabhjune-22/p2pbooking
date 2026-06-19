@@ -37,8 +37,8 @@ public class RoomRepository {
     }
 
     private static final int FIRST_PAGE = 1;
-    private static final int ROOM_PAGE_SIZE = 100;
-    private static final String ROOM_CACHE_KEY = "rooms:all";
+    public static final int ROOM_PAGE_SIZE = 100;
+    public static final String ROOM_CACHE_KEY = "rooms:all";
     private static final long ROOM_REFRESH_INTERVAL_MS = CachePolicy.ROOMS_TTL_MS;
     private static final long FAILED_REFRESH_RETRY_INTERVAL_MS = 5L * 60L * 1000L;
 
