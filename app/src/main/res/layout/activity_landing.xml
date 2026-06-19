@@ -240,6 +240,21 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/tvAvailabilityStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/space_16"
+        android:paddingTop="@dimen/space_2"
+        android:paddingBottom="@dimen/space_2"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_12"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/layoutAvailabilityLegend" />
+
     <LinearLayout
         android:id="@+id/layoutWeekDays"
         android:layout_width="0dp"
@@ -249,7 +264,7 @@
         android:paddingEnd="@dimen/space_8"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/layoutAvailabilityLegend">
+        app:layout_constraintTop_toBottomOf="@id/tvAvailabilityStatus">
 
         <TextView
             style="@style/CalendarWeekDayTextStyle"

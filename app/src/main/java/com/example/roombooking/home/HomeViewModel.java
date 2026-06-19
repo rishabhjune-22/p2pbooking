@@ -20,6 +20,7 @@ import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppDiagnostics;
 import com.example.roombooking.utils.NullSafeCollections;
+import com.example.roombooking.utils.SyncStatusFormatter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,6 +74,9 @@ public class HomeViewModel extends ViewModel {
     private final MutableLiveData<String> toastLiveData =
             new MutableLiveData<>();
 
+    private final MutableLiveData<String> syncStatusLiveData =
+            new MutableLiveData<>("");
+
     private int currentPage = FIRST_PAGE;
 
     private boolean isLoading = false;
@@ -84,6 +88,10 @@ public class HomeViewModel extends ViewModel {
     private Runnable pendingBookingsRetry;
     private int firstPageNetworkRetryCount = 0;
     private int cacheLoadGeneration = 0;
+    private long currentDataUpdatedAtMillis = 0L;
+    private boolean hasLoadedFirstPage = false;
+    private String currentVisibleCacheKey = "";
+    private boolean syncStatusShowsFailure = false;
 
     private String filterPrefix = null;
     private String filterArrivalFrom = null;
@@ -128,6 +136,10 @@ public class HomeViewModel extends ViewModel {
         return toastLiveData;
     }
 
+    public LiveData<String> getSyncStatusLiveData() {
+        return syncStatusLiveData;
+    }
+
     public boolean isLoading() {
         return isLoading;
     }
@@ -144,11 +156,17 @@ public class HomeViewModel extends ViewModel {
         String cacheKey = firstPageCacheKey();
         CachedBookingPage memoryPage = getCachedBookingsForCurrentFilter();
         if (memoryPage != null) {
-            showCachedFirstPage(memoryPage.bookings, "memory", actionStartedAtMillis);
+            showCachedFirstPage(
+                    memoryPage.bookings,
+                    "memory",
+                    memoryPage.updatedAtMillis,
+                    actionStartedAtMillis
+            );
             if (isFresh(memoryPage.updatedAtMillis, CachePolicy.BOOKING_PAGE_ONE_TTL_MS)) {
                 return;
             }
 
+            updateSyncStatus(SyncStatusFormatter.SHOWING_CACHED_REFRESHING);
             fetchBookings(FIRST_PAGE, false, true, actionStartedAtMillis);
             return;
         }
@@ -169,11 +187,50 @@ public class HomeViewModel extends ViewModel {
     }
 
     public void refreshBookings() {
+        if (isLoading || bookingsCall != null) {
+            logSkippedRequest(FIRST_PAGE);
+            AppDiagnostics.logEvent("booking_list_manual_refresh_skipped_duplicate");
+            return;
+        }
+
         cacheLoadGeneration++;
-        abortBookingsRequest();
         resetPagination();
+        updateSyncStatus(SyncStatusFormatter.REFRESHING);
         swipeRefreshingLiveData.setValue(true);
         fetchBookings(FIRST_PAGE, false, false);
+    }
+
+    public void refreshBookingsIfStaleOnForeground() {
+        if (isLoading || bookingsCall != null) {
+            AppDiagnostics.logEvent("booking_list_foreground_refresh_skipped_in_flight");
+            return;
+        }
+
+        if (!hasLoadedCurrentFirstPage() || currentDataUpdatedAtMillis <= 0L) {
+            AppDiagnostics.logEvent("booking_list_foreground_refresh_skipped_no_visible_data");
+            return;
+        }
+
+        if (isFresh(currentDataUpdatedAtMillis, CachePolicy.BOOKING_PAGE_ONE_TTL_MS)) {
+            updateLastUpdatedStatus();
+            AppDiagnostics.logEvent("booking_list_foreground_refresh_skipped_cache_fresh");
+            return;
+        }
+
+        cacheLoadGeneration++;
+        resetPagination();
+        updateSyncStatus(SyncStatusFormatter.REFRESHING);
+        fetchBookings(FIRST_PAGE, false, true);
+    }
+
+    public void refreshVisibleSyncStatusAge() {
+        if (isLoading || bookingsCall != null || syncStatusShowsFailure) {
+            return;
+        }
+
+        if (hasLoadedCurrentFirstPage() && currentDataUpdatedAtMillis > 0L) {
+            updateLastUpdatedStatus();
+        }
     }
 
     public void invalidateBookingPageOneCacheForMutation() {
@@ -409,6 +466,9 @@ public class HomeViewModel extends ViewModel {
 
                 hideAllLoaders();
                 handleBookingsPage(page, apiResponse.getData());
+                if (page == FIRST_PAGE) {
+                    updateLastUpdatedStatus();
+                }
                 AppDiagnostics.logUiUpdated(
                         "booking_list_page_" + page,
                         "network",
@@ -438,13 +498,14 @@ public class HomeViewModel extends ViewModel {
                 }
 
                 hideAllLoaders();
-                if (quietFailure && hasVisibleBookings()) {
-                    toastLiveData.setValue(MESSAGE_STALE_BOOKINGS);
+                if (page == FIRST_PAGE && hasLoadedCurrentFirstPage()) {
+                    keepCachedBookingsAfterFailure(ApiErrorUtils.cachedDataMessageForThrowable(t));
                     return;
                 }
 
-                AppDiagnostics.logApiFailure("booking_list", MESSAGE_NETWORK_ERROR, t);
-                messageLiveData.setValue(ApiErrorUtils.networkMessage());
+                String message = ApiErrorUtils.messageFromThrowable(t);
+                AppDiagnostics.logApiFailure("booking_list", message, t);
+                messageLiveData.setValue(message);
             }
         });
     }
@@ -510,8 +571,8 @@ public class HomeViewModel extends ViewModel {
             return;
         }
 
-        if (quietFailure && hasVisibleBookings()) {
-            toastLiveData.setValue(MESSAGE_STALE_BOOKINGS);
+        if (page == FIRST_PAGE && hasLoadedCurrentFirstPage()) {
+            keepCachedBookingsAfterFailure(ApiErrorUtils.cachedDataMessageForHttpCode(httpCode));
             return;
         }
 
@@ -554,11 +615,13 @@ public class HomeViewModel extends ViewModel {
         if (results.isEmpty()) {
             bookingsLiveData.setValue(new ArrayList<>());
             messageLiveData.setValue(MESSAGE_EMPTY_BOOKINGS);
+            hasLoadedFirstPage = true;
             return;
         }
 
         bookingsLiveData.setValue(results);
         messageLiveData.setValue("");
+        hasLoadedFirstPage = true;
     }
 
     private void appendNextPageResults(List<BookingItem> results) {
@@ -631,6 +694,8 @@ public class HomeViewModel extends ViewModel {
         String cacheKey = firstPageCacheKey();
         long updatedAtMillis = System.currentTimeMillis();
         List<BookingItem> cachedBookings = NullSafeCollections.copyWithoutNulls(results);
+        currentDataUpdatedAtMillis = updatedAtMillis;
+        currentVisibleCacheKey = cacheKey;
         cacheFirstPageInMemory(cacheKey, cachedBookings, updatedAtMillis);
         bookingRepository.saveCachedFirstPage(cacheKey, cachedBookings);
     }
@@ -679,12 +744,18 @@ public class HomeViewModel extends ViewModel {
                     cachedBookings,
                     result.getUpdatedAtMillis()
             );
-            showCachedFirstPage(cachedBookings, "disk", actionStartedAtMillis);
+            showCachedFirstPage(
+                    cachedBookings,
+                    "disk",
+                    result.getUpdatedAtMillis(),
+                    actionStartedAtMillis
+            );
 
             if (result.isFresh()) {
                 return;
             }
 
+            updateSyncStatus(SyncStatusFormatter.SHOWING_CACHED_REFRESHING);
             fetchBookings(FIRST_PAGE, false, true, actionStartedAtMillis);
             return;
         }
@@ -695,10 +766,14 @@ public class HomeViewModel extends ViewModel {
     private void showCachedFirstPage(
             List<BookingItem> bookings,
             String source,
+            long updatedAtMillis,
             long actionStartedAtMillis
     ) {
         hideAllLoaders();
+        currentDataUpdatedAtMillis = updatedAtMillis;
+        currentVisibleCacheKey = firstPageCacheKey();
         handleFirstPageResults(NullSafeCollections.copyWithoutNulls(bookings));
+        updateLastUpdatedStatus();
         AppDiagnostics.logUiUpdated(
                 "booking_list_page_1",
                 "cache_" + source,
@@ -708,6 +783,28 @@ public class HomeViewModel extends ViewModel {
 
     private boolean isFresh(long updatedAtMillis, long ttlMillis) {
         return CachePolicy.isFresh(updatedAtMillis, ttlMillis, System.currentTimeMillis());
+    }
+
+    private void updateLastUpdatedStatus() {
+        updateSyncStatus(SyncStatusFormatter.lastUpdated(currentDataUpdatedAtMillis), false);
+    }
+
+    private void keepCachedBookingsAfterFailure(String message) {
+        updateSyncStatus(message, true);
+        AppDiagnostics.logEvent("booking_list_kept_cached_after_failure");
+    }
+
+    private boolean hasLoadedCurrentFirstPage() {
+        return hasLoadedFirstPage && firstPageCacheKey().equals(currentVisibleCacheKey);
+    }
+
+    private void updateSyncStatus(String message) {
+        updateSyncStatus(message, false);
+    }
+
+    private void updateSyncStatus(String message, boolean failureState) {
+        syncStatusShowsFailure = failureState;
+        syncStatusLiveData.setValue(message != null ? message : "");
     }
 
     private String filterKey() {

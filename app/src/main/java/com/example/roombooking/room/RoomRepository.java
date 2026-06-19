@@ -267,8 +267,9 @@ public class RoomRepository {
                     return;
                 }
 
-                AppDiagnostics.logApiFailure("rooms", MESSAGE_NETWORK_ERROR, t);
-                finishRoomRequestWithError(ApiErrorUtils.networkMessage());
+                String message = ApiErrorUtils.messageFromThrowable(t);
+                AppDiagnostics.logApiFailure("rooms", message, t);
+                finishRoomRequestWithError(message);
                 AppDiagnostics.logNetworkResponse(
                         "rooms_page_" + page,
                         ROOM_CACHE_KEY,

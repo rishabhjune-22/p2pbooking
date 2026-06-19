@@ -3,6 +3,8 @@ package com.example.roombooking.home;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -65,6 +67,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private static final int PAGINATION_THRESHOLD = 2;
     private static final long PAGINATION_DEBOUNCE_MS = 500L;
+    private static final long SYNC_STATUS_REFRESH_INTERVAL_MS = 30L * 1000L;
 
     private RecyclerView recyclerView;
     private ProgressBar progressBar;
@@ -72,6 +75,7 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvTitle;
     private TextView tvStatusToggleLabel;
     private TextView tvCompactToggleLabel;
+    private TextView tvSyncStatus;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     private ImageButton btnCreateBooking;
@@ -103,6 +107,15 @@ public class HomeActivity extends AppCompatActivity {
 
     private MaterialDatePicker<Pair<Long, Long>> dateRangePicker;
     private long lastPaginationTriggerAtMillis = 0L;
+    private boolean hasHandledInitialResume = false;
+    private final Handler syncStatusHandler = new Handler(Looper.getMainLooper());
+    private final Runnable syncStatusRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            viewModel.refreshVisibleSyncStatusAge();
+            syncStatusHandler.postDelayed(this, SYNC_STATUS_REFRESH_INTERVAL_MS);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -138,6 +151,7 @@ public class HomeActivity extends AppCompatActivity {
         tvTitle = findViewById(R.id.tvTitle);
         tvStatusToggleLabel = findViewById(R.id.tvStatusToggleLabel);
         tvCompactToggleLabel = findViewById(R.id.tvCompactToggleLabel);
+        tvSyncStatus = findViewById(R.id.tvSyncStatus);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
@@ -734,6 +748,23 @@ public class HomeActivity extends AppCompatActivity {
                 showToast(message);
             }
         });
+
+        viewModel.getSyncStatusLiveData().observe(this, this::updateSyncStatus);
+    }
+
+    private void updateSyncStatus(String message) {
+        if (tvSyncStatus == null) {
+            return;
+        }
+
+        if (message == null || message.trim().isEmpty()) {
+            tvSyncStatus.setVisibility(View.GONE);
+            tvSyncStatus.setText("");
+            return;
+        }
+
+        tvSyncStatus.setText(message.trim());
+        tvSyncStatus.setVisibility(View.VISIBLE);
     }
 
     private void updateInternetErrorBanner(String message) {
@@ -819,6 +850,33 @@ public class HomeActivity extends AppCompatActivity {
 
     private void showToast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        startSyncStatusTimer();
+        if (!hasHandledInitialResume) {
+            hasHandledInitialResume = true;
+            return;
+        }
+
+        viewModel.refreshBookingsIfStaleOnForeground();
+    }
+
+    @Override
+    protected void onPause() {
+        stopSyncStatusTimer();
+        super.onPause();
+    }
+
+    private void startSyncStatusTimer() {
+        syncStatusHandler.removeCallbacks(syncStatusRefreshRunnable);
+        syncStatusHandler.post(syncStatusRefreshRunnable);
+    }
+
+    private void stopSyncStatusTimer() {
+        syncStatusHandler.removeCallbacks(syncStatusRefreshRunnable);
     }
 
     private final ActivityResultLauncher<Intent> bookingDetailLauncher =

@@ -3,6 +3,8 @@ package com.example.roombooking.booking;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.GestureDetector;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -63,6 +65,7 @@ public class LandingActivity extends AppCompatActivity {
     private static final String STATE_HAS_ACTIVE_RANGE = "has_active_range";
     private static final String STATE_ARRIVAL_DATE = "arrival_date";
     private static final String STATE_DEPARTURE_DATE = "departure_date";
+    private static final long SYNC_STATUS_REFRESH_INTERVAL_MS = 30L * 1000L;
 
     private MaterialButton btnPreviousMonth;
     private MaterialButton btnNextMonth;
@@ -71,6 +74,7 @@ public class LandingActivity extends AppCompatActivity {
     private TextView tvMonthYear;
     private TextView bannerSelectedDateRange;
     private TextView tvTotalRoomCapacity;
+    private TextView tvAvailabilityStatus;
 
     private MaterialToolbar materialToolbar;
     private TabLayout tabLayoutRooms;
@@ -103,6 +107,19 @@ public class LandingActivity extends AppCompatActivity {
     private BottomSheetDialog activeBottomSheetDialog = null;
     private String activeAvailabilitySheetKey = null;
     private boolean replacingAvailabilitySheet = false;
+    private boolean hasHandledInitialResume = false;
+    private TextView activeAvailabilitySheetStatus = null;
+    private AvailableRoomsResponse activeAvailableRoomsResponse = null;
+    private AvailableRoomsRangeResponse activeAvailableRoomsRangeResponse = null;
+    private final Handler syncStatusHandler = new Handler(Looper.getMainLooper());
+    private final Runnable syncStatusRefreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            viewModel.refreshVisibleSyncStatusAge();
+            updateActiveAvailabilitySheetStatus();
+            syncStatusHandler.postDelayed(this, SYNC_STATUS_REFRESH_INTERVAL_MS);
+        }
+    };
 
     private LinearLayout pendingDeleteLayoutDetails = null;
     private View pendingDeleteCard = null;
@@ -152,6 +169,7 @@ public class LandingActivity extends AppCompatActivity {
         bannerSelectedDateRange = findViewById(R.id.bannerSelectedDateRange);
         tvMonthYear = findViewById(R.id.tvMonthYear);
         tvTotalRoomCapacity = findViewById(R.id.tvTotalRoomCapacity);
+        tvAvailabilityStatus = findViewById(R.id.tvAvailabilityStatus);
 
         materialToolbar = findViewById(R.id.toolbar);
         tabLayoutRooms = findViewById(R.id.tabLayoutRooms);
@@ -306,7 +324,7 @@ public class LandingActivity extends AppCompatActivity {
                 R.color.error_red
         );
 
-        swipeRefreshAvailability.setOnRefreshListener(this::loadAvailability);
+        swipeRefreshAvailability.setOnRefreshListener(this::refreshAvailability);
     }
 
     private void observeViewModel() {
@@ -324,6 +342,11 @@ public class LandingActivity extends AppCompatActivity {
             allGroups.addAll(NullSafeCollections.copyWithoutNulls(groups));
             applyPrefixFilter();
         });
+
+        viewModel.getAvailabilityStatusLiveData().observe(
+                this,
+                this::updateAvailabilityStatus
+        );
 
         viewModel.getToastLiveData().observe(this, event -> {
             if (event == null) return;
@@ -633,6 +656,36 @@ public class LandingActivity extends AppCompatActivity {
         viewModel.loadAvailability(month, year);
     }
 
+    private void refreshAvailability() {
+        int month = selectedMonth.get(Calendar.MONTH) + 1;
+        int year = selectedMonth.get(Calendar.YEAR);
+
+        tvMonthYear.setText(monthYearFormat.format(selectedMonth.getTime()));
+        viewModel.refreshAvailability(month, year);
+    }
+
+    private void refreshAvailabilityIfStaleOnForeground() {
+        int month = selectedMonth.get(Calendar.MONTH) + 1;
+        int year = selectedMonth.get(Calendar.YEAR);
+
+        viewModel.refreshAvailabilityIfStaleOnForeground(month, year);
+    }
+
+    private void updateAvailabilityStatus(String message) {
+        if (tvAvailabilityStatus == null) {
+            return;
+        }
+
+        if (message == null || message.trim().isEmpty()) {
+            tvAvailabilityStatus.setVisibility(View.GONE);
+            tvAvailabilityStatus.setText("");
+            return;
+        }
+
+        tvAvailabilityStatus.setText(message.trim());
+        tvAvailabilityStatus.setVisibility(View.VISIBLE);
+    }
+
     private void applyPrefixFilter() {
         RoomAvailabilityGroup selectedGroup = findSelectedRoomGroup();
 
@@ -835,6 +888,8 @@ public class LandingActivity extends AppCompatActivity {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeBottomSheetDialog = dialog;
         activeAvailabilitySheetKey = sheetKey;
+        activeAvailableRoomsResponse = data;
+        activeAvailableRoomsRangeResponse = null;
 
         LinearLayout container = createBottomSheetContainer();
 
@@ -848,6 +903,9 @@ public class LandingActivity extends AppCompatActivity {
 
         container.addView(title);
         container.addView(subtitle);
+        TextView status = createBottomSheetStatus(viewModel.getAvailableRoomsSheetStatus(data));
+        activeAvailabilitySheetStatus = status;
+        container.addView(status);
 
         addAvailableRoomViews(
                 container,
@@ -877,6 +935,8 @@ public class LandingActivity extends AppCompatActivity {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeBottomSheetDialog = dialog;
         activeAvailabilitySheetKey = sheetKey;
+        activeAvailableRoomsResponse = null;
+        activeAvailableRoomsRangeResponse = data;
 
         LinearLayout container = createBottomSheetContainer();
 
@@ -891,6 +951,11 @@ public class LandingActivity extends AppCompatActivity {
 
         container.addView(title);
         container.addView(subtitle);
+        TextView status = createBottomSheetStatus(
+                viewModel.getAvailableRoomsRangeSheetStatus(data)
+        );
+        activeAvailabilitySheetStatus = status;
+        container.addView(status);
 
         addAvailableRoomViews(
                 container,
@@ -925,8 +990,30 @@ public class LandingActivity extends AppCompatActivity {
 
         activeBottomSheetDialog = null;
         activeAvailabilitySheetKey = null;
+        activeAvailabilitySheetStatus = null;
+        activeAvailableRoomsResponse = null;
+        activeAvailableRoomsRangeResponse = null;
         if (!replacingAvailabilitySheet) {
             clearRangeSelectionAndEnableRefresh();
+        }
+    }
+
+    private void updateActiveAvailabilitySheetStatus() {
+        if (activeAvailabilitySheetStatus == null) {
+            return;
+        }
+
+        if (activeAvailableRoomsResponse != null) {
+            activeAvailabilitySheetStatus.setText(
+                    viewModel.getAvailableRoomsSheetStatus(activeAvailableRoomsResponse)
+            );
+            return;
+        }
+
+        if (activeAvailableRoomsRangeResponse != null) {
+            activeAvailabilitySheetStatus.setText(
+                    viewModel.getAvailableRoomsRangeSheetStatus(activeAvailableRoomsRangeResponse)
+            );
         }
     }
 
@@ -1011,6 +1098,16 @@ public class LandingActivity extends AppCompatActivity {
         subtitle.setTextColor(getColor(R.color.detail_text_secondary));
         subtitle.setPadding(0, getDimenPx(R.dimen.space_8), 0, getDimenPx(R.dimen.space_20));
         return subtitle;
+    }
+
+    private TextView createBottomSheetStatus(String text) {
+        TextView status = new TextView(this);
+        status.setText(safe(text));
+        status.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                getResponsiveDimension(R.dimen.text_12, R.dimen.text_13));
+        status.setTextColor(getColor(R.color.text_secondary));
+        status.setPadding(0, 0, 0, getDimenPx(R.dimen.space_14));
+        return status;
     }
 
     private void addAvailableRoomViews(
@@ -1135,6 +1232,10 @@ public class LandingActivity extends AppCompatActivity {
     private void showAvailabilityDetailsDialog(RoomAvailabilityDetailsResponse data) {
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeBottomSheetDialog = dialog;
+        activeAvailabilitySheetKey = null;
+        activeAvailabilitySheetStatus = null;
+        activeAvailableRoomsResponse = null;
+        activeAvailableRoomsRangeResponse = null;
 
         View view = getLayoutInflater().inflate(
                 R.layout.bottom_sheet_availability_details,
@@ -1154,6 +1255,10 @@ public class LandingActivity extends AppCompatActivity {
 
         dialog.setOnDismissListener(d -> {
             activeBottomSheetDialog = null;
+            activeAvailabilitySheetKey = null;
+            activeAvailabilitySheetStatus = null;
+            activeAvailableRoomsResponse = null;
+            activeAvailableRoomsRangeResponse = null;
             clearRangeSelectionAndEnableRefresh();
         });
 
@@ -1350,7 +1455,35 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onResume() {
+        super.onResume();
+        startSyncStatusTimer();
+        if (!hasHandledInitialResume) {
+            hasHandledInitialResume = true;
+            return;
+        }
+
+        refreshAvailabilityIfStaleOnForeground();
+    }
+
+    @Override
+    protected void onPause() {
+        stopSyncStatusTimer();
+        super.onPause();
+    }
+
+    private void startSyncStatusTimer() {
+        syncStatusHandler.removeCallbacks(syncStatusRefreshRunnable);
+        syncStatusHandler.post(syncStatusRefreshRunnable);
+    }
+
+    private void stopSyncStatusTimer() {
+        syncStatusHandler.removeCallbacks(syncStatusRefreshRunnable);
+    }
+
+    @Override
     protected void onDestroy() {
+        stopSyncStatusTimer();
         super.onDestroy();
     }
 }

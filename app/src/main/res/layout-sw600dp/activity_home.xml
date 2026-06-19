@@ -97,6 +97,21 @@
         app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
         app:layout_constraintTop_toBottomOf="@id/headerView" />
 
+    <TextView
+        android:id="@+id/tvSyncStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_16"
+        android:layout_marginTop="@dimen/space_8"
+        android:layout_marginEnd="@dimen/space_16"
+        android:gravity="center"
+        android:textColor="@color/text_secondary"
+        android:textSize="@dimen/text_12"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
+        app:layout_constraintTop_toBottomOf="@id/headerView" />
+
     <ProgressBar
         android:id="@+id/progressBar"
         android:layout_width="wrap_content"
@@ -115,7 +130,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/layoutBookingActions"
-        app:layout_constraintTop_toBottomOf="@id/headerView">
+        app:layout_constraintTop_toBottomOf="@id/tvSyncStatus">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewBookings"

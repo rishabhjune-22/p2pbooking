@@ -122,6 +122,16 @@
             <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_half_available" /><TextView style="@style/LegendTextStyle" android:text="More Than Half Booked" /></LinearLayout>
             <LinearLayout style="@style/TabletLegendRow"><View style="@style/TabletLegendDot" android:background="@drawable/bg_legend_less_than_half_available" /><TextView style="@style/LegendTextStyle" android:text="Most Rooms Booked" /></LinearLayout>
         </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvAvailabilityStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_12"
+            android:visibility="gone" />
     </LinearLayout>
 
     <LinearLayout

@@ -64,7 +64,11 @@ public final class InternetErrorBanner {
 
         String normalizedMessage = message.trim();
         return normalizedMessage.equalsIgnoreCase(MESSAGE)
-                || normalizedMessage.equalsIgnoreCase(MESSAGE + ".");
+                || normalizedMessage.equalsIgnoreCase(MESSAGE + ".")
+                || normalizedMessage.equalsIgnoreCase(ApiErrorUtils.NETWORK_ERROR_MESSAGE)
+                || normalizedMessage.equalsIgnoreCase(ApiErrorUtils.NO_INTERNET_ERROR_MESSAGE)
+                || normalizedMessage.equalsIgnoreCase(ApiErrorUtils.SERVER_UNAVAILABLE_ERROR_MESSAGE)
+                || normalizedMessage.equalsIgnoreCase(ApiErrorUtils.TIMEOUT_ERROR_MESSAGE);
     }
 
     private static MaterialToolbar findToolbar(Activity activity) {

@@ -3,12 +3,23 @@ package com.example.roombooking.utils;
 import com.example.roombooking.model.common.ApiResponse;
 import com.google.gson.Gson;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+
 import retrofit2.Response;
 
 public final class ApiErrorUtils {
 
     public static final String NETWORK_ERROR_MESSAGE =
             "Please check your internet connection.";
+    public static final String NO_INTERNET_ERROR_MESSAGE =
+            "No internet connection. Please check your connection.";
+    public static final String SERVER_UNAVAILABLE_ERROR_MESSAGE =
+            "Server unavailable. Please try again.";
+    public static final String TIMEOUT_ERROR_MESSAGE =
+            "Request timed out. Please try again.";
     public static final String RATE_LIMIT_ERROR_MESSAGE =
             "Too many requests. Please wait a moment and try again.";
     public static final String DEFAULT_ERROR_MESSAGE =
@@ -57,6 +68,70 @@ public final class ApiErrorUtils {
 
     public static String networkMessage() {
         return NETWORK_ERROR_MESSAGE;
+    }
+
+    public static String messageFromThrowable(Throwable throwable) {
+        if (throwable instanceof SocketTimeoutException) {
+            return TIMEOUT_ERROR_MESSAGE;
+        }
+
+        if (throwable instanceof UnknownHostException) {
+            return NO_INTERNET_ERROR_MESSAGE;
+        }
+
+        if (throwable instanceof ConnectException) {
+            return SERVER_UNAVAILABLE_ERROR_MESSAGE;
+        }
+
+        if (throwable instanceof IOException) {
+            return NETWORK_ERROR_MESSAGE;
+        }
+
+        return DEFAULT_ERROR_MESSAGE;
+    }
+
+    public static String messageForHttpCode(int httpCode) {
+        if (httpCode == 429) {
+            return RATE_LIMIT_ERROR_MESSAGE;
+        }
+
+        if (httpCode == 408) {
+            return TIMEOUT_ERROR_MESSAGE;
+        }
+
+        if (httpCode >= 500 && httpCode <= 599) {
+            return SERVER_UNAVAILABLE_ERROR_MESSAGE;
+        }
+
+        return DEFAULT_ERROR_MESSAGE;
+    }
+
+    public static String cachedDataMessageForHttpCode(int httpCode) {
+        if (httpCode == 429) {
+            return "Too many requests. Showing saved data.";
+        }
+
+        if (httpCode == 408) {
+            return "Request timed out. Showing saved data.";
+        }
+
+        if (httpCode >= 500 && httpCode <= 599) {
+            return "Server unavailable. Showing saved data.";
+        }
+
+        return SyncStatusFormatter.OFFLINE_SAVED_DATA;
+    }
+
+    public static String cachedDataMessageForThrowable(Throwable throwable) {
+        if (throwable instanceof SocketTimeoutException) {
+            return "Request timed out. Showing saved data.";
+        }
+
+        if (throwable instanceof ConnectException) {
+            return "Server unavailable. Showing saved data.";
+        }
+
+        return SyncStatusFormatter.OFFLINE_SAVED_DATA;
     }
 
     public static String rateLimitMessage() {

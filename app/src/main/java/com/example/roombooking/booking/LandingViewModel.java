@@ -15,6 +15,7 @@ import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppDiagnostics;
 import com.example.roombooking.utils.NullSafeCollections;
+import com.example.roombooking.utils.SyncStatusFormatter;
 import com.example.roombooking.utils.UiEvent;
 
 import java.util.ArrayList;
@@ -80,6 +81,8 @@ public class LandingViewModel extends ViewModel {
     private final MutableLiveData<List<RoomAvailabilityGroup>> availabilityGroupsLiveData =
             new MutableLiveData<>();
     private final MutableLiveData<UiEvent<String>> toastLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> availabilityStatusLiveData =
+            new MutableLiveData<>("");
     private final MutableLiveData<UiEvent<Boolean>> networkBannerLiveData =
             new MutableLiveData<>();
     private final MutableLiveData<UiEvent<RoomAvailabilityDetailsResponse>>
@@ -105,6 +108,9 @@ public class LandingViewModel extends ViewModel {
     private int observedCacheInvalidationVersion =
             AvailabilityRepository.getCacheInvalidationVersion();
     private boolean forceNextAvailabilityNetworkRefresh = false;
+    private long currentAvailabilityUpdatedAtMillis = 0L;
+    private boolean hasLoadedAvailability = false;
+    private boolean availabilityStatusShowsFailure = false;
 
     private int requestedMonth = -1;
     private int requestedYear = -1;
@@ -113,6 +119,8 @@ public class LandingViewModel extends ViewModel {
     private String requestedRangePrefix = "";
     private String requestedAvailableRoomsCacheKey = "";
     private String requestedAvailableRoomsRangeCacheKey = "";
+    private final Map<String, AvailableRoomsSheetStatus> availableRoomsSheetStatus =
+            new HashMap<>();
 
     public LandingViewModel(AvailabilityRepository availabilityRepository) {
         this.availabilityRepository = availabilityRepository;
@@ -157,6 +165,22 @@ public class LandingViewModel extends ViewModel {
         }
     }
 
+    private static final class AvailableRoomsSheetStatus {
+        private final long updatedAtMillis;
+        private final boolean refreshing;
+        private final String failureMessage;
+
+        private AvailableRoomsSheetStatus(
+                long updatedAtMillis,
+                boolean refreshing,
+                String failureMessage
+        ) {
+            this.updatedAtMillis = updatedAtMillis;
+            this.refreshing = refreshing;
+            this.failureMessage = failureMessage;
+        }
+    }
+
     public LiveData<Boolean> getAvailabilityLoadingLiveData() {
         return availabilityLoadingLiveData;
     }
@@ -171,6 +195,10 @@ public class LandingViewModel extends ViewModel {
 
     public LiveData<UiEvent<String>> getToastLiveData() {
         return toastLiveData;
+    }
+
+    public LiveData<String> getAvailabilityStatusLiveData() {
+        return availabilityStatusLiveData;
     }
 
     public LiveData<UiEvent<Boolean>> getNetworkBannerLiveData() {
@@ -221,11 +249,18 @@ public class LandingViewModel extends ViewModel {
 
         CachedAvailability memoryAvailability = getCachedAvailability(month, year);
         if (memoryAvailability != null) {
-            showCachedAvailability(memoryAvailability.groups, "memory", actionStartedAtMillis);
-            if (isFresh(
+            boolean fresh = isFresh(
                     memoryAvailability.updatedAtMillis,
                     CachePolicy.CALENDAR_AVAILABILITY_TTL_MS
-            )) {
+            );
+            showCachedAvailability(
+                    memoryAvailability.groups,
+                    "memory",
+                    memoryAvailability.updatedAtMillis,
+                    !fresh,
+                    actionStartedAtMillis
+            );
+            if (fresh) {
                 return;
             }
 
@@ -244,6 +279,61 @@ public class LandingViewModel extends ViewModel {
 
             handleCachedAvailabilityResult(result, month, year, actionStartedAtMillis);
         });
+    }
+
+    public void refreshAvailability(int month, int year) {
+        if (availabilityCall != null) {
+            AppDiagnostics.logEvent("availability_manual_refresh_skipped_duplicate");
+            return;
+        }
+
+        requestedMonth = month;
+        requestedYear = year;
+        cancelPendingAvailabilityRetry();
+        updateAvailabilityStatus(SyncStatusFormatter.REFRESHING);
+        loadAvailabilityInternal(
+                month,
+                year,
+                0,
+                !hasVisibleAvailability(),
+                hasVisibleAvailability(),
+                System.currentTimeMillis()
+        );
+    }
+
+    public void refreshAvailabilityIfStaleOnForeground(int month, int year) {
+        if (availabilityCall != null) {
+            AppDiagnostics.logEvent("availability_foreground_refresh_skipped_in_flight");
+            return;
+        }
+
+        if (!hasLoadedAvailability || currentAvailabilityUpdatedAtMillis <= 0L) {
+            AppDiagnostics.logEvent("availability_foreground_refresh_skipped_no_visible_data");
+            return;
+        }
+
+        if (isFresh(
+                currentAvailabilityUpdatedAtMillis,
+                CachePolicy.CALENDAR_AVAILABILITY_TTL_MS
+        )) {
+            updateLastUpdatedAvailabilityStatus();
+            AppDiagnostics.logEvent("availability_foreground_refresh_skipped_cache_fresh");
+            return;
+        }
+
+        requestedMonth = month;
+        requestedYear = year;
+        updateAvailabilityStatus(SyncStatusFormatter.REFRESHING);
+        loadAvailabilityInternal(month, year, 0, false, true, System.currentTimeMillis());
+    }
+
+    public void refreshVisibleSyncStatusAge() {
+        if (availabilityCall == null
+                && !availabilityStatusShowsFailure
+                && hasLoadedAvailability
+                && currentAvailabilityUpdatedAtMillis > 0L) {
+            updateLastUpdatedAvailabilityStatus();
+        }
     }
 
     private void loadAvailabilityInternal(
@@ -313,7 +403,9 @@ public class LandingViewModel extends ViewModel {
                     );
                     AppDiagnostics.logApiFailure("availability_calendar", message, null);
                     if (quietFailure) {
-                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                        keepCachedAvailabilityAfterFailure(
+                                ApiErrorUtils.cachedDataMessageForHttpCode(response.code())
+                        );
                     } else {
                         toastLiveData.setValue(new UiEvent<>(message));
                     }
@@ -333,6 +425,8 @@ public class LandingViewModel extends ViewModel {
                         : new ArrayList<>();
                 cacheAvailability(month, year, groups);
                 availabilityGroupsLiveData.setValue(groups);
+                hasLoadedAvailability = true;
+                updateLastUpdatedAvailabilityStatus();
                 AppDiagnostics.logUiUpdated(
                         "availability_calendar",
                         "network",
@@ -367,10 +461,16 @@ public class LandingViewModel extends ViewModel {
                     availabilityLoadingLiveData.setValue(false);
                     AppDiagnostics.logApiFailure(
                             "availability_calendar",
-                            ApiErrorUtils.networkMessage(),
+                            ApiErrorUtils.messageFromThrowable(t),
                             t
                     );
-                    networkBannerLiveData.setValue(new UiEvent<>(true));
+                    if (quietFailure && hasLoadedAvailability) {
+                        keepCachedAvailabilityAfterFailure(
+                                ApiErrorUtils.cachedDataMessageForThrowable(t)
+                        );
+                    } else {
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                    }
                     logAvailabilityNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
             }
@@ -458,12 +558,16 @@ public class LandingViewModel extends ViewModel {
         long actionStartedAtMillis = System.currentTimeMillis();
         CachedAvailableRooms memoryResponse = getCachedAvailableRooms(cacheKey);
         if (memoryResponse != null && memoryResponse.response != null) {
+            boolean fresh = isFresh(
+                    memoryResponse.updatedAtMillis,
+                    CachePolicy.AVAILABLE_ROOMS_TTL_MS
+            );
+            updateAvailableRoomsSheetStatus(cacheKey, memoryResponse.updatedAtMillis, !fresh);
             showCachedAvailableRooms(memoryResponse.response, "memory", actionStartedAtMillis);
-            if (isFresh(memoryResponse.updatedAtMillis, CachePolicy.AVAILABLE_ROOMS_TTL_MS)) {
+            if (fresh) {
                 return;
             }
 
-            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
             loadAvailableRoomsForDateInternal(
                     date,
                     requestedAvailableRoomsPrefix,
@@ -559,10 +663,10 @@ public class LandingViewModel extends ViewModel {
                     );
                     AppDiagnostics.logApiFailure("available_rooms", message, null);
                     if (quietFailure) {
-                        toastLiveData.setValue(new UiEvent<>(
-                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
-                        ));
-                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                        keepCachedAvailableRoomsAfterFailure(
+                                cacheKey,
+                                ApiErrorUtils.cachedDataMessageForHttpCode(response.code())
+                        );
                     } else {
                         toastLiveData.setValue(new UiEvent<>(message));
                     }
@@ -574,6 +678,7 @@ public class LandingViewModel extends ViewModel {
                 networkBannerLiveData.setValue(new UiEvent<>(false));
                 AvailableRoomsResponse data = response.body().getData();
                 cacheAvailableRooms(cacheKey, date, prefix, data);
+                updateAvailableRoomsSheetStatus(cacheKey, System.currentTimeMillis(), false);
                 availableRoomsLiveData.setValue(new UiEvent<>(data));
                 AppDiagnostics.logUiUpdated(
                         "available_rooms",
@@ -610,14 +715,16 @@ public class LandingViewModel extends ViewModel {
                     availableRoomsLoadingLiveData.setValue(false);
                     AppDiagnostics.logApiFailure(
                             "available_rooms",
-                            ApiErrorUtils.networkMessage(),
+                            ApiErrorUtils.messageFromThrowable(t),
                             t
                     );
-                    networkBannerLiveData.setValue(new UiEvent<>(true));
                     if (quietFailure) {
-                        toastLiveData.setValue(new UiEvent<>(
-                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
-                        ));
+                        keepCachedAvailableRoomsAfterFailure(
+                                cacheKey,
+                                ApiErrorUtils.cachedDataMessageForThrowable(t)
+                        );
+                    } else {
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
                     }
                     logAvailableRoomsNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
@@ -658,19 +765,20 @@ public class LandingViewModel extends ViewModel {
         long actionStartedAtMillis = System.currentTimeMillis();
         CachedAvailableRoomsRange memoryResponse = getCachedAvailableRoomsRange(cacheKey);
         if (memoryResponse != null && memoryResponse.response != null) {
+            boolean fresh = isFresh(
+                    memoryResponse.updatedAtMillis,
+                    CachePolicy.AVAILABLE_ROOMS_RANGE_TTL_MS
+            );
+            updateAvailableRoomsSheetStatus(cacheKey, memoryResponse.updatedAtMillis, !fresh);
             showCachedAvailableRoomsRange(
                     memoryResponse.response,
                     "memory",
                     actionStartedAtMillis
             );
-            if (isFresh(
-                    memoryResponse.updatedAtMillis,
-                    CachePolicy.AVAILABLE_ROOMS_RANGE_TTL_MS
-            )) {
+            if (fresh) {
                 return;
             }
 
-            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
             loadAvailableRoomsForDateRangeInternal(
                     arrivalDate,
                     departureDate,
@@ -773,10 +881,10 @@ public class LandingViewModel extends ViewModel {
                     );
                     AppDiagnostics.logApiFailure("available_rooms_range", message, null);
                     if (quietFailure) {
-                        toastLiveData.setValue(new UiEvent<>(
-                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
-                        ));
-                        networkBannerLiveData.setValue(new UiEvent<>(true));
+                        keepCachedAvailableRoomsRangeAfterFailure(
+                                cacheKey,
+                                ApiErrorUtils.cachedDataMessageForHttpCode(response.code())
+                        );
                     } else {
                         toastLiveData.setValue(new UiEvent<>(message));
                     }
@@ -792,6 +900,7 @@ public class LandingViewModel extends ViewModel {
                 networkBannerLiveData.setValue(new UiEvent<>(false));
                 AvailableRoomsRangeResponse data = response.body().getData();
                 cacheAvailableRoomsRange(cacheKey, arrivalDate, departureDate, prefix, data);
+                updateAvailableRoomsSheetStatus(cacheKey, System.currentTimeMillis(), false);
                 availableRoomsRangeLiveData.setValue(new UiEvent<>(data));
                 AppDiagnostics.logUiUpdated(
                         "available_rooms_range",
@@ -833,14 +942,16 @@ public class LandingViewModel extends ViewModel {
                     availableRoomsLoadingLiveData.setValue(false);
                     AppDiagnostics.logApiFailure(
                             "available_rooms_range",
-                            ApiErrorUtils.networkMessage(),
+                            ApiErrorUtils.messageFromThrowable(t),
                             t
                     );
-                    networkBannerLiveData.setValue(new UiEvent<>(true));
                     if (quietFailure) {
-                        toastLiveData.setValue(new UiEvent<>(
-                                MESSAGE_CACHED_AVAILABILITY_FINAL_CHECK
-                        ));
+                        keepCachedAvailableRoomsRangeAfterFailure(
+                                cacheKey,
+                                ApiErrorUtils.cachedDataMessageForThrowable(t)
+                        );
+                    } else {
+                        networkBannerLiveData.setValue(new UiEvent<>(true));
                     }
                     logAvailableRoomsRangeNetworkResponse(cacheKey, 0, requestStartedAtMillis);
                 }
@@ -1068,6 +1179,7 @@ public class LandingViewModel extends ViewModel {
     ) {
         String cacheKey = AvailabilityRepository.calendarAvailabilityCacheKey(month, year);
         long updatedAtMillis = System.currentTimeMillis();
+        currentAvailabilityUpdatedAtMillis = updatedAtMillis;
         List<RoomAvailabilityGroup> cachedGroups = NullSafeCollections.copyWithoutNulls(groups);
         synchronized (CACHE_LOCK) {
             availabilityCache.put(
@@ -1106,15 +1218,22 @@ public class LandingViewModel extends ViewModel {
             List<RoomAvailabilityGroup> groups = NullSafeCollections.copyWithoutNulls(
                     result.getValue()
             );
+            boolean fresh = result.isFresh();
             synchronized (CACHE_LOCK) {
                 availabilityCache.put(
                         result.getKey(),
                         new CachedAvailability(groups, result.getUpdatedAtMillis())
                 );
             }
-            showCachedAvailability(groups, "disk", actionStartedAtMillis);
+            showCachedAvailability(
+                    groups,
+                    "disk",
+                    result.getUpdatedAtMillis(),
+                    !fresh,
+                    actionStartedAtMillis
+            );
 
-            if (result.isFresh()) {
+            if (fresh) {
                 return;
             }
 
@@ -1133,18 +1252,19 @@ public class LandingViewModel extends ViewModel {
             long actionStartedAtMillis
     ) {
         if (result.isHit() && result.getValue() != null) {
+            boolean fresh = result.isFresh();
             cacheAvailableRoomsInMemory(
                     result.getKey(),
                     result.getValue(),
                     result.getUpdatedAtMillis()
             );
+            updateAvailableRoomsSheetStatus(result.getKey(), result.getUpdatedAtMillis(), !fresh);
             showCachedAvailableRooms(result.getValue(), "disk", actionStartedAtMillis);
 
-            if (result.isFresh()) {
+            if (fresh) {
                 return;
             }
 
-            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
             loadAvailableRoomsForDateInternal(
                     date,
                     prefix,
@@ -1176,18 +1296,19 @@ public class LandingViewModel extends ViewModel {
             long actionStartedAtMillis
     ) {
         if (result.isHit() && result.getValue() != null) {
+            boolean fresh = result.isFresh();
             cacheAvailableRoomsRangeInMemory(
                     result.getKey(),
                     result.getValue(),
                     result.getUpdatedAtMillis()
             );
+            updateAvailableRoomsSheetStatus(result.getKey(), result.getUpdatedAtMillis(), !fresh);
             showCachedAvailableRoomsRange(result.getValue(), "disk", actionStartedAtMillis);
 
-            if (result.isFresh()) {
+            if (fresh) {
                 return;
             }
 
-            toastLiveData.setValue(new UiEvent<>(MESSAGE_CACHED_AVAILABILITY_REFRESHING));
             loadAvailableRoomsForDateRangeInternal(
                     arrivalDate,
                     departureDate,
@@ -1216,10 +1337,17 @@ public class LandingViewModel extends ViewModel {
     private void showCachedAvailability(
             List<RoomAvailabilityGroup> groups,
             String source,
+            long updatedAtMillis,
+            boolean refreshing,
             long actionStartedAtMillis
     ) {
         availabilityLoadingLiveData.setValue(false);
         networkBannerLiveData.setValue(new UiEvent<>(false));
+        currentAvailabilityUpdatedAtMillis = updatedAtMillis;
+        hasLoadedAvailability = true;
+        updateAvailabilityStatus(refreshing
+                ? SyncStatusFormatter.SHOWING_CACHED_REFRESHING
+                : SyncStatusFormatter.lastUpdated(updatedAtMillis));
         availabilityGroupsLiveData.setValue(NullSafeCollections.copyWithoutNulls(groups));
         AppDiagnostics.logUiUpdated(
                 "availability_calendar",
@@ -1267,11 +1395,116 @@ public class LandingViewModel extends ViewModel {
         return CachePolicy.isFresh(updatedAtMillis, ttlMillis, System.currentTimeMillis());
     }
 
+    private void updateLastUpdatedAvailabilityStatus() {
+        updateAvailabilityStatus(
+                SyncStatusFormatter.lastUpdated(currentAvailabilityUpdatedAtMillis),
+                false
+        );
+    }
+
+    private void keepCachedAvailabilityAfterFailure(String message) {
+        updateAvailabilityStatus(message, true);
+        AppDiagnostics.logEvent("availability_calendar_kept_cached_after_failure");
+    }
+
+    private void updateAvailabilityStatus(String message) {
+        updateAvailabilityStatus(message, false);
+    }
+
+    private void updateAvailabilityStatus(String message, boolean failureState) {
+        availabilityStatusShowsFailure = failureState;
+        availabilityStatusLiveData.setValue(message != null ? message : "");
+    }
+
+    public String getAvailableRoomsSheetStatus(AvailableRoomsResponse response) {
+        if (response == null) {
+            return SyncStatusFormatter.FINAL_BOOKING_VERIFIED;
+        }
+
+        return getSheetStatus(AvailabilityRepository.availableRoomsCacheKey(
+                response.getPrefix(),
+                response.getDate()
+        ));
+    }
+
+    public String getAvailableRoomsRangeSheetStatus(AvailableRoomsRangeResponse response) {
+        if (response == null) {
+            return SyncStatusFormatter.FINAL_BOOKING_VERIFIED;
+        }
+
+        return getSheetStatus(AvailabilityRepository.availableRoomsRangeCacheKey(
+                response.getPrefix(),
+                response.getArrivalDate(),
+                response.getDepartureDate()
+        ));
+    }
+
+    private String getSheetStatus(String cacheKey) {
+        AvailableRoomsSheetStatus status = availableRoomsSheetStatus.get(cacheKey);
+        if (status == null) {
+            return SyncStatusFormatter.FINAL_BOOKING_VERIFIED;
+        }
+
+        if (status.failureMessage != null && !status.failureMessage.trim().isEmpty()) {
+            return status.failureMessage + "\n" + SyncStatusFormatter.FINAL_BOOKING_VERIFIED;
+        }
+
+        if (status.refreshing) {
+            return SyncStatusFormatter.cachedAvailabilityRefreshing();
+        }
+
+        return SyncStatusFormatter.availabilityDecisionText(status.updatedAtMillis);
+    }
+
+    private void updateAvailableRoomsSheetStatus(
+            String cacheKey,
+            long updatedAtMillis,
+            boolean refreshing
+    ) {
+        availableRoomsSheetStatus.put(
+                cacheKey,
+                new AvailableRoomsSheetStatus(updatedAtMillis, refreshing, "")
+        );
+    }
+
+    private void keepCachedAvailableRoomsAfterFailure(String cacheKey, String message) {
+        availableRoomsSheetStatus.put(
+                cacheKey,
+                new AvailableRoomsSheetStatus(0L, false, fallbackSavedDataMessage(message))
+        );
+
+        CachedAvailableRooms cachedResponse = getCachedAvailableRooms(cacheKey);
+        if (cachedResponse != null && cachedResponse.response != null) {
+            availableRoomsLiveData.setValue(new UiEvent<>(cachedResponse.response));
+        }
+        AppDiagnostics.logEvent("available_rooms_kept_cached_after_failure");
+    }
+
+    private void keepCachedAvailableRoomsRangeAfterFailure(String cacheKey, String message) {
+        availableRoomsSheetStatus.put(
+                cacheKey,
+                new AvailableRoomsSheetStatus(0L, false, fallbackSavedDataMessage(message))
+        );
+
+        CachedAvailableRoomsRange cachedResponse = getCachedAvailableRoomsRange(cacheKey);
+        if (cachedResponse != null && cachedResponse.response != null) {
+            availableRoomsRangeLiveData.setValue(new UiEvent<>(cachedResponse.response));
+        }
+        AppDiagnostics.logEvent("available_rooms_range_kept_cached_after_failure");
+    }
+
+    private String fallbackSavedDataMessage(String message) {
+        return message != null && !message.trim().isEmpty()
+                ? message.trim()
+                : SyncStatusFormatter.OFFLINE_SAVED_DATA;
+    }
+
     private void clearAvailabilityCaches() {
         synchronized (CACHE_LOCK) {
             availabilityCache.clear();
             availableRoomsCache.clear();
             availableRoomsRangeCache.clear();
+            availableRoomsSheetStatus.clear();
         }
         availabilityRepository.clearAvailabilityCaches();
         observedCacheInvalidationVersion = AvailabilityRepository.getCacheInvalidationVersion();
@@ -1287,6 +1520,7 @@ public class LandingViewModel extends ViewModel {
             availabilityCache.clear();
             availableRoomsCache.clear();
             availableRoomsRangeCache.clear();
+            availableRoomsSheetStatus.clear();
         }
         availabilityCacheGeneration++;
         availableRoomsCacheGeneration++;
