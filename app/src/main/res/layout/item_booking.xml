@@ -306,7 +306,7 @@
                     android:ellipsize="end"
                     android:gravity="end"
                     android:maxLines="1"
-                    android:text="Created By: Admin"
+                    android:text="Created By: -"
                     android:textColor="@color/palette_8f8f99"
                     android:textSize="@dimen/text_12"
                     android:textStyle="italic"

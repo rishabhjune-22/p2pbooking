@@ -4,6 +4,36 @@
     <string name="filter">Filter</string>
     <string name="toggle_booking_status">Toggle Booking Status</string>
     <string name="clear_filter">Clear Filter</string>
+    <string name="iit_bhilai_logo">IIT Bhilai Logo</string>
+    <string name="login_subtitle">Login to manage visitor room bookings</string>
+    <string name="signup_title">Create Account</string>
+    <string name="signup_subtitle">Use your institute booking account</string>
+    <string name="full_name">Full Name</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="action_login">Login</string>
+    <string name="action_logging_in">Logging in...</string>
+    <string name="action_create_account">Create Account</string>
+    <string name="action_creating_account">Creating account...</string>
+    <string name="action_open_signup">New here? Create an account</string>
+    <string name="action_open_login">Already have an account? Login</string>
+    <string name="message_login_success">Login successful.</string>
+    <string name="message_signup_success">Account created successfully.</string>
+    <string name="error_full_name_required">Full name is required.</string>
+    <string name="error_email_required">Email is required.</string>
+    <string name="error_email_invalid">Enter a valid email address.</string>
+    <string name="error_password_required">Password is required.</string>
+    <string name="error_confirm_password_required">Confirm password is required.</string>
+    <string name="error_passwords_do_not_match">Passwords do not match.</string>
+    <string name="error_invalid_credentials">Invalid email or password.</string>
+    <string name="error_signup_failed">Account could not be created.</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirm_title">Logout</string>
+    <string name="logout_confirm_message">Are you sure you want to logout?</string>
+    <string name="message_logged_out">Logged out successfully.</string>
+    <string name="action_cancel">Cancel</string>
     <string-array name="gender_options">
         <item>Select Gender</item>
         <item>Male</item>
@@ -12,11 +42,6 @@
 
     </string-array>
 
-    <string name="hint_enter_name">Enter your name</string>
-    <string name="dialog_title_welcome">Welcome</string>
-    <string name="dialog_message_enter_name">Please enter your name to continue.</string>
-    <string name="action_continue">Continue</string>
-    <string name="error_name_required">Name is required</string>
     <string name="about_title">About Visitors Room Booking</string>
     <string name="about_message">Visitors Room Booking helps IIT Bhilai manage visitor room availability, bookings, and booking updates.</string>
     <string name="action_close">Close</string>

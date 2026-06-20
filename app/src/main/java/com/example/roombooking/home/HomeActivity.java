@@ -30,13 +30,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthLogoutManager;
+import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.booking.BookingAdapter;
 import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.booking.CreateBookingActivity;
 import com.example.roombooking.booking.LandingActivity;
-import com.example.roombooking.common.LocalUserManager;
-import com.example.roombooking.common.RequiredUserNamePrompt;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
@@ -92,8 +92,6 @@ public class HomeActivity extends AppCompatActivity {
     private LinearLayoutManager layoutManager;
     private RecyclerView.OnScrollListener paginationScrollListener;
     private HomeViewModel viewModel;
-    private LocalUserManager localUserManager;
-    private boolean userNamePromptShowing = false;
 
     private String selectedPrefix = null;
     private String selectedQuickRange = QUICK_RANGE_CUSTOM;
@@ -125,11 +123,13 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
         setupDateFormats();
-        localUserManager = new LocalUserManager(getApplicationContext());
 
         initViews();
         initViewModel();
@@ -140,7 +140,6 @@ public class HomeActivity extends AppCompatActivity {
         updateStatusToggleUi();
         updateFilterTitle();
         observeViewModel();
-        ensureLocalUserName();
 
         viewModel.loadInitialBookings();
     }
@@ -437,6 +436,11 @@ public class HomeActivity extends AppCompatActivity {
 
             if (itemId == R.id.menuAboutUs) {
                 showAboutDialog();
+                return true;
+            }
+
+            if (itemId == R.id.menuLogout) {
+                AuthLogoutManager.confirmAndLogout(this);
                 return true;
             }
 
@@ -858,28 +862,12 @@ public class HomeActivity extends AppCompatActivity {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
-    private void ensureLocalUserName() {
-        if (localUserManager == null || localUserManager.hasValidUserName()) {
-            return;
-        }
-
-        showRequiredUserNamePrompt();
-    }
-
-    private void showRequiredUserNamePrompt() {
-        if (isFinishing() || isDestroyed() || userNamePromptShowing) {
-            return;
-        }
-
-        userNamePromptShowing = true;
-        RequiredUserNamePrompt.show(this, localUserManager, null)
-                .setOnDismissListener(d -> userNamePromptShowing = false);
-    }
-
     @Override
     protected void onResume() {
         super.onResume();
-        ensureLocalUserName();
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
         startSyncStatusTimer();
         if (!hasHandledInitialResume) {
             hasHandledInitialResume = true;

@@ -13,9 +13,6 @@ public class BookingCreateRequest {
     @SerializedName("departure_at")
     private final String departureAt;
 
-    @SerializedName("created_by_name")
-    private final String createdByName;
-
     @SerializedName("visitor_name")
     private final String visitorName;
 
@@ -110,7 +107,6 @@ public class BookingCreateRequest {
             Integer room,
             String arrivalAt,
             String departureAt,
-            String createdByName,
 
             String visitorName,
             String visitorDesignation,
@@ -150,7 +146,6 @@ public class BookingCreateRequest {
         this.room = room;
         this.arrivalAt = arrivalAt;
         this.departureAt = departureAt;
-        this.createdByName = createdByName;
 
         this.visitorName = visitorName;
         this.visitorDesignation = visitorDesignation;

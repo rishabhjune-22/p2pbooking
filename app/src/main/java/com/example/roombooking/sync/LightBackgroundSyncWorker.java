@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters;
 
 import com.example.roombooking.api.ApiService;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.booking.AvailabilityRepository;
 import com.example.roombooking.booking.RoomAvailabilityGroup;
 import com.example.roombooking.booking.RoomAvailabilityResponse;
@@ -62,6 +63,11 @@ public class LightBackgroundSyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+        if (!new AuthSessionManager(getApplicationContext()).isLoggedIn()) {
+            AppDiagnostics.logEvent("background_sync_worker_skipped_not_authenticated");
+            return Result.success();
+        }
+
         AppDiagnostics.logEvent("background_sync_started");
 
         SyncOutcome roomsOutcome = syncRooms();

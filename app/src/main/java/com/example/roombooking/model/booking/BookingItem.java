@@ -7,6 +7,8 @@ import androidx.annotation.NonNull;
 
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 public class BookingItem implements Parcelable {
@@ -28,6 +30,12 @@ public class BookingItem implements Parcelable {
 
     @SerializedName("created_by_name")
     private String createdByName;
+
+    @SerializedName("created_at")
+    private String createdAt;
+
+    @SerializedName("edit_history")
+    private List<BookingEditHistoryItem> editHistory;
 
     @SerializedName("visitor_name")
     private String visitorName;
@@ -133,6 +141,8 @@ public class BookingItem implements Parcelable {
         arrivalAt = in.readString();
         departureAt = in.readString();
         createdByName = in.readString();
+        createdAt = in.readString();
+        editHistory = in.createTypedArrayList(BookingEditHistoryItem.CREATOR);
 
         visitorName = in.readString();
         visitorDesignation = in.readString();
@@ -198,6 +208,8 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(arrivalAt, other.arrivalAt)
                 && Objects.equals(departureAt, other.departureAt)
                 && Objects.equals(createdByName, other.createdByName)
+                && Objects.equals(createdAt, other.createdAt)
+                && Objects.equals(editHistory, other.editHistory)
                 && Objects.equals(visitorName, other.visitorName)
                 && Objects.equals(visitorDesignation, other.visitorDesignation)
                 && Objects.equals(visitorOrganisation, other.visitorOrganisation)
@@ -248,6 +260,14 @@ public class BookingItem implements Parcelable {
 
     public String getCreatedByName() {
         return createdByName;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public List<BookingEditHistoryItem> getEditHistory() {
+        return editHistory == null ? Collections.emptyList() : editHistory;
     }
 
     public String getVisitorName() {
@@ -399,6 +419,8 @@ public class BookingItem implements Parcelable {
         parcel.writeString(arrivalAt);
         parcel.writeString(departureAt);
         parcel.writeString(createdByName);
+        parcel.writeString(createdAt);
+        parcel.writeTypedList(editHistory);
 
         parcel.writeString(visitorName);
         parcel.writeString(visitorDesignation);

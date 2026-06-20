@@ -12,5 +12,9 @@
         android:id="@+id/menuAboutUs"
         android:title="About Us" />
 
+    <item
+        android:id="@+id/menuLogout"
+        android:title="@string/logout" />
+
 
 </menu>

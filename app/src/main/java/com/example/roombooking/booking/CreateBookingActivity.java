@@ -27,8 +27,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.roombooking.R;
-import com.example.roombooking.common.LocalUserManager;
-import com.example.roombooking.common.RequiredUserNamePrompt;
+import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.NullSafeCollections;
@@ -89,6 +88,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
+    private RadioGroup rgBudgetHeadFocus;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
     private EditText etBudgetHeadName;
@@ -103,9 +103,6 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private CreateBookingViewModel viewModel;
     private CreateBookingFormState currentFormState;
-    private LocalUserManager localUserManager;
-    private boolean userNamePromptShowing = false;
-
     private final Random random = new Random();
 
     private final SimpleDateFormat displayFormat =
@@ -117,6 +114,9 @@ public class CreateBookingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_booking);
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
@@ -137,11 +137,9 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void initDependencies() {
         BookingRepository bookingRepository = new BookingRepository(getApplicationContext());
         RoomRepository roomRepository = new RoomRepository(getApplicationContext());
-        localUserManager = new LocalUserManager(getApplicationContext());
         CreateBookingViewModelFactory factory = new CreateBookingViewModelFactory(
                 bookingRepository,
-                roomRepository,
-                localUserManager
+                roomRepository
         );
         viewModel = new ViewModelProvider(this, factory).get(CreateBookingViewModel.class);
     }
@@ -181,6 +179,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
+        rgBudgetHeadFocus = findViewById(R.id.rgBudgetHeadFocus);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
         etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
@@ -274,6 +273,8 @@ public class CreateBookingActivity extends AppCompatActivity {
                 R.id.rbAttenderChargesYes
         );
 
+        setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
+        setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
     }
 
@@ -626,26 +627,13 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         tvMessage.setVisibility(View.GONE);
 
-        if (!localUserManager.hasValidUserName()) {
-            showRequiredUserNamePrompt(this::submitBooking);
-            return;
-        }
-
         viewModel.create(collectFormData());
     }
 
-    private void showRequiredUserNamePrompt(Runnable afterSaved) {
-        if (isFinishing() || isDestroyed() || userNamePromptShowing) {
-            return;
-        }
-
-        userNamePromptShowing = true;
-
-        RequiredUserNamePrompt.show(this, localUserManager, name -> {
-            if (afterSaved != null && !isFinishing() && !isDestroyed()) {
-                afterSaved.run();
-            }
-        }).setOnDismissListener(d -> userNamePromptShowing = false);
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AuthSessionGuard.ensureAuthenticated(this);
     }
 
     private void handleBackPress() {
@@ -768,6 +756,50 @@ public class CreateBookingActivity extends AppCompatActivity {
                 if (group.getCheckedRadioButtonId() == yesId && amountField.isEnabled()) {
                     focusAndShowKeyboard(amountField);
                 }
+            });
+        }
+    }
+
+    private void setupClearRadioAction(int clearButtonId, RadioGroup group) {
+        View clearButton = findViewById(clearButtonId);
+        if (clearButton == null || group == null) {
+            return;
+        }
+
+        clearButton.setOnClickListener(v -> group.clearCheck());
+    }
+
+    private void setupBudgetHeadFocusControls() {
+        if (rgBudgetHeadFocus == null) {
+            return;
+        }
+
+        rgBudgetHeadFocus.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbBudgetHeadName) {
+                focusAndShowKeyboard(etBudgetHeadName);
+            } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
+                focusAndShowKeyboard(etBudgetHeadDepartmentName);
+            } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
+                focusAndShowKeyboard(etBudgetHeadProjectCode);
+            }
+        });
+
+        View clearButton = findViewById(R.id.btnClearBudgetHeadFocus);
+        if (clearButton != null) {
+            clearButton.setOnClickListener(v -> {
+                int checkedId = rgBudgetHeadFocus.getCheckedRadioButtonId();
+                if (checkedId == R.id.rbBudgetHeadName) {
+                    etBudgetHeadName.setText("");
+                } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
+                    etBudgetHeadDepartmentName.setText("");
+                } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
+                    etBudgetHeadProjectCode.setText("");
+                }
+                rgBudgetHeadFocus.clearCheck();
+                etBudgetHeadName.clearFocus();
+                etBudgetHeadDepartmentName.clearFocus();
+                etBudgetHeadProjectCode.clearFocus();
+                hideKeyboard(v);
             });
         }
     }

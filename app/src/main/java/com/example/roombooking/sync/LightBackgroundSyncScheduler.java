@@ -9,6 +9,7 @@ import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.utils.AppDiagnostics;
 
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,14 @@ public final class LightBackgroundSyncScheduler {
             return;
         }
 
-        WorkManager.getInstance(context.getApplicationContext())
+        Context appContext = context.getApplicationContext();
+        if (!new AuthSessionManager(appContext).isLoggedIn()) {
+            WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_WORK_NAME);
+            AppDiagnostics.logEvent("background_sync_skipped_not_authenticated");
+            return;
+        }
+
+        WorkManager.getInstance(appContext)
                 .enqueueUniquePeriodicWork(
                         UNIQUE_WORK_NAME,
                         WORK_POLICY,

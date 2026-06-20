@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider;
 import android.text.Editable;
 import android.text.TextWatcher;
 import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.room.RoomRepository;
@@ -67,6 +68,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
+    private RadioGroup rgBudgetHeadFocus;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
     private EditText etBudgetHeadName;
@@ -106,6 +108,9 @@ public class EditBookingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_booking);
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
         initDependencies();
@@ -128,6 +133,12 @@ public class EditBookingActivity extends AppCompatActivity {
 
         viewModel.initialize(bookingItem);
         viewModel.loadRooms();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AuthSessionGuard.ensureAuthenticated(this);
     }
 
     private void initDependencies() {
@@ -157,6 +168,7 @@ public class EditBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
+        rgBudgetHeadFocus = findViewById(R.id.rgBudgetHeadFocus);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
         etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
@@ -257,6 +269,8 @@ public class EditBookingActivity extends AppCompatActivity {
                 etAttenderChargesAmount,
                 R.id.rbAttenderChargesYes
         );
+        setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
+        setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
     }
 
@@ -639,8 +653,6 @@ public class EditBookingActivity extends AppCompatActivity {
                 ? getText(etAttenderChargesAmount)
                 : "0");
 
-        data.setBudgetHeadType("");
-        data.setBudgetHeadValue("");
         data.setBudgetHeadName(getText(etBudgetHeadName));
         data.setBudgetHeadDepartmentName(getText(etBudgetHeadDepartmentName));
         data.setBudgetHeadProjectCode(getText(etBudgetHeadProjectCode));
@@ -778,6 +790,50 @@ public class EditBookingActivity extends AppCompatActivity {
                         && amountField.isEnabled()) {
                     focusAndShowKeyboard(amountField);
                 }
+            });
+        }
+    }
+
+    private void setupClearRadioAction(int clearButtonId, RadioGroup group) {
+        View clearButton = findViewById(clearButtonId);
+        if (clearButton == null || group == null) {
+            return;
+        }
+
+        clearButton.setOnClickListener(v -> group.clearCheck());
+    }
+
+    private void setupBudgetHeadFocusControls() {
+        if (rgBudgetHeadFocus == null) {
+            return;
+        }
+
+        rgBudgetHeadFocus.setOnCheckedChangeListener((group, checkedId) -> {
+            if (checkedId == R.id.rbBudgetHeadName) {
+                focusAndShowKeyboard(etBudgetHeadName);
+            } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
+                focusAndShowKeyboard(etBudgetHeadDepartmentName);
+            } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
+                focusAndShowKeyboard(etBudgetHeadProjectCode);
+            }
+        });
+
+        View clearButton = findViewById(R.id.btnClearBudgetHeadFocus);
+        if (clearButton != null) {
+            clearButton.setOnClickListener(v -> {
+                int checkedId = rgBudgetHeadFocus.getCheckedRadioButtonId();
+                if (checkedId == R.id.rbBudgetHeadName) {
+                    etBudgetHeadName.setText("");
+                } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
+                    etBudgetHeadDepartmentName.setText("");
+                } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
+                    etBudgetHeadProjectCode.setText("");
+                }
+                rgBudgetHeadFocus.clearCheck();
+                etBudgetHeadName.clearFocus();
+                etBudgetHeadDepartmentName.clearFocus();
+                etBudgetHeadProjectCode.clearFocus();
+                hideKeyboard(v);
             });
         }
     }

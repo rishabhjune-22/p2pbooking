@@ -18,6 +18,18 @@
         android:usesCleartextTraffic="true">
 
         <activity
+            android:name=".auth.SignupActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".auth.LoginActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
             android:name=".booking.LandingActivity"
             android:exported="false"
             android:launchMode="singleTop"

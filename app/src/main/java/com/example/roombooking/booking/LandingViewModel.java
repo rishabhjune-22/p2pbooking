@@ -1510,6 +1510,14 @@ public class LandingViewModel extends ViewModel {
         observedCacheInvalidationVersion = AvailabilityRepository.getCacheInvalidationVersion();
     }
 
+    public static void clearInMemoryAvailabilityCachesForLogout() {
+        synchronized (CACHE_LOCK) {
+            availabilityCache.clear();
+            availableRoomsCache.clear();
+            availableRoomsRangeCache.clear();
+        }
+    }
+
     private boolean syncCacheInvalidationVersion() {
         int currentVersion = AvailabilityRepository.getCacheInvalidationVersion();
         if (currentVersion == observedCacheInvalidationVersion) {

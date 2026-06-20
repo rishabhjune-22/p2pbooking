@@ -21,7 +21,6 @@ final class CreateBookingFormState {
     private String departureAt;
     private long arrivalAtMillis;
     private long departureAtMillis;
-    private String createdByName;
 
     private String visitorName;
     private String visitorDesignation;
@@ -71,7 +70,6 @@ final class CreateBookingFormState {
         copy.departureAt = departureAt;
         copy.arrivalAtMillis = arrivalAtMillis;
         copy.departureAtMillis = departureAtMillis;
-        copy.createdByName = createdByName;
         copy.visitorName = visitorName;
         copy.visitorDesignation = visitorDesignation;
         copy.visitorOrganisation = visitorOrganisation;
@@ -127,8 +125,6 @@ final class CreateBookingFormState {
     void setArrivalAtMillis(long arrivalAtMillis) { this.arrivalAtMillis = arrivalAtMillis; }
     long getDepartureAtMillis() { return departureAtMillis; }
     void setDepartureAtMillis(long departureAtMillis) { this.departureAtMillis = departureAtMillis; }
-    String getCreatedByName() { return createdByName; }
-    void setCreatedByName(String createdByName) { this.createdByName = clean(createdByName); }
     String getVisitorName() { return visitorName; }
     void setVisitorName(String visitorName) { this.visitorName = clean(visitorName); }
     String getVisitorDesignation() { return visitorDesignation; }

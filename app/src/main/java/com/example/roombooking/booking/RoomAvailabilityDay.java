@@ -21,6 +21,9 @@ public class RoomAvailabilityDay {
     @SerializedName("has_before_6pm_booking")
     private boolean hasBefore6pmBooking;
 
+    @SerializedName("has_partial_booking")
+    private boolean hasPartialBooking;
+
     public String getDate() {
         return date;
     }
@@ -41,6 +44,10 @@ public class RoomAvailabilityDay {
         return hasBefore6pmBooking;
     }
 
+    public boolean hasPartialBooking() {
+        return hasPartialBooking;
+    }
+
     public boolean hasSameContent(RoomAvailabilityDay other) {
         if (other == null) return false;
 
@@ -48,6 +55,7 @@ public class RoomAvailabilityDay {
                 && bookedRooms == other.bookedRooms
                 && availableRooms == other.availableRooms
                 && hasBefore6pmBooking == other.hasBefore6pmBooking
+                && hasPartialBooking == other.hasPartialBooking
                 && Objects.equals(date, other.date);
     }
 }

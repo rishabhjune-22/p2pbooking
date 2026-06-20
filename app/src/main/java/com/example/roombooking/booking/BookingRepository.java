@@ -106,7 +106,7 @@ public class BookingRepository {
         clearFirstPageCaches(cacheStore);
     }
 
-    static void clearFirstPageCaches(LocalJsonCacheStore cacheStore) {
+    public static void clearFirstPageCaches(LocalJsonCacheStore cacheStore) {
         if (cacheStore == null) {
             return;
         }

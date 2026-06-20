@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthSessionManager;
+import com.example.roombooking.auth.LoginActivity;
 import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.InternetErrorBanner;
@@ -21,13 +23,12 @@ public class SplashActivity extends AppCompatActivity {
     private final Handler handler = new Handler(Looper.getMainLooper());
 
     private RoomRepository roomRepository;
-    private LocalUserManager localUserManager;
+    private AuthSessionManager authSessionManager;
 
     private boolean minimumDelayCompleted = false;
     private boolean preloadCompleted = false;
     private boolean preloadTimeoutCompleted = false;
     private boolean navigationDone = false;
-    private boolean userDialogShowing = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,13 +38,17 @@ public class SplashActivity extends AppCompatActivity {
 
         initDependencies();
         startSplashDelayTimer();
-        startPreloadTimeoutTimer();
-        preloadRooms();
+        if (authSessionManager.isLoggedIn()) {
+            startPreloadTimeoutTimer();
+            preloadRooms();
+        } else {
+            preloadCompleted = true;
+        }
     }
 
     private void initDependencies() {
         roomRepository = new RoomRepository(getApplicationContext());
-        localUserManager = new LocalUserManager(getApplicationContext());
+        authSessionManager = new AuthSessionManager(getApplicationContext());
     }
 
     private void startSplashDelayTimer() {
@@ -77,7 +82,7 @@ public class SplashActivity extends AppCompatActivity {
 
     private void tryNavigateNext() {
         if (isFinishing() || isDestroyed()) return;
-        if (navigationDone || userDialogShowing) return;
+        if (navigationDone) return;
 
         if (!minimumDelayCompleted) return;
 
@@ -85,20 +90,12 @@ public class SplashActivity extends AppCompatActivity {
 
         if (!canMoveAhead) return;
 
-        if (!localUserManager.hasValidUserName()) {
-            showUserNameDialog();
+        if (!authSessionManager.isLoggedIn()) {
+            navigateToLogin();
             return;
         }
 
         navigateToLanding();
-    }
-
-    private void showUserNameDialog() {
-        if (navigationDone || userDialogShowing) return;
-
-        userDialogShowing = true;
-        RequiredUserNamePrompt.show(this, localUserManager, name -> navigateToLanding())
-                .setOnDismissListener(dialog -> userDialogShowing = false);
     }
 
     private void navigateToLanding() {
@@ -107,6 +104,18 @@ public class SplashActivity extends AppCompatActivity {
         navigationDone = true;
 
         Intent intent = new Intent(SplashActivity.this, LandingActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+
+        startActivity(intent);
+        finish();
+    }
+
+    private void navigateToLogin() {
+        if (navigationDone) return;
+
+        navigationDone = true;
+
+        Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);

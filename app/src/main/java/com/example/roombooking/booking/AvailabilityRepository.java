@@ -192,7 +192,7 @@ public class AvailabilityRepository {
         BookingRepository.clearFirstPageCaches(cacheStore);
     }
 
-    static void clearAvailabilityCaches(LocalJsonCacheStore cacheStore) {
+    public static void clearAvailabilityCaches(LocalJsonCacheStore cacheStore) {
         if (cacheStore == null) {
             incrementCacheInvalidationVersion();
             return;

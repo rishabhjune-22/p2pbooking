@@ -15,6 +15,9 @@ public final class DateTimeUtils {
     private static final Pattern API_DATE_TIME_IN_TEXT = Pattern.compile(
             "\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})"
     );
+    private static final Pattern LONG_FRACTIONAL_SECONDS = Pattern.compile(
+            "(\\.\\d{3})\\d+(Z|[+-]\\d{2}:?\\d{2})$"
+    );
 
     private static final String[] API_FORMATS = {
             "yyyy-MM-dd'T'HH:mm:ss'Z'",
@@ -72,8 +75,10 @@ public final class DateTimeUtils {
     }
 
     private static Date parseApiDateTime(String apiDateTime) {
+        String normalizedDateTime = normalizeFractionalSeconds(apiDateTime);
+
         for (String format : API_FORMATS) {
-            Date date = parseWithFormat(apiDateTime, format);
+            Date date = parseWithFormat(normalizedDateTime, format);
 
             if (date != null) {
                 return date;
@@ -81,6 +86,16 @@ public final class DateTimeUtils {
         }
 
         return null;
+    }
+
+    private static String normalizeFractionalSeconds(String apiDateTime) {
+        if (isBlank(apiDateTime)) {
+            return apiDateTime;
+        }
+
+        return LONG_FRACTIONAL_SECONDS
+                .matcher(apiDateTime)
+                .replaceFirst("$1$2");
     }
 
     private static Date parseWithFormat(String apiDateTime, String format) {

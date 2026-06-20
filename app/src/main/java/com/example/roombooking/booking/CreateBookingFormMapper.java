@@ -76,7 +76,6 @@ final class CreateBookingFormMapper {
                 data.getRoomId(),
                 data.getArrivalAt(),
                 data.getDepartureAt(),
-                data.getCreatedByName(),
 
                 data.getVisitorName(),
                 data.getVisitorDesignation(),
@@ -118,10 +117,6 @@ final class CreateBookingFormMapper {
     static CreateBookingValidationResult validate(CreateBookingFormState data) {
         if (data.getRoomId() == null) {
             return CreateBookingValidationResult.invalid("Please select a room.");
-        }
-
-        if (isEmpty(data.getCreatedByName())) {
-            return CreateBookingValidationResult.invalid("Name is required");
         }
 
         if (isEmpty(data.getVisitorName())

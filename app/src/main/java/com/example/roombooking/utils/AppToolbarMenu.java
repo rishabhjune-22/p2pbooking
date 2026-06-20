@@ -10,6 +10,7 @@ import android.widget.PopupMenu;
 import androidx.appcompat.app.AlertDialog;
 
 import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.home.HomeActivity;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -64,6 +65,11 @@ public final class AppToolbarMenu {
                     .setMessage(R.string.about_message)
                     .setPositiveButton(R.string.action_close, null)
                     .show();
+            return true;
+        }
+
+        if (itemId == R.id.menuLogout) {
+            AuthLogoutManager.confirmAndLogout(activity);
             return true;
         }
 

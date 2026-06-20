@@ -5,7 +5,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
-import com.example.roombooking.common.LocalUserManager;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.room.RoomItem;
@@ -33,7 +32,6 @@ public class CreateBookingViewModel extends ViewModel {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
-    private final LocalUserManager localUserManager;
     private final SimpleDateFormat apiDateTimeFormat =
             new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
 
@@ -54,12 +52,10 @@ public class CreateBookingViewModel extends ViewModel {
 
     public CreateBookingViewModel(
             BookingRepository bookingRepository,
-            RoomRepository roomRepository,
-            LocalUserManager localUserManager
+            RoomRepository roomRepository
     ) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
-        this.localUserManager = localUserManager;
     }
 
     public LiveData<CreateBookingFormState> getFormStateLiveData() {
@@ -100,7 +96,6 @@ public class CreateBookingViewModel extends ViewModel {
                 initialData,
                 apiDateTimeFormat
         );
-        state.setCreatedByName(localUserManager.getUserName());
         formStateLiveData.setValue(state);
     }
 
@@ -159,7 +154,6 @@ public class CreateBookingViewModel extends ViewModel {
         }
 
         CreateBookingFormState state = formState.copy();
-        state.setCreatedByName(localUserManager.getUserName());
 
         CreateBookingValidationResult validationResult =
                 CreateBookingFormMapper.validate(state);

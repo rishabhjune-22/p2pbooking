@@ -2,10 +2,14 @@ package com.example.roombooking.booking;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.TypedValue;
+import android.view.View;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,10 +18,13 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.AppCompatButton;
+import androidx.core.content.ContextCompat;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.roombooking.R;
+import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.booking.BookingActionData;
+import com.example.roombooking.model.booking.BookingEditHistoryItem;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
@@ -50,6 +57,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     private TextView tvBookingId;
     private TextView tvRoomName;
 
+    private TextView tvCreatedByDetails;
     private TextView tvVisitorDetails;
     private TextView tvVisitDetails;
     private TextView tvVisitorCategoryDetails;
@@ -59,6 +67,8 @@ public class BookingDetailActivity extends AppCompatActivity {
     private TextView tvRequestorDetails;
     private TextView tvLogisticsDetails;
     private TextView tvStatusDetails;
+    private TextView tvEditHistoryEmpty;
+    private LinearLayout layoutEditHistoryContainer;
 
     private AppCompatButton btnDeleteBooking;
     private AppCompatButton btnEditBooking;
@@ -83,6 +93,9 @@ public class BookingDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_detail);
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
@@ -101,6 +114,20 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         renderBookingDetails();
         updateButtonState();
+        swipeRefreshBookingDetail.post(() -> {
+            if (!canUpdateUi()) {
+                return;
+            }
+
+            swipeRefreshBookingDetail.setRefreshing(true);
+            refreshBookingDetails();
+        });
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        AuthSessionGuard.ensureAuthenticated(this);
     }
 
     private void initDependencies() {
@@ -113,6 +140,7 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvBookingId = findViewById(R.id.tvBookingId);
         tvRoomName = findViewById(R.id.tvRoomName);
 
+        tvCreatedByDetails = findViewById(R.id.tvCreatedByDetails);
         tvVisitorDetails = findViewById(R.id.tvVisitorDetails);
         tvVisitDetails = findViewById(R.id.tvVisitDetails);
         tvVisitorCategoryDetails = findViewById(R.id.tvVisitorCategoryDetails);
@@ -122,6 +150,8 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvRequestorDetails = findViewById(R.id.tvRequestorDetails);
         tvLogisticsDetails = findViewById(R.id.tvLogisticsDetails);
         tvStatusDetails = findViewById(R.id.tvStatusDetails);
+        tvEditHistoryEmpty = findViewById(R.id.tvEditHistoryEmpty);
+        layoutEditHistoryContainer = findViewById(R.id.layoutEditHistoryContainer);
 
         btnDeleteBooking = findViewById(R.id.btnDeleteBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
@@ -293,6 +323,7 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvBookingId.setText("Booking ID: " + bookingItem.getId());
         tvRoomName.setText("Room Name: " + safe(bookingItem.getRoomName()));
 
+        tvCreatedByDetails.setText(buildCreatedByDetails());
         tvVisitorDetails.setText(buildVisitorDetails());
         tvVisitDetails.setText(buildVisitDetails());
         tvVisitorCategoryDetails.setText(buildVisitorCategoryDetails());
@@ -302,6 +333,142 @@ public class BookingDetailActivity extends AppCompatActivity {
         tvRequestorDetails.setText(buildRequestorDetails());
         tvLogisticsDetails.setText(buildLogisticsDetails());
         tvStatusDetails.setText("Status: " + getDisplayStatus());
+        renderEditHistory();
+    }
+
+    private String buildCreatedByDetails() {
+        return "Created By: " + safe(bookingItem.getCreatedByName()) + "\n"
+                + "Created At: " + safe(formatDisplayDateTime(bookingItem.getCreatedAt()));
+    }
+
+    private void renderEditHistory() {
+        layoutEditHistoryContainer.removeAllViews();
+
+        List<BookingEditHistoryItem> history = bookingItem.getEditHistory();
+        if (history.isEmpty()) {
+            tvEditHistoryEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+
+        tvEditHistoryEmpty.setVisibility(View.GONE);
+
+        for (int i = 0; i < history.size(); i++) {
+            if (i > 0) {
+                layoutEditHistoryContainer.addView(createHistoryDivider());
+            }
+
+            layoutEditHistoryContainer.addView(createHistoryRow(history.get(i)));
+        }
+    }
+
+    private View createHistoryDivider() {
+        View divider = new View(this);
+        divider.setBackgroundColor(ContextCompat.getColor(this, R.color.detail_divider));
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                getResources().getDimensionPixelSize(R.dimen.space_1)
+        );
+        params.setMargins(
+                getResources().getDimensionPixelSize(R.dimen.space_8),
+                getResources().getDimensionPixelSize(R.dimen.space_12),
+                getResources().getDimensionPixelSize(R.dimen.space_8),
+                getResources().getDimensionPixelSize(R.dimen.space_12)
+        );
+        divider.setLayoutParams(params);
+        return divider;
+    }
+
+    private View createHistoryRow(BookingEditHistoryItem item) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        row.setPadding(
+                getResources().getDimensionPixelSize(R.dimen.space_8),
+                0,
+                getResources().getDimensionPixelSize(R.dimen.space_8),
+                0
+        );
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+
+        row.addView(createHistoryText(
+                "Edited by " + resolveEditorName(item) + "\n"
+                        + safe(formatDisplayDateTime(item.getEditedAt())),
+                R.color.detail_text_secondary,
+                R.dimen.text_13,
+                Typeface.NORMAL
+        ));
+
+        TextView fieldText = createHistoryText(
+                safe(item.getFieldLabel()),
+                R.color.detail_text_primary,
+                R.dimen.text_14,
+                Typeface.BOLD
+        );
+        LinearLayout.LayoutParams fieldParams = (LinearLayout.LayoutParams) fieldText.getLayoutParams();
+        fieldParams.topMargin = getResources().getDimensionPixelSize(R.dimen.space_8);
+        fieldText.setLayoutParams(fieldParams);
+        row.addView(fieldText);
+
+        row.addView(createHistoryText(
+                "Old: " + safe(formatAuditValue(item.getOldValue())) + "\n"
+                        + "New: " + safe(formatAuditValue(item.getNewValue())),
+                R.color.detail_text_primary,
+                R.dimen.text_14,
+                Typeface.NORMAL
+        ));
+
+        return row;
+    }
+
+    private TextView createHistoryText(
+            String text,
+            int colorRes,
+            int textSizeRes,
+            int typefaceStyle
+    ) {
+        TextView textView = new TextView(this);
+        textView.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        ));
+        textView.setText(text);
+        textView.setTextColor(ContextCompat.getColor(this, colorRes));
+        textView.setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
+                getResources().getDimension(textSizeRes)
+        );
+        textView.setTypeface(Typeface.DEFAULT, typefaceStyle);
+        textView.setLineSpacing(
+                getResources().getDimension(R.dimen.space_4),
+                1.0f
+        );
+        textView.setSingleLine(false);
+        textView.setHorizontallyScrolling(false);
+        return textView;
+    }
+
+    private String resolveEditorName(BookingEditHistoryItem item) {
+        if (!isBlank(item.getEditedByName())) {
+            return item.getEditedByName();
+        }
+
+        if (!isBlank(item.getEditedByEmail())) {
+            return item.getEditedByEmail();
+        }
+
+        return "Unknown user";
+    }
+
+    private String formatAuditValue(String value) {
+        return DateTimeUtils.formatDateTimesInText(value);
+    }
+
+    private String formatDisplayDateTime(String value) {
+        String formatted = DateTimeUtils.formatUtcToLocal(value);
+        return isBlank(formatted) ? value : formatted;
     }
     private String buildRoomChargesDetails() {
         return "Room charges received: "

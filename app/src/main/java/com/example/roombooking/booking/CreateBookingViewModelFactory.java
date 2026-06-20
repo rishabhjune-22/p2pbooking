@@ -4,23 +4,19 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.roombooking.common.LocalUserManager;
 import com.example.roombooking.room.RoomRepository;
 
 public class CreateBookingViewModelFactory implements ViewModelProvider.Factory {
 
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
-    private final LocalUserManager localUserManager;
 
     public CreateBookingViewModelFactory(
             BookingRepository bookingRepository,
-            RoomRepository roomRepository,
-            LocalUserManager localUserManager
+            RoomRepository roomRepository
     ) {
         this.bookingRepository = bookingRepository;
         this.roomRepository = roomRepository;
-        this.localUserManager = localUserManager;
     }
 
     @NonNull
@@ -30,8 +26,7 @@ public class CreateBookingViewModelFactory implements ViewModelProvider.Factory 
         if (modelClass.isAssignableFrom(CreateBookingViewModel.class)) {
             return (T) new CreateBookingViewModel(
                     bookingRepository,
-                    roomRepository,
-                    localUserManager
+                    roomRepository
             );
         }
 

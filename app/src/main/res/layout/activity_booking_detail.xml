@@ -129,9 +129,29 @@
                 android:orientation="vertical"
                 android:padding="@dimen/space_16">
 
-                <!-- VISITOR -->
+                <!-- CREATED BY -->
                 <LinearLayout
                     style="@style/DetailSectionHeader">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Created By" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvCreatedByDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- VISITOR -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
 
                     <ImageView
                         style="@style/DetailSectionIcon"
@@ -309,6 +329,33 @@
                 <TextView
                     android:id="@+id/tvStatusDetails"
                     style="@style/DetailContentText" />
+
+                <!-- EDIT HISTORY -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Edit History" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvEditHistoryEmpty"
+                    style="@style/DetailContentText"
+                    android:text="No edits recorded yet." />
+
+                <LinearLayout
+                    android:id="@+id/layoutEditHistoryContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
 
             </LinearLayout>
 

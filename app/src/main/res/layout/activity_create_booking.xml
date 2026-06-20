@@ -385,6 +385,21 @@
                 </RadioGroup>
 
                 <TextView
+                    android:id="@+id/btnClearVisitorCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="@dimen/space_36"
+                    android:paddingTop="@dimen/space_6"
+                    android:paddingBottom="@dimen/space_6"
+                    android:text="Clear Selection"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_13"
+                    android:textStyle="bold" />
+
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
@@ -599,26 +614,73 @@
                     android:layout_marginTop="@dimen/space_4"
                     android:background="@color/section_requestor" />
 
-                <EditText
-                    android:id="@+id/etBudgetHeadName"
-                    style="@style/CreateBookingEditText"
+                <RadioGroup
+                    android:id="@+id/rgBudgetHeadFocus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:drawableStart="@drawable/ic_documents"
-                    android:hint="Name" />
+                    android:orientation="vertical">
 
-                <EditText
-                    android:id="@+id/etBudgetHeadDepartmentName"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/ic_department"
-                    android:hint="Department Name" />
+                    <RadioButton
+                        android:id="@+id/rbBudgetHeadName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Name"
+                        android:textColor="@color/create_booking_text_secondary" />
 
-                <EditText
-                    android:id="@+id/etBudgetHeadProjectCode"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/ic_documents"
-                    android:hint="Project Code" />
+                    <EditText
+                        android:id="@+id/etBudgetHeadName"
+                        style="@style/CreateBookingEditText"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:drawableStart="@drawable/ic_documents"
+                        android:hint="Name" />
+
+                    <RadioButton
+                        android:id="@+id/rbBudgetHeadDepartmentName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_10"
+                        android:text="Department Name"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <EditText
+                        android:id="@+id/etBudgetHeadDepartmentName"
+                        style="@style/CreateBookingEditText"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:drawableStart="@drawable/ic_department"
+                        android:hint="Department Name" />
+
+                    <RadioButton
+                        android:id="@+id/rbBudgetHeadProjectCode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_10"
+                        android:text="Project Code"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <EditText
+                        android:id="@+id/etBudgetHeadProjectCode"
+                        style="@style/CreateBookingEditText"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:drawableStart="@drawable/ic_documents"
+                        android:hint="Project Code" />
+
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/btnClearBudgetHeadFocus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="@dimen/space_36"
+                    android:paddingTop="@dimen/space_6"
+                    android:paddingBottom="@dimen/space_6"
+                    android:text="Clear Selection"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_13"
+                    android:textStyle="bold" />
 
                 <!-- REQUESTOR DETAILS -->
                 <LinearLayout

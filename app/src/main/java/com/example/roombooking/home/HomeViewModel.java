@@ -717,6 +717,12 @@ public class HomeViewModel extends ViewModel {
         bookingRepository.clearFirstPageCaches();
     }
 
+    public static void clearInMemoryFirstPageCacheForLogout() {
+        synchronized (CACHE_LOCK) {
+            firstPageCache.clear();
+        }
+    }
+
     private CachedBookingPage getCachedBookingsForCurrentFilter() {
         synchronized (CACHE_LOCK) {
             CachedBookingPage cachedPage = firstPageCache.get(firstPageCacheKey());

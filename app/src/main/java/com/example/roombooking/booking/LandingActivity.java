@@ -27,8 +27,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.TypedValue;
 
 import com.example.roombooking.R;
-import com.example.roombooking.common.LocalUserManager;
-import com.example.roombooking.common.RequiredUserNamePrompt;
+import com.example.roombooking.auth.AuthLogoutManager;
+import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
@@ -85,7 +85,6 @@ public class LandingActivity extends AppCompatActivity {
 
     private LandingViewModel viewModel;
     private CalendarAvailabilityAdapter calendarAdapter;
-    private LocalUserManager localUserManager;
 
     private final Calendar selectedMonth = Calendar.getInstance();
 
@@ -111,7 +110,6 @@ public class LandingActivity extends AppCompatActivity {
     private String activeAvailabilitySheetKey = null;
     private boolean replacingAvailabilitySheet = false;
     private boolean hasHandledInitialResume = false;
-    private boolean userNamePromptShowing = false;
     private TextView activeAvailabilitySheetStatus = null;
     private AvailableRoomsResponse activeAvailableRoomsResponse = null;
     private AvailableRoomsRangeResponse activeAvailableRoomsRangeResponse = null;
@@ -143,9 +141,11 @@ public class LandingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_landing);
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.main));
-        localUserManager = new LocalUserManager(getApplicationContext());
 
         initViewModel();
         initViews();
@@ -155,7 +155,6 @@ public class LandingActivity extends AppCompatActivity {
         setupListeners();
         setupCalendarGestureSelection();
         observeViewModel();
-        ensureLocalUserName();
 
         loadAvailability();
     }
@@ -443,6 +442,11 @@ public class LandingActivity extends AppCompatActivity {
 
             if (itemId == R.id.menuAboutUs) {
                 showAboutDialog();
+                return true;
+            }
+
+            if (itemId == R.id.menuLogout) {
+                AuthLogoutManager.confirmAndLogout(this);
                 return true;
             }
 
@@ -831,12 +835,16 @@ public class LandingActivity extends AppCompatActivity {
             return CalendarDayItem.TYPE_AVAILABLE;
         }
 
-        if (availableRooms <= 0) {
-            return CalendarDayItem.TYPE_NOT_AVAILABLE;
+        if (day.hasPartialBooking() || day.hasBefore6pmBooking()) {
+            return CalendarDayItem.TYPE_HALF_AVAILABLE;
         }
 
         if (availableRooms == totalRooms) {
             return CalendarDayItem.TYPE_AVAILABLE;
+        }
+
+        if (availableRooms <= 0) {
+            return CalendarDayItem.TYPE_NOT_AVAILABLE;
         }
 
         double availablePercentage = (availableRooms * 100.0) / totalRooms;
@@ -1463,7 +1471,9 @@ public class LandingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        ensureLocalUserName();
+        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+            return;
+        }
         startSyncStatusTimer();
         if (!hasHandledInitialResume) {
             hasHandledInitialResume = true;
@@ -1471,24 +1481,6 @@ public class LandingActivity extends AppCompatActivity {
         }
 
         refreshAvailabilityIfStaleOnForeground();
-    }
-
-    private void ensureLocalUserName() {
-        if (localUserManager == null || localUserManager.hasValidUserName()) {
-            return;
-        }
-
-        showRequiredUserNamePrompt();
-    }
-
-    private void showRequiredUserNamePrompt() {
-        if (isFinishing() || isDestroyed() || userNamePromptShowing) {
-            return;
-        }
-
-        userNamePromptShowing = true;
-        RequiredUserNamePrompt.show(this, localUserManager, null)
-                .setOnDismissListener(d -> userNamePromptShowing = false);
     }
 
     @Override
