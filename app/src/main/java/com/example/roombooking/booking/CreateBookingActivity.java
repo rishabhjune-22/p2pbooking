@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 import android.text.Editable;
 import android.text.TextWatcher;
 import androidx.activity.OnBackPressedCallback;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -27,9 +29,14 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.roombooking.R;
+import com.example.roombooking.admin.BookingRequestDecisionRequest;
 import com.example.roombooking.auth.AuthSessionGuard;
+import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.room.RoomItem;
+import com.example.roombooking.requester.BookingRequestItem;
 import com.example.roombooking.room.RoomRepository;
+import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
@@ -38,9 +45,15 @@ import com.example.roombooking.utils.InternetErrorBanner;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class CreateBookingActivity extends AppCompatActivity {
 
@@ -53,6 +66,25 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_IS_PARTIAL_ROOM = "is_partial_room";
     public static final String EXTRA_AVAILABLE_FROM_DATE = "available_from_date";
     public static final String EXTRA_AVAILABLE_FROM_TIME = "available_from_time";
+    public static final String EXTRA_BOOKING_REQUEST_ID = "booking_request_id";
+    public static final String EXTRA_VISITOR_NAME = "visitor_name";
+    public static final String EXTRA_VISITOR_DESIGNATION = "visitor_designation";
+    public static final String EXTRA_VISITOR_ORGANISATION = "visitor_organisation";
+    public static final String EXTRA_VISITOR_GENDER = "visitor_gender";
+    public static final String EXTRA_VISITOR_ADDRESS = "visitor_address";
+    public static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
+    public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
+    public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
+    public static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    public static final String EXTRA_REQUESTOR_NAME = "requestor_name";
+    public static final String EXTRA_REQUESTOR_DESIGNATION = "requestor_designation";
+    public static final String EXTRA_REQUESTOR_DEPARTMENT = "requestor_department";
+    public static final String EXTRA_REQUESTOR_MOBILE = "requestor_mobile";
+    public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
+    public static final String EXTRA_ATTENDER_COUNT_PER_DAY = "attender_count_per_day";
+    public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
+    public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
+    public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
 
     private EditText etVisitorName;
     private EditText etVisitorDesignation;
@@ -83,6 +115,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private Button btnCreateBooking;
     private Button btnFillDummy;
+    private Button btnSendBackBooking;
+    private Button btnDeleteBookingRequest;
     private ImageButton btnBack;
 
     private RadioGroup rgVisitorCategory;
@@ -103,6 +137,13 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private CreateBookingViewModel viewModel;
     private CreateBookingFormState currentFormState;
+    private int bookingRequestId = -1;
+    private boolean bookingRequestApprovalMode = false;
+    private boolean approvalRequestInFlight = false;
+    private Call<ApiResponse<BookingRequestItem>> approveRequestCall;
+    private Call<ApiResponse<BookingRequestItem>> rejectRequestCall;
+    private Call<ApiResponse<BookingRequestItem>> sendBackRequestCall;
+    private Call<ApiResponse<BookingRequestItem>> deleteRequestCall;
     private final Random random = new Random();
 
     private final SimpleDateFormat displayFormat =
@@ -114,7 +155,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_booking);
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
 
@@ -124,6 +165,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         bindViews();
         setupScrollInsets();
         AppToolbarMenu.setup(this, findViewById(R.id.appToolbar));
+        configureBookingRequestApprovalMode();
         setupRoomSpinner();
         setupGenderSpinner();
         setupListeners();
@@ -131,6 +173,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         observeViewModel();
 
         viewModel.initialize(readInitialDataFromIntent());
+        applyBookingRequestPrefillFromIntent();
         viewModel.loadRooms();
     }
 
@@ -174,6 +217,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
         btnFillDummy = findViewById(R.id.btnFillDummy);
+        btnSendBackBooking = findViewById(R.id.btnSendBackBooking);
+        btnDeleteBookingRequest = findViewById(R.id.btnDeleteBookingRequest);
         btnBack = findViewById(R.id.btnBack);
 
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
@@ -259,7 +304,19 @@ public class CreateBookingActivity extends AppCompatActivity {
         });
 
         btnCreateBooking.setOnClickListener(v -> submitBooking());
-        btnFillDummy.setOnClickListener(v -> fillRandomBookingData());
+        if (bookingRequestApprovalMode) {
+            btnCreateBooking.setText("Approve");
+            btnFillDummy.setText("Reject");
+            btnFillDummy.setOnClickListener(v -> showRejectBookingRequestDialog());
+            btnSendBackBooking.setVisibility(View.VISIBLE);
+            btnSendBackBooking.setOnClickListener(v -> showSendBackBookingRequestDialog());
+            btnDeleteBookingRequest.setVisibility(View.VISIBLE);
+            btnDeleteBookingRequest.setOnClickListener(v -> showDeleteBookingRequestDialog());
+        } else {
+            btnSendBackBooking.setVisibility(View.GONE);
+            btnDeleteBookingRequest.setVisibility(View.GONE);
+            btnFillDummy.setOnClickListener(v -> fillRandomBookingData());
+        }
         btnBack.setOnClickListener(v -> handleBackPress());
 
         setupChargeAmountListener(
@@ -340,6 +397,14 @@ public class CreateBookingActivity extends AppCompatActivity {
         });
     }
 
+    private void configureBookingRequestApprovalMode() {
+        Intent intent = getIntent();
+        bookingRequestId = intent != null
+                ? intent.getIntExtra(EXTRA_BOOKING_REQUEST_ID, -1)
+                : -1;
+        bookingRequestApprovalMode = bookingRequestId > 0;
+    }
+
     private CreateBookingInitialData readInitialDataFromIntent() {
         Intent intent = getIntent();
 
@@ -414,11 +479,76 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private void updateRoomSelectionState() {
         boolean hasPreselectedRoom = currentFormState != null
-                && currentFormState.hasPreselectedRoom();
+                && currentFormState.hasPreselectedRoom()
+                && !bookingRequestApprovalMode;
         spinnerRoom.setEnabled(!hasPreselectedRoom);
         spinnerRoom.setClickable(!hasPreselectedRoom);
         spinnerRoom.setFocusable(!hasPreselectedRoom);
         spinnerRoom.setAlpha(hasPreselectedRoom ? 0.65f : 1.0f);
+    }
+
+    private void applyBookingRequestPrefillFromIntent() {
+        if (!bookingRequestApprovalMode) {
+            return;
+        }
+
+        Intent intent = getIntent();
+        if (intent == null) {
+            return;
+        }
+
+        etVisitorName.setText(intent.getStringExtra(EXTRA_VISITOR_NAME));
+        etVisitorDesignation.setText(intent.getStringExtra(EXTRA_VISITOR_DESIGNATION));
+        etVisitorOrganisation.setText(intent.getStringExtra(EXTRA_VISITOR_ORGANISATION));
+        etVisitorAddress.setText(intent.getStringExtra(EXTRA_VISITOR_ADDRESS));
+        etVisitorMobile.setText(intent.getStringExtra(EXTRA_VISITOR_MOBILE));
+        etVisitorEmail.setText(intent.getStringExtra(EXTRA_VISITOR_EMAIL));
+        etPurpose.setText(intent.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
+
+        etRequestorName.setText(intent.getStringExtra(EXTRA_REQUESTOR_NAME));
+        etRequestorDesignation.setText(intent.getStringExtra(EXTRA_REQUESTOR_DESIGNATION));
+        etRequestorDepartment.setText(intent.getStringExtra(EXTRA_REQUESTOR_DEPARTMENT));
+        etRequestorMobile.setText(intent.getStringExtra(EXTRA_REQUESTOR_MOBILE));
+
+        setGenderSelection(intent.getStringExtra(EXTRA_VISITOR_GENDER));
+        setVisitorCategorySelection(intent.getStringExtra(EXTRA_VISITOR_CATEGORY));
+
+        boolean attenderRequired = intent.getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
+        cbAttenderRequired.setChecked(attenderRequired);
+        if (attenderRequired) {
+            int count = intent.getIntExtra(EXTRA_ATTENDER_COUNT_PER_DAY, 0);
+            etAttenderCount.setText(count > 0 ? String.valueOf(count) : "");
+            cbGeneralShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_GENERAL_SHIFT, false));
+            cbMorningShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
+            cbDayShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
+            updateAttenderControlsState();
+        }
+
+        showMessage("Review requester details before creating or rejecting this booking.");
+    }
+
+    private void setGenderSelection(String gender) {
+        if (isBlank(gender) || spinnerGender == null) {
+            return;
+        }
+
+        for (int i = 0; i < spinnerGender.getCount(); i++) {
+            Object item = spinnerGender.getItemAtPosition(i);
+            if (item != null && gender.equalsIgnoreCase(item.toString())) {
+                spinnerGender.setSelection(i);
+                return;
+            }
+        }
+    }
+
+    private void setVisitorCategorySelection(String visitorCategory) {
+        if ("institute_guest".equalsIgnoreCase(visitorCategory)) {
+            rgVisitorCategory.check(R.id.rbInstituteGuest);
+        } else if ("conference_workshop_guest".equalsIgnoreCase(visitorCategory)) {
+            rgVisitorCategory.check(R.id.rbConferenceGuest);
+        } else if ("other_guest".equalsIgnoreCase(visitorCategory)) {
+            rgVisitorCategory.check(R.id.rbOtherGuest);
+        }
     }
 
     private Integer getSelectedRoomId() {
@@ -621,11 +751,16 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void submitBooking() {
-        if (viewModel.isCreating()) {
+        if (isBusy()) {
             return;
         }
 
         tvMessage.setVisibility(View.GONE);
+
+        if (bookingRequestApprovalMode) {
+            approveBookingRequestFromForm();
+            return;
+        }
 
         viewModel.create(collectFormData());
     }
@@ -633,11 +768,11 @@ public class CreateBookingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AuthSessionGuard.ensureAuthenticated(this);
+        AuthSessionGuard.ensureAdmin(this);
     }
 
     private void handleBackPress() {
-        if (viewModel.isCreating()) {
+        if (isBusy()) {
             showMessage("Please wait for the booking request to finish.");
             return;
         }
@@ -733,6 +868,333 @@ public class CreateBookingActivity extends AppCompatActivity {
         sendBookingCreatedResult();
         showMessage(result.getMessage());
         finish();
+    }
+
+    private Map<String, Object> toApprovalPayload(CreateBookingFormState data) {
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("room", data.getRoomId());
+        payload.put("arrival_at", data.getArrivalAt());
+        payload.put("departure_at", data.getDepartureAt());
+        payload.put("visitor_name", data.getVisitorName());
+        payload.put("visitor_designation", data.getVisitorDesignation());
+        payload.put("visitor_organisation", data.getVisitorOrganisation());
+        payload.put("visitor_gender", data.getVisitorGender());
+        payload.put("visitor_address", data.getVisitorAddress());
+        payload.put("visitor_mobile", data.getVisitorMobile());
+        payload.put("visitor_email", data.getVisitorEmail());
+        payload.put("purpose_of_visit", data.getPurpose());
+        payload.put("visitor_category", data.getVisitorCategory());
+        payload.put("attender_required", data.isAttenderRequired());
+        payload.put("attender_count_per_day", data.getAttenderCountPerDay());
+        payload.put("attender_general_shift", data.isAttenderGeneralShift());
+        payload.put("attender_morning_shift", data.isAttenderMorningShift());
+        payload.put("attender_day_shift", data.isAttenderDayShift());
+        payload.put("room_charges_status", data.getRoomChargesStatus());
+        payload.put("attender_charges_status", data.getAttenderChargesStatus());
+        payload.put("room_charges_amount", data.getRoomChargesAmount());
+        payload.put("attender_charges_amount", data.getAttenderChargesAmount());
+        payload.put("budget_head_type", data.getBudgetHeadType());
+        payload.put("budget_head_value", data.getBudgetHeadValue());
+        payload.put("budget_head_name", data.getBudgetHeadName());
+        payload.put("budget_head_department_name", data.getBudgetHeadDepartmentName());
+        payload.put("budget_head_project_code", data.getBudgetHeadProjectCode());
+        payload.put("requestor_name", data.getRequestorName());
+        payload.put("requestor_designation", data.getRequestorDesignation());
+        payload.put("requestor_department", data.getRequestorDepartment());
+        payload.put("requestor_mobile", data.getRequestorMobile());
+        payload.put("logistics_name", data.getLogisticsName());
+        payload.put("logistics_designation", data.getLogisticsDesignation());
+        payload.put("logistics_mobile", data.getLogisticsMobile());
+        payload.put("remarks", "");
+        return payload;
+    }
+
+    private void approveBookingRequestFromForm() {
+        CreateBookingFormState state = collectFormData();
+        CreateBookingValidationResult validationResult = CreateBookingFormMapper.validate(state);
+        if (!validationResult.isValid()) {
+            handleValidationError(validationResult);
+            return;
+        }
+
+        setLoading(true);
+        approvalRequestInFlight = true;
+        approveRequestCall = RetrofitClient.getApiService(getApplicationContext())
+                .approveBookingRequestFromForm(
+                        bookingRequestId,
+                        toApprovalPayload(state)
+                );
+        approveRequestCall.enqueue(new Callback<ApiResponse<BookingRequestItem>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Response<ApiResponse<BookingRequestItem>> response
+            ) {
+                if (call != approveRequestCall) return;
+                approveRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()) {
+                    showError(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Booking request could not be approved."
+                    ));
+                    return;
+                }
+
+                new BookingRepository(getApplicationContext()).clearFirstPageCaches();
+                new BookingRepository(getApplicationContext()).clearAvailabilityCachesForBookingMutation();
+                sendBookingCreatedResult();
+                showMessage("Booking created successfully.");
+                finish();
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != approveRequestCall) return;
+                approveRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+                if (!call.isCanceled()) {
+                    showError(ApiErrorUtils.messageFromThrowable(t));
+                }
+            }
+        });
+    }
+
+    private void showRejectBookingRequestDialog() {
+        if (isBusy()) {
+            return;
+        }
+
+        EditText remarks = new EditText(this);
+        remarks.setHint("Remarks (optional)");
+        remarks.setSingleLine(false);
+        remarks.setMinLines(2);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Reject Booking Request?")
+                .setView(remarks)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton("Reject", (dialog, which) -> rejectBookingRequest(getText(remarks)))
+                .show();
+    }
+
+    private void rejectBookingRequest(String remarks) {
+        setLoading(true);
+        approvalRequestInFlight = true;
+        rejectRequestCall = RetrofitClient.getApiService(getApplicationContext())
+                .rejectBookingRequest(
+                        bookingRequestId,
+                        new BookingRequestDecisionRequest(null, remarks)
+                );
+        rejectRequestCall.enqueue(new Callback<ApiResponse<BookingRequestItem>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Response<ApiResponse<BookingRequestItem>> response
+            ) {
+                if (call != rejectRequestCall) return;
+                rejectRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()) {
+                    showError(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Booking request could not be rejected."
+                    ));
+                    return;
+                }
+
+                sendBookingCreatedResult();
+                showMessage("Booking request rejected.");
+                finish();
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != rejectRequestCall) return;
+                rejectRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+                if (!call.isCanceled()) {
+                    showError(ApiErrorUtils.messageFromThrowable(t));
+                }
+            }
+        });
+    }
+
+    private void showSendBackBookingRequestDialog() {
+        if (isBusy()) {
+            return;
+        }
+
+        EditText remarks = new EditText(this);
+        remarks.setHint("Explain what needs to be corrected");
+        remarks.setSingleLine(false);
+        remarks.setMinLines(3);
+
+        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Send Back for Correction")
+                .setView(remarks)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton("Send Back", null)
+                .create();
+        dialog.setOnShowListener(shownDialog -> dialog
+                .getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String value = getText(remarks);
+                    if (value.isEmpty()) {
+                        remarks.setError("Remarks are required.");
+                        return;
+                    }
+                    dialog.dismiss();
+                    sendBackBookingRequest(value);
+                }));
+        dialog.show();
+    }
+
+    private void sendBackBookingRequest(String remarks) {
+        setLoading(true);
+        approvalRequestInFlight = true;
+        sendBackRequestCall = RetrofitClient.getApiService(getApplicationContext())
+                .sendBackBookingRequest(
+                        bookingRequestId,
+                        new BookingRequestDecisionRequest(null, remarks)
+                );
+        sendBackRequestCall.enqueue(new Callback<ApiResponse<BookingRequestItem>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Response<ApiResponse<BookingRequestItem>> response
+            ) {
+                if (call != sendBackRequestCall) return;
+                sendBackRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()) {
+                    showError(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Booking request could not be sent back for correction."
+                    ));
+                    return;
+                }
+
+                sendBookingCreatedResult();
+                showMessage("Request sent back for correction.");
+                finish();
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != sendBackRequestCall) return;
+                sendBackRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+                if (!call.isCanceled()) {
+                    showError(ApiErrorUtils.messageFromThrowable(t));
+                }
+            }
+        });
+    }
+
+    private void showDeleteBookingRequestDialog() {
+        if (isBusy()) {
+            return;
+        }
+
+        TextView message = new TextView(this);
+        message.setText("Are you sure you want to delete this booking request?");
+        message.setTextColor(getColor(R.color.detail_text_primary));
+        message.setTextSize(14);
+        message.setPadding(0, 0, 0, getResources().getDimensionPixelSize(R.dimen.space_10));
+
+        EditText remarks = new EditText(this);
+        remarks.setHint("Remarks");
+        remarks.setSingleLine(false);
+        remarks.setMinLines(2);
+
+        LinearLayout content = new LinearLayout(this);
+        content.setOrientation(LinearLayout.VERTICAL);
+        int horizontalPadding = getResources().getDimensionPixelSize(R.dimen.space_20);
+        content.setPadding(horizontalPadding, getResources().getDimensionPixelSize(R.dimen.space_6), horizontalPadding, 0);
+        content.addView(message);
+        content.addView(remarks);
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Delete Request")
+                .setView(content)
+                .setNegativeButton(R.string.action_cancel, null)
+                .setPositiveButton("Delete", (dialog, which) -> deleteBookingRequest(getText(remarks)))
+                .show();
+    }
+
+    private void deleteBookingRequest(String remarks) {
+        setLoading(true);
+        approvalRequestInFlight = true;
+        deleteRequestCall = RetrofitClient.getApiService(getApplicationContext())
+                .deleteAdminBookingRequest(
+                        bookingRequestId,
+                        new BookingRequestDecisionRequest(null, remarks)
+                );
+        deleteRequestCall.enqueue(new Callback<ApiResponse<BookingRequestItem>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Response<ApiResponse<BookingRequestItem>> response
+            ) {
+                if (call != deleteRequestCall) return;
+                deleteRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()) {
+                    showError(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Booking request could not be deleted."
+                    ));
+                    return;
+                }
+
+                sendBookingCreatedResult();
+                showMessage("Booking request deleted successfully.");
+                finish();
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != deleteRequestCall) return;
+                deleteRequestCall = null;
+                approvalRequestInFlight = false;
+                setLoading(false);
+                if (!call.isCanceled()) {
+                    showError(ApiErrorUtils.messageFromThrowable(t));
+                }
+            }
+        });
     }
 
     private void setupChargeAmountListener(RadioGroup group, EditText amountField, int yesId) {
@@ -881,7 +1343,19 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void setLoading(boolean loading) {
         btnCreateBooking.setEnabled(!loading);
         btnCreateBooking.setAlpha(loading ? 0.65f : 1.0f);
-        btnCreateBooking.setText(loading ? "Please wait..." : "Create Booking");
+        btnCreateBooking.setText(loading ? "Please wait..." : (bookingRequestApprovalMode ? "Approve" : "Create Booking"));
+        if (bookingRequestApprovalMode && btnFillDummy != null) {
+            btnFillDummy.setEnabled(!loading);
+            btnFillDummy.setAlpha(loading ? 0.65f : 1.0f);
+        }
+        if (bookingRequestApprovalMode && btnSendBackBooking != null) {
+            btnSendBackBooking.setEnabled(!loading);
+            btnSendBackBooking.setAlpha(loading ? 0.65f : 1.0f);
+        }
+        if (bookingRequestApprovalMode && btnDeleteBookingRequest != null) {
+            btnDeleteBookingRequest.setEnabled(!loading);
+            btnDeleteBookingRequest.setAlpha(loading ? 0.65f : 1.0f);
+        }
     }
 
     private void showError(String message) {
@@ -906,6 +1380,10 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isBusy() {
+        return viewModel.isCreating() || approvalRequestInFlight;
     }
 
     private void fillRandomBookingData() {
@@ -1010,6 +1488,27 @@ public class CreateBookingActivity extends AppCompatActivity {
     private String generateRandomEmail(String name) {
         String cleanName = name.toLowerCase(Locale.ROOT).replace(" ", ".");
         return cleanName + random.nextInt(1000) + "@test.com";
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (approveRequestCall != null && !approveRequestCall.isCanceled()) {
+            approveRequestCall.cancel();
+        }
+        if (rejectRequestCall != null && !rejectRequestCall.isCanceled()) {
+            rejectRequestCall.cancel();
+        }
+        if (sendBackRequestCall != null && !sendBackRequestCall.isCanceled()) {
+            sendBackRequestCall.cancel();
+        }
+        if (deleteRequestCall != null && !deleteRequestCall.isCanceled()) {
+            deleteRequestCall.cancel();
+        }
+        approveRequestCall = null;
+        rejectRequestCall = null;
+        sendBackRequestCall = null;
+        deleteRequestCall = null;
+        super.onDestroy();
     }
 
 }

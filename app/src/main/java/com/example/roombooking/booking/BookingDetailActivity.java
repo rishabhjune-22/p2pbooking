@@ -93,7 +93,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_booking_detail);
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
 
@@ -127,7 +127,7 @@ public class BookingDetailActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AuthSessionGuard.ensureAuthenticated(this);
+        AuthSessionGuard.ensureAdmin(this);
     }
 
     private void initDependencies() {

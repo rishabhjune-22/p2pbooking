@@ -12,6 +12,7 @@ import com.example.roombooking.R;
 import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.auth.LoginActivity;
 import com.example.roombooking.booking.LandingActivity;
+import com.example.roombooking.requester.RequesterLandingActivity;
 import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.InternetErrorBanner;
 
@@ -38,7 +39,9 @@ public class SplashActivity extends AppCompatActivity {
 
         initDependencies();
         startSplashDelayTimer();
-        if (authSessionManager.isLoggedIn()) {
+        if (authSessionManager.isLoggedIn()
+                && authSessionManager.isApproved()
+                && authSessionManager.isAdminLike()) {
             startPreloadTimeoutTimer();
             preloadRooms();
         } else {
@@ -90,20 +93,23 @@ public class SplashActivity extends AppCompatActivity {
 
         if (!canMoveAhead) return;
 
-        if (!authSessionManager.isLoggedIn()) {
+        if (!authSessionManager.isLoggedIn() || !authSessionManager.isApproved()) {
             navigateToLogin();
             return;
         }
 
-        navigateToLanding();
+        navigateToRoleLanding();
     }
 
-    private void navigateToLanding() {
+    private void navigateToRoleLanding() {
         if (navigationDone) return;
 
         navigationDone = true;
 
-        Intent intent = new Intent(SplashActivity.this, LandingActivity.class);
+        Class<?> destination = authSessionManager.isRequester()
+                ? RequesterLandingActivity.class
+                : LandingActivity.class;
+        Intent intent = new Intent(SplashActivity.this, destination);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);

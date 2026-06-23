@@ -6,12 +6,10 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.GestureDetector;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,9 +25,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.util.TypedValue;
 
 import com.example.roombooking.R;
-import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.auth.AuthSessionGuard;
-import com.example.roombooking.home.HomeActivity;
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.DateTimeUtils;
@@ -37,6 +33,7 @@ import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.example.roombooking.utils.AppDiagnostics;
+import com.example.roombooking.utils.AppToolbarMenu;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
@@ -141,7 +138,7 @@ public class LandingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_landing);
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
 
@@ -242,25 +239,7 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     private void setupToolbarMenu() {
-        materialToolbar.post(this::tintToolbarBreadcrumbIcon);
-
-        materialToolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.actionBreadcrumb) {
-                View menuView = materialToolbar.findViewById(R.id.actionBreadcrumb);
-                showLandingPopupMenu(menuView != null ? menuView : materialToolbar);
-                return true;
-            }
-
-            return false;
-        });
-    }
-
-    private void tintToolbarBreadcrumbIcon() {
-        MenuItem breadcrumbItem = materialToolbar.getMenu().findItem(R.id.actionBreadcrumb);
-
-        if (breadcrumbItem != null && breadcrumbItem.getIcon() != null) {
-            breadcrumbItem.getIcon().setTint(getColor(R.color.white));
-        }
+        AppToolbarMenu.setupAdmin(this, materialToolbar);
     }
 
     private void setupCheckAvailabilityButton() {
@@ -418,56 +397,6 @@ public class LandingActivity extends AppCompatActivity {
 
             handleDeleteBookingResult(result);
         });
-    }
-
-    private void showLandingPopupMenu(View anchor) {
-        PopupMenu popupMenu = new PopupMenu(this, anchor, android.view.Gravity.END);
-
-        popupMenu.getMenuInflater().inflate(
-                R.menu.menu_landing_popup,
-                popupMenu.getMenu()
-        );
-
-        popupMenu.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.menuBookings) {
-                openBookingsScreen();
-                return true;
-            }
-
-            if (itemId == R.id.menuAvailability) {
-                return true;
-            }
-
-            if (itemId == R.id.menuAboutUs) {
-                showAboutDialog();
-                return true;
-            }
-
-            if (itemId == R.id.menuLogout) {
-                AuthLogoutManager.confirmAndLogout(this);
-                return true;
-            }
-
-            return false;
-        });
-
-        popupMenu.show();
-    }
-
-    private void openBookingsScreen() {
-        Intent intent = new Intent(LandingActivity.this, HomeActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
-    }
-
-    private void showAboutDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.about_title)
-                .setMessage(R.string.about_message)
-                .setPositiveButton(R.string.action_close, null)
-                .show();
     }
 
     private void setupCalendarGestureSelection() {
@@ -1471,7 +1400,7 @@ public class LandingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
         startSyncStatusTimer();

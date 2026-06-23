@@ -108,7 +108,7 @@ public class EditBookingActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_booking);
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
@@ -138,7 +138,7 @@ public class EditBookingActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        AuthSessionGuard.ensureAuthenticated(this);
+        AuthSessionGuard.ensureAdmin(this);
     }
 
     private void initDependencies() {

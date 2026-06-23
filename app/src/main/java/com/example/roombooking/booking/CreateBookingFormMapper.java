@@ -32,11 +32,11 @@ final class CreateBookingFormMapper {
             boolean hasDepartureDate = !isEmpty(initialData.getDepartureDate());
 
             if (hasArrivalDate) {
-                setCalendarDateOnly(arrival, initialData.getArrivalDate(), 10, 0);
+                setCalendarValue(arrival, initialData.getArrivalDate(), 10, 0, apiDateTimeFormat);
             }
 
             if (hasDepartureDate) {
-                setCalendarDateOnly(departure, initialData.getDepartureDate(), 10, 0);
+                setCalendarValue(departure, initialData.getDepartureDate(), 10, 0, apiDateTimeFormat);
             }
 
             state.setHasPreselectedDateRange(hasArrivalDate && hasDepartureDate);
@@ -211,6 +211,29 @@ final class CreateBookingFormMapper {
         } catch (Exception ignored) {
             // Keep default calendar value.
         }
+    }
+
+    private static void setCalendarValue(
+            Calendar calendar,
+            String value,
+            int defaultHour,
+            int defaultMinute,
+            SimpleDateFormat apiDateTimeFormat
+    ) {
+        if (isEmpty(value)) {
+            return;
+        }
+
+        if (value.contains("T")) {
+            try {
+                calendar.setTime(apiDateTimeFormat.parse(value));
+                return;
+            } catch (Exception ignored) {
+                // Fall back to date-only parsing below.
+            }
+        }
+
+        setCalendarDateOnly(calendar, value, defaultHour, defaultMinute);
     }
 
     private static boolean isPositiveAmount(String amount) {

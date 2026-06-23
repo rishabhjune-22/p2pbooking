@@ -8,6 +8,7 @@
     android:clipToPadding="false"
     android:fillViewport="true"
     android:overScrollMode="never"
+    android:paddingBottom="@dimen/space_24"
     android:scrollbars="none">
 
     <LinearLayout
@@ -53,13 +54,59 @@
                 android:textColor="@color/detail_text_secondary"
                 android:textSize="@dimen/text_14" />
 
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_20"
+                android:background="@drawable/bg_create_booking_info"
+                android:orientation="horizontal"
+                android:padding="@dimen/space_4">
+
+                <TextView
+                    android:id="@+id/tabAdmin"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/space_42"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_create_booking_primary_button"
+                    android:gravity="center"
+                    android:text="@string/role_admin"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tabRequester"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/space_42"
+                    android:layout_marginStart="@dimen/space_4"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text="@string/role_requester"
+                    android:textColor="@color/detail_text_secondary"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvRoleContext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_12"
+                android:gravity="center"
+                android:text="@string/logging_in_as_admin"
+                android:textColor="@color/detail_text_secondary"
+                android:textSize="@dimen/text_13"
+                android:textStyle="bold" />
+
             <EditText
                 android:id="@+id/etEmail"
                 style="@style/CreateBookingEditText"
-                android:layout_marginTop="@dimen/space_24"
+                android:layout_marginTop="@dimen/space_18"
                 android:autofillHints="emailAddress"
                 android:drawableStart="@drawable/ic_email"
                 android:hint="@string/email"
+                android:imeOptions="actionNext"
                 android:inputType="textEmailAddress"
                 android:singleLine="true" />
 
@@ -70,6 +117,7 @@
                 android:autofillHints="password"
                 android:drawableStart="@android:drawable/ic_lock_lock"
                 android:hint="@string/password"
+                android:imeOptions="actionDone"
                 android:inputType="textPassword"
                 android:singleLine="true" />
 
@@ -116,6 +164,10 @@
                 android:textStyle="bold" />
 
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/space_96" />
 
     </LinearLayout>
 

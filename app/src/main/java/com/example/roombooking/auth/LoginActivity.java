@@ -1,12 +1,16 @@
 package com.example.roombooking.auth;
 
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Patterns;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -16,7 +20,6 @@ import androidx.appcompat.widget.AppCompatButton;
 
 import com.example.roombooking.R;
 import com.example.roombooking.api.RetrofitClient;
-import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.sync.LightBackgroundSyncScheduler;
 import com.example.roombooking.utils.ApiErrorUtils;
@@ -28,34 +31,46 @@ import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
+    public static final String EXTRA_SELECTED_ROLE = "selected_role";
+
+    private TextView tabAdmin;
+    private TextView tabRequester;
+    private TextView tvRoleContext;
     private EditText etEmail;
     private EditText etPassword;
     private AppCompatButton btnLogin;
     private TextView tvSignup;
     private TextView tvError;
     private ProgressBar progressBar;
+    private ScrollView rootView;
 
     private AuthSessionManager sessionManager;
     private Call<ApiResponse<AuthResponse>> loginCall;
+    private String selectedRole = AuthSessionManager.ROLE_ADMIN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sessionManager = new AuthSessionManager(getApplicationContext());
-        if (sessionManager.isLoggedIn()) {
-            openLanding();
+        if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
+            AuthSessionGuard.openLandingForSession(this);
             return;
         }
 
         setContentView(R.layout.activity_login);
-        EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
+        EdgeToEdgeUtils.applySystemBarAndImeInsets(this, findViewById(R.id.rootView));
 
         bindViews();
+        selectRole(getIntent().getStringExtra(EXTRA_SELECTED_ROLE));
         setupListeners();
         showSessionMessageIfNeeded();
     }
 
     private void bindViews() {
+        rootView = findViewById(R.id.rootView);
+        tabAdmin = findViewById(R.id.tabAdmin);
+        tabRequester = findViewById(R.id.tabRequester);
+        tvRoleContext = findViewById(R.id.tvRoleContext);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -66,9 +81,64 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnLogin.setOnClickListener(v -> login());
+        tabAdmin.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_ADMIN));
+        tabRequester.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_REQUESTER));
         tvSignup.setOnClickListener(v -> {
-            startActivity(new Intent(this, SignupActivity.class));
+            Intent intent = new Intent(this, SignupActivity.class);
+            intent.putExtra(EXTRA_SELECTED_ROLE, selectedRole);
+            startActivity(intent);
         });
+        setupKeyboardNavigation();
+        setupFocusScroll();
+        PasswordVisibilityToggle.attach(etPassword);
+    }
+
+    private void setupKeyboardNavigation() {
+        etEmail.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_NEXT) {
+                focusAndScroll(etPassword);
+                return true;
+            }
+            return false;
+        });
+        etPassword.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                hideKeyboard();
+                login();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    private void setupFocusScroll() {
+        View.OnFocusChangeListener listener = (view, hasFocus) -> {
+            if (hasFocus) {
+                scrollToView(rootView, view);
+            }
+        };
+        etEmail.setOnFocusChangeListener(listener);
+        etPassword.setOnFocusChangeListener(listener);
+    }
+
+    private void selectRole(String role) {
+        selectedRole = AuthSessionManager.ROLE_REQUESTER.equals(role)
+                ? AuthSessionManager.ROLE_REQUESTER
+                : AuthSessionManager.ROLE_ADMIN;
+
+        boolean isAdmin = AuthSessionManager.ROLE_ADMIN.equals(selectedRole);
+        tabAdmin.setBackgroundResource(isAdmin
+                ? R.drawable.bg_create_booking_primary_button
+                : R.drawable.bg_create_booking_info);
+        tabRequester.setBackgroundResource(isAdmin
+                ? R.drawable.bg_create_booking_info
+                : R.drawable.bg_create_booking_primary_button);
+        tabAdmin.setTextColor(getColor(isAdmin ? R.color.white : R.color.detail_text_secondary));
+        tabRequester.setTextColor(getColor(isAdmin ? R.color.detail_text_secondary : R.color.white));
+        tvRoleContext.setText(isAdmin
+                ? R.string.logging_in_as_admin
+                : R.string.logging_in_as_requester);
+        hideError();
     }
 
     private void showSessionMessageIfNeeded() {
@@ -91,8 +161,10 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         setLoading(true);
-        loginCall = RetrofitClient.getAuthApiService(getApplicationContext())
-                .login(new LoginRequest(email, password));
+        LoginRequest request = new LoginRequest(email, password, selectedRole);
+        loginCall = AuthSessionManager.ROLE_REQUESTER.equals(selectedRole)
+                ? RetrofitClient.getAuthApiService(getApplicationContext()).requesterLogin(request)
+                : RetrofitClient.getAuthApiService(getApplicationContext()).adminLogin(request);
         loginCall.enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
             public void onResponse(
@@ -114,14 +186,20 @@ public class LoginActivity extends AppCompatActivity {
                     return;
                 }
 
-                sessionManager.saveSession(response.body().getData());
+                AuthResponse authResponse = response.body().getData();
+                if (!authResponse.hasTokens()) {
+                    showError(getString(R.string.error_invalid_credentials));
+                    return;
+                }
+
+                sessionManager.saveSession(authResponse);
                 LightBackgroundSyncScheduler.schedule(getApplicationContext());
                 Toast.makeText(
                         LoginActivity.this,
                         R.string.message_login_success,
                         Toast.LENGTH_SHORT
                 ).show();
-                openLanding();
+                AuthSessionGuard.openLandingForSession(LoginActivity.this);
             }
 
             @Override
@@ -142,19 +220,19 @@ public class LoginActivity extends AppCompatActivity {
     private boolean validate(String email, String password) {
         if (email.isEmpty()) {
             showError(getString(R.string.error_email_required));
-            etEmail.requestFocus();
+            focusAndScroll(etEmail);
             return false;
         }
 
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             showError(getString(R.string.error_email_invalid));
-            etEmail.requestFocus();
+            focusAndScroll(etEmail);
             return false;
         }
 
         if (password.isEmpty()) {
             showError(getString(R.string.error_password_required));
-            etPassword.requestFocus();
+            focusAndScroll(etPassword);
             return false;
         }
 
@@ -176,6 +254,7 @@ public class LoginActivity extends AppCompatActivity {
                 ? getString(R.string.error_generic)
                 : message);
         tvError.setVisibility(View.VISIBLE);
+        scrollToView(rootView, tvError);
     }
 
     private void hideError() {
@@ -187,11 +266,42 @@ public class LoginActivity extends AppCompatActivity {
         return editText.getText() != null ? editText.getText().toString().trim() : "";
     }
 
-    private void openLanding() {
-        Intent intent = new Intent(this, LandingActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
+    private void focusAndScroll(View view) {
+        if (view == null) return;
+        view.requestFocus();
+        scrollToView(rootView, view);
+    }
+
+    private void scrollToView(final ScrollView scrollView, final View view) {
+        if (scrollView == null || view == null) return;
+        view.postDelayed(() -> {
+            View content = scrollView.getChildAt(0);
+            if (content == null) return;
+            int targetTop = getRelativeTop(content, view)
+                    - getResources().getDimensionPixelSize(R.dimen.space_24);
+            scrollView.smoothScrollTo(0, Math.max(0, targetTop));
+        }, 250);
+    }
+
+    private int getRelativeTop(View parent, View child) {
+        int top = child.getTop();
+        View current = child;
+        while (current.getParent() instanceof View && current.getParent() != parent) {
+            current = (View) current.getParent();
+            top += current.getTop();
+        }
+        return top;
+    }
+
+    private void hideKeyboard() {
+        View view = getCurrentFocus();
+        if (view == null) {
+            view = rootView;
+        }
+        InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null && view != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 
     @Override

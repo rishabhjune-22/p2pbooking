@@ -7,12 +7,15 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 
-import androidx.appcompat.app.AlertDialog;
-
 import com.example.roombooking.R;
+import com.example.roombooking.admin.AdminBookingRequestsActivity;
+import com.example.roombooking.admin.AdminRequesterAccountsActivity;
 import com.example.roombooking.auth.AuthLogoutManager;
+import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.home.HomeActivity;
+import com.example.roombooking.requester.RequesterLandingActivity;
+import com.example.roombooking.requester.RequesterRequestsActivity;
 import com.google.android.material.appbar.MaterialToolbar;
 
 public final class AppToolbarMenu {
@@ -21,6 +24,46 @@ public final class AppToolbarMenu {
     }
 
     public static void setup(Activity activity, MaterialToolbar toolbar) {
+        setupAdmin(activity, toolbar);
+    }
+
+    public static void setupAdmin(Activity activity, MaterialToolbar toolbar) {
+        setup(activity, toolbar, R.menu.menu_landing_popup, currentAdminMenuItem(activity));
+    }
+
+    public static void setupRequester(Activity activity, MaterialToolbar toolbar) {
+        setup(
+                activity,
+                toolbar,
+                R.menu.menu_requester_secondary_popup,
+                currentRequesterMenuItem(activity)
+        );
+    }
+
+    public static void setupAdminSecondary(Activity activity, MaterialToolbar toolbar) {
+        setupAdmin(activity, toolbar);
+    }
+
+    public static void setupRequesterSecondary(Activity activity, MaterialToolbar toolbar) {
+        setupRequester(activity, toolbar);
+    }
+
+    public static void setupForCurrentRoleSecondary(Activity activity, MaterialToolbar toolbar) {
+        AuthSessionManager sessionManager = new AuthSessionManager(activity);
+        if (sessionManager.isRequester()) {
+            setupRequester(activity, toolbar);
+        } else {
+            setupAdmin(activity, toolbar);
+        }
+    }
+
+    private static void setup(
+            Activity activity,
+            MaterialToolbar toolbar,
+            int popupMenuRes,
+            int currentMenuItemId
+    ) {
+        ensureToolbarMenu(toolbar);
         toolbar.post(() -> tintMenuIcon(activity, toolbar));
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() != R.id.actionBreadcrumb) {
@@ -28,9 +71,20 @@ public final class AppToolbarMenu {
             }
 
             View menuView = toolbar.findViewById(R.id.actionBreadcrumb);
-            showPopup(activity, menuView != null ? menuView : toolbar);
+            showPopup(
+                    activity,
+                    menuView != null ? menuView : toolbar,
+                    popupMenuRes,
+                    currentMenuItemId
+            );
             return true;
         });
+    }
+
+    private static void ensureToolbarMenu(MaterialToolbar toolbar) {
+        if (toolbar.getMenu().findItem(R.id.actionBreadcrumb) == null) {
+            toolbar.inflateMenu(R.menu.menu_landing_toolbar);
+        }
     }
 
     private static void tintMenuIcon(Activity activity, MaterialToolbar toolbar) {
@@ -41,16 +95,61 @@ public final class AppToolbarMenu {
         }
     }
 
-    private static void showPopup(Activity activity, View anchor) {
+    private static void showPopup(
+            Activity activity,
+            View anchor,
+            int popupMenuRes,
+            int currentMenuItemId
+    ) {
         PopupMenu popupMenu = new PopupMenu(activity, anchor, Gravity.END);
-        popupMenu.getMenuInflater().inflate(R.menu.menu_landing_popup, popupMenu.getMenu());
+        popupMenu.getMenuInflater().inflate(popupMenuRes, popupMenu.getMenu());
+        if (currentMenuItemId != 0) {
+            popupMenu.getMenu().removeItem(currentMenuItemId);
+        }
         popupMenu.setOnMenuItemClickListener(item -> handleItem(activity, item.getItemId()));
         popupMenu.show();
     }
 
+    private static int currentAdminMenuItem(Activity activity) {
+        if (activity instanceof LandingActivity) {
+            return R.id.menuAvailability;
+        }
+
+        if (activity instanceof HomeActivity) {
+            return R.id.menuBookings;
+        }
+
+        if (activity instanceof AdminBookingRequestsActivity) {
+            return R.id.menuBookingRequests;
+        }
+
+        if (activity instanceof AdminRequesterAccountsActivity) {
+            return R.id.menuRequesterAccounts;
+        }
+
+        return 0;
+    }
+
+    private static int currentRequesterMenuItem(Activity activity) {
+        if (activity instanceof RequesterLandingActivity) {
+            return R.id.menuRequesterHome;
+        }
+
+        if (activity instanceof RequesterRequestsActivity) {
+            return R.id.menuMyRequests;
+        }
+
+        return 0;
+    }
+
     private static boolean handleItem(Activity activity, int itemId) {
-        if (itemId == R.id.menuBookings) {
-            open(activity, HomeActivity.class);
+        if (itemId == R.id.menuRequesterHome) {
+            open(activity, RequesterLandingActivity.class);
+            return true;
+        }
+
+        if (itemId == R.id.menuMyRequests) {
+            open(activity, RequesterRequestsActivity.class);
             return true;
         }
 
@@ -59,12 +158,18 @@ public final class AppToolbarMenu {
             return true;
         }
 
-        if (itemId == R.id.menuAboutUs) {
-            new AlertDialog.Builder(activity)
-                    .setTitle(R.string.about_title)
-                    .setMessage(R.string.about_message)
-                    .setPositiveButton(R.string.action_close, null)
-                    .show();
+        if (itemId == R.id.menuBookings) {
+            open(activity, HomeActivity.class);
+            return true;
+        }
+
+        if (itemId == R.id.menuBookingRequests) {
+            open(activity, AdminBookingRequestsActivity.class);
+            return true;
+        }
+
+        if (itemId == R.id.menuRequesterAccounts) {
+            open(activity, AdminRequesterAccountsActivity.class);
             return true;
         }
 

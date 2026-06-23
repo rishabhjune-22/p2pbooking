@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menuAvailability"
+        android:title="Home / Calendar" />
+
+    <item
+        android:id="@+id/menuBookings"
+        android:title="Bookings" />
+
+    <item
+        android:id="@+id/menuBookingRequests"
+        android:title="Booking Requests" />
+
+    <item
+        android:id="@+id/menuRequesterAccounts"
+        android:title="Manage Requesters" />
+
+    <item
+        android:id="@+id/menuLogout"
+        android:title="@string/logout" />
+
+</menu>

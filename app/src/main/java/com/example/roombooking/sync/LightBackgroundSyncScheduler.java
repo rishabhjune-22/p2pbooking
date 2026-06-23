@@ -34,9 +34,16 @@ public final class LightBackgroundSyncScheduler {
         }
 
         Context appContext = context.getApplicationContext();
-        if (!new AuthSessionManager(appContext).isLoggedIn()) {
+        AuthSessionManager sessionManager = new AuthSessionManager(appContext);
+        if (!sessionManager.isLoggedIn() || !sessionManager.isApproved()) {
             WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_WORK_NAME);
             AppDiagnostics.logEvent("background_sync_skipped_not_authenticated");
+            return;
+        }
+
+        if (!sessionManager.isAdminLike() && !sessionManager.isRequester()) {
+            WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_WORK_NAME);
+            AppDiagnostics.logEvent("background_sync_skipped_unsupported_role");
             return;
         }
 
@@ -50,6 +57,7 @@ public final class LightBackgroundSyncScheduler {
         AppDiagnostics.logEvent(
                 "background_sync_scheduled"
                         + " name=" + UNIQUE_WORK_NAME
+                        + " role=" + sessionManager.getUserRole()
                         + " intervalHours=" + SYNC_INTERVAL_HOURS
                         + " policy=KEEP"
         );

@@ -59,6 +59,34 @@
             android:screenOrientation="portrait" />
 
         <activity
+            android:name=".admin.AdminBookingRequestsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".admin.AdminRequesterAccountsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".requester.RequesterLandingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
+            android:name=".requester.RequesterRequestBookingActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".requester.RequesterRequestsActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <activity
             android:name=".common.SplashActivity"
             android:exported="true"
             android:screenOrientation="portrait">

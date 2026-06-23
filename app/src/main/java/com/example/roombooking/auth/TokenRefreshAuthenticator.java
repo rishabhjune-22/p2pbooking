@@ -28,7 +28,12 @@ public final class TokenRefreshAuthenticator implements Authenticator {
     @Nullable
     @Override
     public Request authenticate(@Nullable Route route, Response response) throws IOException {
-        if (responseCount(response) > 1 || isAuthEndpoint(response.request())) {
+        if (responseCount(response) > 1) {
+            expireSession();
+            return null;
+        }
+
+        if (isAuthEndpoint(response.request())) {
             return null;
         }
 

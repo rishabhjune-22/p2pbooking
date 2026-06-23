@@ -2,15 +2,20 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
     <item
-        android:id="@+id/menuBookings"
-        android:title="Bookings" />
-    <item
         android:id="@+id/menuAvailability"
-        android:title="Availability" />
+        android:title="Home / Calendar" />
 
     <item
-        android:id="@+id/menuAboutUs"
-        android:title="About Us" />
+        android:id="@+id/menuBookings"
+        android:title="Bookings" />
+
+    <item
+        android:id="@+id/menuBookingRequests"
+        android:title="Booking Requests" />
+
+    <item
+        android:id="@+id/menuRequesterAccounts"
+        android:title="Manage Requesters" />
 
     <item
         android:id="@+id/menuLogout"

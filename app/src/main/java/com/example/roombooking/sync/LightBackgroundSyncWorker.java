@@ -17,7 +17,9 @@ import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.model.room.RoomItem;
+import com.example.roombooking.requester.RequesterAvailabilityRepository;
 import com.example.roombooking.room.RoomMapper;
 import com.example.roombooking.room.RoomMemoryCache;
 import com.example.roombooking.room.RoomRepository;
@@ -63,12 +65,22 @@ public class LightBackgroundSyncWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
-        if (!new AuthSessionManager(getApplicationContext()).isLoggedIn()) {
+        AuthSessionManager sessionManager = new AuthSessionManager(getApplicationContext());
+        if (!sessionManager.isLoggedIn() || !sessionManager.isApproved()) {
             AppDiagnostics.logEvent("background_sync_worker_skipped_not_authenticated");
             return Result.success();
         }
 
-        AppDiagnostics.logEvent("background_sync_started");
+        if (sessionManager.isRequester()) {
+            return doRequesterWork(sessionManager);
+        }
+
+        if (!sessionManager.isAdminLike()) {
+            AppDiagnostics.logEvent("background_sync_worker_skipped_unsupported_role");
+            return Result.success();
+        }
+
+        AppDiagnostics.logEvent("background_sync_started role=" + sessionManager.getUserRole());
 
         SyncOutcome roomsOutcome = syncRooms();
         SyncOutcome activeBookingsOutcome = syncBookingPageOne(BookingStatus.ACTIVE);
@@ -83,6 +95,35 @@ public class LightBackgroundSyncWorker extends Worker {
 
         AppDiagnostics.logEvent(
                 "background_sync_finished"
+                        + " successCount=" + summary.successCount
+                        + " retryableFailureCount=" + summary.retryableFailureCount
+                        + " permanentFailureCount=" + summary.permanentFailureCount
+        );
+
+        if (summary.successCount > 0) {
+            return Result.success();
+        }
+
+        if (summary.retryableFailureCount > 0) {
+            return Result.retry();
+        }
+
+        return Result.failure();
+    }
+
+    private Result doRequesterWork(AuthSessionManager sessionManager) {
+        AppDiagnostics.logEvent("background_sync_requester_started");
+
+        SyncSummary summary = new SyncSummary();
+        for (String prefix : RoomPrefix.displayOrder()) {
+            summary.add(syncRequesterCurrentMonthAvailability(
+                    sessionManager.getUserId(),
+                    prefix
+            ));
+        }
+
+        AppDiagnostics.logEvent(
+                "background_sync_requester_finished"
                         + " successCount=" + summary.successCount
                         + " retryableFailureCount=" + summary.retryableFailureCount
                         + " permanentFailureCount=" + summary.permanentFailureCount
@@ -203,6 +244,57 @@ public class LightBackgroundSyncWorker extends Worker {
             writeJsonCache(cacheKey, groups);
             AppDiagnostics.logEvent(
                     "background_sync_calendar_success"
+                            + " month=" + month
+                            + " year=" + year
+                            + " groupCount=" + groups.size()
+            );
+            return SyncOutcome.success();
+        } catch (IOException exception) {
+            return handleException(failureEvent, operation, exception, true);
+        } catch (RuntimeException exception) {
+            return handleException(failureEvent, operation, exception, false);
+        }
+    }
+
+    private SyncOutcome syncRequesterCurrentMonthAvailability(int userId, String prefix) {
+        Calendar calendar = Calendar.getInstance();
+        int month = calendar.get(Calendar.MONTH) + 1;
+        int year = calendar.get(Calendar.YEAR);
+        String safePrefix = safe(prefix);
+        String cacheKey = RequesterAvailabilityRepository.requesterAvailabilityCacheKey(
+                userId,
+                safePrefix,
+                year,
+                month
+        );
+        String operation = "background_sync_requester_availability";
+        String failureEvent = "background_sync_requester_availability_failure";
+        long startedAtMillis = System.currentTimeMillis();
+        AppDiagnostics.logNetworkStart(operation, cacheKey);
+
+        try {
+            Response<ApiResponse<RoomAvailabilityResponse>> response =
+                    apiService.getRequesterAvailability(month, year, safePrefix).execute();
+            AppDiagnostics.logNetworkResponse(
+                    operation,
+                    cacheKey,
+                    response.code(),
+                    System.currentTimeMillis() - startedAtMillis
+            );
+
+            if (!isValidDataResponse(response)) {
+                logSyncFailure(failureEvent, operation, "HTTP " + response.code(), null);
+                return outcomeForHttpCode(response.code());
+            }
+
+            RoomAvailabilityResponse data = response.body().getData();
+            List<RoomAvailabilityGroup> groups = data.hasGroups()
+                    ? NullSafeCollections.copyWithoutNulls(data.getGroups())
+                    : new ArrayList<>();
+            writeJsonCache(cacheKey, groups);
+            AppDiagnostics.logEvent(
+                    "background_sync_requester_availability_success"
+                            + " prefix=" + safePrefix
                             + " month=" + month
                             + " year=" + year
                             + " groupCount=" + groups.size()

@@ -840,6 +840,32 @@
                     android:textSize="@dimen/text_14"
                     android:textStyle="bold" />
 
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnSendBackBooking"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:background="@drawable/bg_create_booking_outline_button"
+                    android:text="Send Back"
+                    android:textAllCaps="false"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDeleteBookingRequest"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:background="@drawable/bg_create_booking_danger_outline_button"
+                    android:text="Delete Request"
+                    android:textAllCaps="false"
+                    android:textColor="@color/error_red"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
             </LinearLayout>
 
         </LinearLayout>

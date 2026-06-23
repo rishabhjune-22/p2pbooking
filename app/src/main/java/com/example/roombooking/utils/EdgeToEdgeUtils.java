@@ -45,6 +45,37 @@ public final class EdgeToEdgeUtils {
         ViewCompat.requestApplyInsets(rootView);
     }
 
+    public static void applySystemBarAndImeInsets(Activity activity, View rootView) {
+        if (activity == null || rootView == null) {
+            return;
+        }
+
+        configureStatusBar(activity);
+        WindowCompat.setDecorFitsSystemWindows(activity.getWindow(), false);
+
+        int initialLeft = rootView.getPaddingLeft();
+        int initialTop = rootView.getPaddingTop();
+        int initialRight = rootView.getPaddingRight();
+        int initialBottom = rootView.getPaddingBottom();
+
+        ViewCompat.setOnApplyWindowInsetsListener(rootView, (view, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            Insets ime = insets.getInsets(WindowInsetsCompat.Type.ime());
+            int bottomInset = Math.max(systemBars.bottom, ime.bottom);
+
+            view.setPadding(
+                    initialLeft + systemBars.left,
+                    initialTop + systemBars.top,
+                    initialRight + systemBars.right,
+                    initialBottom + bottomInset
+            );
+
+            return insets;
+        });
+
+        ViewCompat.requestApplyInsets(rootView);
+    }
+
     public static void applyBottomInsetOnly(Activity activity, View targetView) {
         if (activity == null || targetView == null) {
             return;

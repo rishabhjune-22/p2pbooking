@@ -58,6 +58,7 @@ public final class AuthActivityTracker implements Application.ActivityLifecycleC
     @Override
     public void onActivityResumed(Activity activity) {
         updateCurrentActivity(activity);
+        AuthSessionStatusVerifier.verifyOnResume(activity);
     }
 
     @Override

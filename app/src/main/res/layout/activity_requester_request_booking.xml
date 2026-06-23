@@ -1,0 +1,656 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootView"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/create_booking_bg">
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/space_220"
+        android:layout_marginTop="@dimen/space_56"
+        android:background="@drawable/bg_create_booking_header" />
+
+    <ScrollView
+        android:id="@+id/scrollRequesterRequest"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="@dimen/space_56"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:paddingBottom="@dimen/space_24"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/space_12"
+                android:paddingTop="@dimen/space_18"
+                android:paddingEnd="@dimen/space_12">
+
+                <ImageButton
+                    android:id="@+id/btnBack"
+                    android:layout_width="@dimen/space_50"
+                    android:layout_height="@dimen/space_50"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="Back"
+                    android:padding="@dimen/space_8"
+                    android:src="@drawable/ic_back"
+                    app:tint="@color/white" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:paddingEnd="@dimen/space_40">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_50"
+                        android:gravity="center"
+                        android:text="Request Booking"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/text_28"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_8"
+                        android:gravity="center"
+                        android:text="Submit details for admin approval"
+                        android:textColor="@color/create_booking_header_subtitle"
+                        android:textSize="@dimen/text_13" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_14"
+                android:layout_marginTop="@dimen/space_18"
+                android:layout_marginEnd="@dimen/space_14"
+                android:background="@drawable/bg_create_booking_card"
+                android:elevation="@dimen/space_8"
+                android:orientation="vertical"
+                android:padding="@dimen/space_14">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_room"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_hostel"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Room Details"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_room" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Select Room"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etSelectedRoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:background="@drawable/bg_create_booking_spinner"
+                    android:clickable="false"
+                    android:cursorVisible="false"
+                    android:focusable="false"
+                    android:gravity="center_vertical"
+                    android:hint="Select Room"
+                    android:importantForAutofill="no"
+                    android:inputType="none"
+                    android:longClickable="false"
+                    android:maxLines="1"
+                    android:paddingStart="@dimen/space_12"
+                    android:paddingEnd="@dimen/space_36"
+                    android:singleLine="true"
+                    android:textColor="@color/create_booking_text_primary"
+                    android:textColorHint="@color/create_booking_hint"
+                    android:textSize="@dimen/text_14" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_visit"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_calendar"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Stay Details"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_visit" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Arrival"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etSelectedArrival"
+                    style="@style/CreateBookingEditText"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:clickable="true"
+                    android:cursorVisible="false"
+                    android:drawableStart="@drawable/ic_calendar"
+                    android:focusable="false"
+                    android:hint="Arrival Date &amp; Time"
+                    android:importantForAutofill="no"
+                    android:inputType="none"
+                    android:longClickable="false" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:text="Departure"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/etSelectedDeparture"
+                    style="@style/CreateBookingEditText"
+                    android:layout_width="match_parent"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:clickable="true"
+                    android:cursorVisible="false"
+                    android:drawableStart="@drawable/ic_calendar"
+                    android:focusable="false"
+                    android:hint="Departure Date &amp; Time"
+                    android:importantForAutofill="no"
+                    android:inputType="none"
+                    android:longClickable="false" />
+
+                <Spinner
+                    android:id="@+id/spinnerPreferredPrefix"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:background="@drawable/bg_create_booking_spinner"
+                    android:paddingStart="@dimen/space_12"
+                    android:paddingEnd="@dimen/space_12"
+                    android:spinnerMode="dropdown"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_visitor"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_user"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Visitor Details"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_visitor" />
+
+                <EditText
+                    android:id="@+id/etVisitorName"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:drawableStart="@drawable/ic_user"
+                    android:hint="Visitor Name"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <EditText
+                    android:id="@+id/etVisitorDesignation"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_identification"
+                    android:hint="Designation"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <EditText
+                    android:id="@+id/etVisitorOrganisation"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_organization"
+                    android:hint="Organisation"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Gender"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/spinnerGender"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:background="@drawable/bg_create_booking_spinner"
+                    android:paddingStart="@dimen/space_12"
+                    android:paddingEnd="@dimen/space_12"
+                    android:spinnerMode="dropdown" />
+
+                <EditText
+                    android:id="@+id/etVisitorAddress"
+                    style="@style/CreateBookingEditText"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_location"
+                    android:gravity="top|start"
+                    android:hint="Address"
+                    android:imeOptions="actionNext"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="4"
+                    android:minLines="2" />
+
+                <EditText
+                    android:id="@+id/etVisitorMobile"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_phone"
+                    android:hint="Mobile Number"
+                    android:imeOptions="actionNext"
+                    android:inputType="phone" />
+
+                <EditText
+                    android:id="@+id/etVisitorEmail"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_email"
+                    android:hint="Email Address"
+                    android:imeOptions="actionNext"
+                    android:inputType="textEmailAddress" />
+
+                <EditText
+                    android:id="@+id/etPurpose"
+                    style="@style/CreateBookingEditText"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:drawableStart="@drawable/ic_documents"
+                    android:gravity="top|start"
+                    android:hint="Purpose of Visit"
+                    android:imeOptions="actionNext"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="5"
+                    android:minLines="3" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_visit"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_user"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Visitor Category"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_visit" />
+
+                <RadioGroup
+                    android:id="@+id/rgVisitorCategory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12">
+
+                    <RadioButton
+                        android:id="@+id/rbInstituteGuest"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Institute Guest (Official Institute Guest)"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <RadioButton
+                        android:id="@+id/rbConferenceGuest"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Conference / Workshop Guest"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <RadioButton
+                        android:id="@+id/rbOtherGuest"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Other Guest"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/btnClearVisitorCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="@dimen/space_36"
+                    android:paddingTop="@dimen/space_6"
+                    android:paddingBottom="@dimen/space_6"
+                    android:text="Clear Selection"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_13"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_logistics"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_attendee"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Attender Requirement"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_logistics" />
+
+                <CheckBox
+                    android:id="@+id/cbAttenderRequired"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Attender Required"
+                    android:textColor="@color/create_booking_text_secondary" />
+
+                <EditText
+                    android:id="@+id/etAttenderCount"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:alpha="0.45"
+                    android:drawableStart="@drawable/ic_attendee"
+                    android:enabled="false"
+                    android:hint="Number of Attenders Required Per Day"
+                    android:imeOptions="actionNext"
+                    android:inputType="number" />
+
+                <TextView
+                    android:id="@+id/tvSelectShiftLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:alpha="0.45"
+                    android:text="Select Shift(s)"
+                    android:textColor="@color/create_booking_label"
+                    android:textStyle="bold" />
+
+                <CheckBox
+                    android:id="@+id/cbGeneralShift"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.45"
+                    android:enabled="false"
+                    android:text="General Shift (9 AM - 5 PM)"
+                    android:textColor="@color/create_booking_text_secondary" />
+
+                <CheckBox
+                    android:id="@+id/cbMorningShift"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.45"
+                    android:enabled="false"
+                    android:text="Morning Shift (7 AM - 3 PM)"
+                    android:textColor="@color/create_booking_text_secondary" />
+
+                <CheckBox
+                    android:id="@+id/cbDayShift"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.45"
+                    android:enabled="false"
+                    android:text="Day Shift (3 PM - 11 PM)"
+                    android:textColor="@color/create_booking_text_secondary" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_30"
+                        android:background="@drawable/bg_section_icon_requestor"
+                        android:padding="@dimen/space_5"
+                        android:src="@drawable/ic_user"
+                        app:tint="@color/white" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_8"
+                        android:text="Requester Details"
+                        android:textColor="@color/create_booking_text_secondary"
+                        android:textSize="@dimen/text_15"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <View
+                    android:layout_width="@dimen/space_30"
+                    android:layout_height="@dimen/space_3"
+                    android:layout_marginStart="@dimen/space_34"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@color/section_requestor" />
+
+                <EditText
+                    android:id="@+id/etRequestorName"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:drawableStart="@drawable/ic_user"
+                    android:hint="Requester Name"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <EditText
+                    android:id="@+id/etRequestorDesignation"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_identification"
+                    android:hint="Designation"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <EditText
+                    android:id="@+id/etRequestorDepartment"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_department"
+                    android:hint="Department"
+                    android:imeOptions="actionNext"
+                    android:inputType="textCapWords" />
+
+                <EditText
+                    android:id="@+id/etRequestorMobile"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_phone"
+                    android:hint="Mobile Number"
+                    android:imeOptions="actionNext"
+                    android:inputType="phone" />
+
+                <EditText
+                    android:id="@+id/etRequestorEmail"
+                    style="@style/CreateBookingEditText"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_email"
+                    android:hint="Email Address"
+                    android:imeOptions="actionDone"
+                    android:inputType="textEmailAddress" />
+
+                <TextView
+                    android:id="@+id/tvMessage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@drawable/bg_create_booking_info"
+                    android:drawableStart="@android:drawable/ic_dialog_info"
+                    android:drawablePadding="@dimen/space_8"
+                    android:padding="@dimen/space_12"
+                    android:textColor="@color/create_booking_error"
+                    android:textSize="@dimen/text_12"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnSubmitRequest"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_52"
+                    android:layout_marginTop="@dimen/space_14"
+                    android:background="@drawable/bg_create_booking_primary_button"
+                    android:text="Submit Request"
+                    android:textAllCaps="false"
+                    android:textColor="@color/white"
+                    android:textSize="@dimen/text_15"
+                    android:textStyle="bold" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_86" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/appToolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@color/info_blue"
+        app:menu="@menu/menu_landing_toolbar"
+        app:title="@string/app_name"
+        app:titleCentered="true"
+        app:titleTextColor="@color/white" />
+
+</FrameLayout>

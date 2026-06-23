@@ -5,14 +5,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.PopupMenu;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,16 +28,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.example.roombooking.R;
-import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.booking.BookingAdapter;
 import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.booking.CreateBookingActivity;
-import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
+import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -123,7 +120,7 @@ public class HomeActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
 
@@ -311,25 +308,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupToolbarMenu() {
-        materialToolbar.post(this::tintToolbarBreadcrumbIcon);
-
-        materialToolbar.setOnMenuItemClickListener(item -> {
-            if (item.getItemId() == R.id.actionBreadcrumb) {
-                View menuView = materialToolbar.findViewById(R.id.actionBreadcrumb);
-                showLandingPopupMenu(menuView != null ? menuView : materialToolbar);
-                return true;
-            }
-
-            return false;
-        });
-    }
-
-    private void tintToolbarBreadcrumbIcon() {
-        MenuItem breadcrumbItem = materialToolbar.getMenu().findItem(R.id.actionBreadcrumb);
-
-        if (breadcrumbItem != null && breadcrumbItem.getIcon() != null) {
-            breadcrumbItem.getIcon().setTint(getColor(R.color.white));
-        }
+        AppToolbarMenu.setupAdmin(this, materialToolbar);
     }
 
     private void setupSwipeRefresh() {
@@ -414,42 +393,6 @@ public class HomeActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    private void showLandingPopupMenu(View anchor) {
-        PopupMenu popupMenu = new PopupMenu(this, anchor, android.view.Gravity.END);
-
-        popupMenu.getMenuInflater().inflate(
-                R.menu.menu_landing_popup,
-                popupMenu.getMenu()
-        );
-
-        popupMenu.setOnMenuItemClickListener(item -> {
-            int itemId = item.getItemId();
-
-            if (itemId == R.id.menuBookings) {
-                return true;
-            }
-
-            if (itemId == R.id.menuAvailability) {
-                openAvailabilityScreen();
-                return true;
-            }
-
-            if (itemId == R.id.menuAboutUs) {
-                showAboutDialog();
-                return true;
-            }
-
-            if (itemId == R.id.menuLogout) {
-                AuthLogoutManager.confirmAndLogout(this);
-                return true;
-            }
-
-            return false;
-        });
-
-        popupMenu.show();
-    }
-
     private void openBookingDetailScreen(BookingItem bookingItem) {
         Intent intent = new Intent(HomeActivity.this, BookingDetailActivity.class);
         intent.putExtra(BookingDetailActivity.EXTRA_BOOKING_DATA, bookingItem);
@@ -459,20 +402,6 @@ public class HomeActivity extends AppCompatActivity {
     private void openCreateBookingScreen() {
         Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
         createBookingLauncher.launch(intent);
-    }
-
-    private void openAvailabilityScreen() {
-        Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(intent);
-    }
-
-    private void showAboutDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.about_title)
-                .setMessage(R.string.about_message)
-                .setPositiveButton(R.string.action_close, null)
-                .show();
     }
 
     private void cycleBookingStatus() {
@@ -865,7 +794,7 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        if (!AuthSessionGuard.ensureAuthenticated(this)) {
+        if (!AuthSessionGuard.ensureAdmin(this)) {
             return;
         }
         startSyncStatusTimer();

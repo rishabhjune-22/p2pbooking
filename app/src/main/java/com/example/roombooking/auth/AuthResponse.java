@@ -1,5 +1,7 @@
 package com.example.roombooking.auth;
 
+import android.text.TextUtils;
+
 import com.google.gson.annotations.SerializedName;
 
 public class AuthResponse {
@@ -23,5 +25,9 @@ public class AuthResponse {
 
     public String getRefresh() {
         return refresh != null ? refresh : "";
+    }
+
+    public boolean hasTokens() {
+        return !TextUtils.isEmpty(getAccess()) && !TextUtils.isEmpty(getRefresh());
     }
 }

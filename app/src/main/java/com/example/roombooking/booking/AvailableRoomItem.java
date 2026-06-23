@@ -27,6 +27,9 @@ public class AvailableRoomItem {
     @SerializedName("available_from_time")
     private String availableFromTime;
 
+    @SerializedName("available_from")
+    private String availableFrom;
+
     public int getRoomId() {
         return roomId;
     }
@@ -55,6 +58,10 @@ public class AvailableRoomItem {
         return availableFromTime;
     }
 
+    public String getAvailableFrom() {
+        return availableFrom;
+    }
+
     public boolean isPartiallyAvailable() {
         return availabilityStatus != null
                 && STATUS_PARTIAL.equalsIgnoreCase(availabilityStatus.trim());
@@ -76,5 +83,9 @@ public class AvailableRoomItem {
 
     public String getSafeAvailableFromTime() {
         return availableFromTime != null ? availableFromTime : "";
+    }
+
+    public String getSafeAvailableFrom() {
+        return availableFrom != null ? availableFrom : "";
     }
 }
