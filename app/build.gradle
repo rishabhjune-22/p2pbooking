@@ -11,7 +11,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 def debugApiBaseUrl = providers.gradleProperty("ROOM_BOOKING_DEBUG_API_BASE_URL")
-        .orElse("http://10.50.48.251:8000/")
+        .orElse("http://13.235.231.5/")
         .get()
 def releaseApiBaseUrl = providers.gradleProperty("ROOM_BOOKING_API_BASE_URL")
         .orElse("http://13.235.231.5/")
