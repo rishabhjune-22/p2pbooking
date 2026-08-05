@@ -95,7 +95,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         root.setId(R.id.rootView);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(getColor(R.color.white));
+        root.setBackgroundColor(getColor(R.color.booking_list_bg));
 
         MaterialToolbar toolbar = new MaterialToolbar(this);
         toolbar.setId(R.id.appToolbar);
@@ -349,31 +349,42 @@ public class RequesterRequestsActivity extends AppCompatActivity {
 
     private View createCard(BookingRequestItem item) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(getColor(R.color.white));
-        card.setStrokeColor(getColor(R.color.availability_border));
-        card.setStrokeWidth(dp(1));
-        card.setRadius(dp(8));
-        card.setCardElevation(dp(1));
+        ListScreenUiHelper.styleCard(this, card);
         card.setClickable(true);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(14), dp(12), dp(14), dp(12));
+        content.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        TextView title = label("Visitor", item.getVisitorName());
-        title.setTypeface(null, Typeface.BOLD);
+        TextView title = ListScreenUiHelper.cardTitle(this, requestTitle(item));
         topRow.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         topRow.addView(ListScreenUiHelper.statusChip(this, item.getStatus()));
         content.addView(topRow);
-        content.addView(label("Arrival", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())));
-        content.addView(label("Departure", DateTimeUtils.formatUtcToLocal(item.getDepartureAt())));
+        content.addView(ListScreenUiHelper.cardMeta(
+                this,
+                "Schedule",
+                DateTimeUtils.formatUtcToLocal(item.getArrivalAt())
+                        + " - "
+                        + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())
+        ));
         if (!isBlank(item.getAssignedRoomName())) {
-            content.addView(label("Assigned Room", item.getAssignedRoomName()));
+            content.addView(ListScreenUiHelper.cardMeta(this, "Assigned Room", item.getAssignedRoomName()));
+        } else if (!isBlank(preferenceText(item))) {
+            content.addView(ListScreenUiHelper.cardMeta(this, "Preference", preferenceText(item)));
         }
-        if (!isBlank(item.getAdminRemarks())) {
-            content.addView(label("Admin Remarks", item.getAdminRemarks()));
+        if ("correction_required".equalsIgnoreCase(item.getStatus()) && !isBlank(item.getAdminRemarks())) {
+            TextView note = ListScreenUiHelper.cardNote(
+                    this,
+                    "Remarks: " + ListScreenUiHelper.snippet(item.getAdminRemarks(), 90)
+            );
+            LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            noteParams.setMargins(0, dp(10), 0, 0);
+            content.addView(note, noteParams);
         }
         card.addView(content);
         card.setOnClickListener(v -> showDetail(item));
@@ -402,29 +413,36 @@ public class RequesterRequestsActivity extends AppCompatActivity {
 
     private void showDetail(BookingRequestItem item) {
         final AlertDialog[] dialogRef = new AlertDialog[1];
-        String detail = "Status: " + ListScreenUiHelper.displayStatus(item.getStatus())
-                + "\nRequested: " + DateTimeUtils.formatUtcToLocal(item.getRequestedAt())
-                + "\nArrival: " + DateTimeUtils.formatUtcToLocal(item.getArrivalAt())
-                + "\nDeparture: " + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())
-                + "\nVisitor: " + safe(item.getVisitorName())
-                + "\nPurpose: " + safe(item.getPurposeOfVisit())
-                + "\nPreference: " + safe(item.getPreferredPrefix())
-                + "\nAssigned Room: " + safe(item.getAssignedRoomName())
-                + "\nReviewed By: " + safe(item.getReviewedByName())
-                + "\nAdmin Remarks: " + safe(item.getAdminRemarks());
         ScrollView scrollView = new ScrollView(this);
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(10), dp(20), dp(12));
-        for (String line : detail.split("\\n")) {
-            content.addView(textLine(line));
-        }
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Request"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Status", ListScreenUiHelper.displayStatus(item.getStatus())));
+        content.addView(ListScreenUiHelper.detailRow(this, "Requested", DateTimeUtils.formatUtcToLocal(item.getRequestedAt())));
+        content.addView(ListScreenUiHelper.detailRow(this, "Arrival", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())));
+        content.addView(ListScreenUiHelper.detailRow(this, "Departure", DateTimeUtils.formatUtcToLocal(item.getDepartureAt())));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Visitor"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Name", item.getVisitorName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Designation", item.getVisitorDesignation()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Organisation", item.getVisitorOrganisation()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Mobile", item.getVisitorMobile()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Email", item.getVisitorEmail()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Purpose", item.getPurposeOfVisit()));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Room"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Preference", preferenceText(item)));
+        content.addView(ListScreenUiHelper.detailRow(this, "Assigned Room", item.getAssignedRoomName()));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Review"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Reviewed By", item.getReviewedByName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Admin Remarks", item.getAdminRemarks()));
+
         boolean correctionRequired = "correction_required".equalsIgnoreCase(item.getStatus());
         boolean pending = "pending".equalsIgnoreCase(item.getStatus());
         boolean canEdit = correctionRequired || pending;
         LinearLayout actions = new LinearLayout(this);
-        actions.setOrientation(canEdit ? LinearLayout.HORIZONTAL : LinearLayout.VERTICAL);
-        actions.setPadding(0, dp(12), 0, 0);
+        actions.setOrientation(LinearLayout.VERTICAL);
+        actions.setPadding(0, dp(16), 0, 0);
 
         if (canEdit) {
             AppCompatButton edit = makePrimaryButton(correctionRequired ? "Edit & Resubmit" : "Edit");
@@ -432,21 +450,20 @@ public class RequesterRequestsActivity extends AppCompatActivity {
                 dismissDialog(dialogRef);
                 openEditRequest(item, correctionRequired);
             });
-            actions.addView(edit, new LinearLayout.LayoutParams(0, dp(46), 1f));
+            actions.addView(edit, new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    dp(48)
+            ));
         }
 
         AppCompatButton delete = makeDangerButton("Delete Request");
         delete.setOnClickListener(v -> confirmDelete(item, dialogRef));
-        if (canEdit) {
-            LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
-            deleteParams.setMargins(dp(8), 0, 0, 0);
-            actions.addView(delete, deleteParams);
-        } else {
-            actions.addView(delete, new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(46)
-            ));
-        }
+        LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(48)
+        );
+        deleteParams.setMargins(0, canEdit ? dp(10) : 0, 0, 0);
+        actions.addView(delete, deleteParams);
         content.addView(actions);
         scrollView.addView(content);
 
@@ -518,13 +535,9 @@ public class RequesterRequestsActivity extends AppCompatActivity {
     }
 
     private AppCompatButton makeDangerButton(String text) {
-        AppCompatButton button = new AppCompatButton(this);
-        button.setText(text);
-        button.setTextColor(getColor(R.color.white));
-        button.setTextSize(14);
-        button.setAllCaps(false);
-        button.setTypeface(null, Typeface.BOLD);
-        button.setBackgroundColor(getColor(R.color.error_red));
+        AppCompatButton button = makePrimaryButton(text);
+        button.setTextColor(getColor(R.color.error_red));
+        button.setBackgroundResource(R.drawable.bg_create_booking_danger_outline_button);
         return button;
     }
 
@@ -540,9 +553,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
 
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(6), dp(20), 0);
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(message);
         content.addView(remarks);
 
@@ -643,6 +654,32 @@ public class RequesterRequestsActivity extends AppCompatActivity {
 
     private static boolean isBlank(String value) {
         return TextUtils.isEmpty(safe(value));
+    }
+
+    private String requestTitle(BookingRequestItem item) {
+        if (!isBlank(item.getVisitorName())) {
+            return item.getVisitorName();
+        }
+        if (!isBlank(item.getPurposeOfVisit())) {
+            return item.getPurposeOfVisit();
+        }
+        return "Booking Request #" + item.getId();
+    }
+
+    private String preferenceText(BookingRequestItem item) {
+        StringBuilder builder = new StringBuilder();
+        if (!isBlank(item.getPreferredPrefix())) {
+            builder.append(item.getPreferredPrefix());
+        }
+        if (!isBlank(item.getPreferredRoomName())) {
+            if (builder.length() > 0) builder.append(" / ");
+            builder.append(item.getPreferredRoomName());
+        }
+        if (!isBlank(item.getRoomPreferenceNote())) {
+            if (builder.length() > 0) builder.append(" - ");
+            builder.append(item.getRoomPreferenceNote());
+        }
+        return builder.toString();
     }
 
     @Override

@@ -3,13 +3,18 @@ package com.example.roombooking.utils;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
+import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.roombooking.R;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.Locale;
 
@@ -32,10 +37,11 @@ public final class ListScreenUiHelper {
         HorizontalScrollView scrollView = new HorizontalScrollView(context);
         scrollView.setHorizontalScrollBarEnabled(false);
         scrollView.setFillViewport(false);
+        scrollView.setBackgroundColor(context.getColor(R.color.booking_list_bg));
 
         LinearLayout container = new LinearLayout(context);
         container.setOrientation(LinearLayout.HORIZONTAL);
-        container.setPadding(dp(context, 16), dp(context, 10), dp(context, 16), dp(context, 2));
+        container.setPadding(dp(context, 16), dp(context, 12), dp(context, 16), dp(context, 6));
 
         for (String filter : filters) {
             TextView chip = new TextView(context);
@@ -46,7 +52,7 @@ public final class ListScreenUiHelper {
             chip.setSingleLine(true);
             chip.setEllipsize(TextUtils.TruncateAt.END);
             chip.setGravity(android.view.Gravity.CENTER);
-            chip.setPadding(dp(context, 14), dp(context, 8), dp(context, 14), dp(context, 8));
+            chip.setPadding(dp(context, 16), dp(context, 8), dp(context, 16), dp(context, 8));
             chip.setClickable(true);
             chip.setOnClickListener(v -> {
                 updateFilterBar(context, container, filter);
@@ -92,11 +98,96 @@ public final class ListScreenUiHelper {
 
     public static TextView detailRow(Context context, String label, String value) {
         TextView view = new TextView(context);
-        view.setText(label + ": " + (isBlank(value) ? "-" : value));
+        String safeLabel = safe(label);
+        String safeValue = isBlank(value) ? "-" : value.trim();
+        SpannableString text = new SpannableString(safeLabel + ": " + safeValue);
+        text.setSpan(
+                new StyleSpan(Typeface.BOLD),
+                0,
+                safeLabel.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        text.setSpan(
+                new ForegroundColorSpan(context.getColor(R.color.detail_text_secondary)),
+                0,
+                safeLabel.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+        );
+        view.setText(text);
         view.setTextColor(context.getColor(R.color.detail_text_primary));
         view.setTextSize(14);
-        view.setPadding(0, dp(context, 3), 0, dp(context, 3));
+        view.setLineSpacing(dp(context, 2), 1f);
+        view.setPadding(0, dp(context, 5), 0, dp(context, 5));
         return view;
+    }
+
+    public static TextView sectionHeader(Context context, String title) {
+        TextView view = new TextView(context);
+        view.setText(title);
+        view.setTextColor(context.getColor(R.color.info_blue));
+        view.setTextSize(13);
+        view.setTypeface(null, Typeface.BOLD);
+        view.setAllCaps(true);
+        view.setLetterSpacing(0f);
+        view.setPadding(0, dp(context, 14), 0, dp(context, 5));
+        return view;
+    }
+
+    public static TextView cardTitle(Context context, String value) {
+        TextView view = new TextView(context);
+        view.setText(isBlank(value) ? "-" : value.trim());
+        view.setTextColor(context.getColor(R.color.detail_text_primary));
+        view.setTextSize(15);
+        view.setTypeface(null, Typeface.BOLD);
+        view.setSingleLine(true);
+        view.setEllipsize(TextUtils.TruncateAt.END);
+        return view;
+    }
+
+    public static TextView cardMeta(Context context, String label, String value) {
+        TextView view = new TextView(context);
+        String safeValue = isBlank(value) ? "-" : value.trim();
+        view.setText(isBlank(label) ? safeValue : label + ": " + safeValue);
+        view.setTextColor(context.getColor(R.color.detail_text_secondary));
+        view.setTextSize(13);
+        view.setSingleLine(true);
+        view.setEllipsize(TextUtils.TruncateAt.END);
+        view.setPadding(0, dp(context, 3), 0, 0);
+        return view;
+    }
+
+    public static TextView cardNote(Context context, String value) {
+        TextView view = new TextView(context);
+        view.setText(value);
+        view.setTextColor(context.getColor(R.color.info_blue));
+        view.setTextSize(12);
+        view.setMaxLines(2);
+        view.setEllipsize(TextUtils.TruncateAt.END);
+        view.setPadding(dp(context, 10), dp(context, 8), dp(context, 10), dp(context, 8));
+        view.setBackground(rounded(
+                context,
+                context.getColor(R.color.palette_f0f9ff),
+                context.getColor(R.color.availability_border),
+                1,
+                10
+        ));
+        return view;
+    }
+
+    public static LinearLayout dialogContent(Context context) {
+        LinearLayout content = new LinearLayout(context);
+        content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(context, 20), dp(context, 6), dp(context, 20), dp(context, 10));
+        return content;
+    }
+
+    public static void styleCard(Context context, MaterialCardView card) {
+        card.setCardBackgroundColor(context.getColor(R.color.white));
+        card.setStrokeColor(context.getColor(R.color.availability_border));
+        card.setStrokeWidth(dp(context, 1));
+        card.setRadius(dp(context, 12));
+        card.setCardElevation(dp(context, 3));
+        card.setUseCompatPadding(true);
     }
 
     public static TextView statusChip(Context context, String status) {

@@ -90,7 +90,7 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         root.setId(R.id.rootView);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(getColor(R.color.white));
+        root.setBackgroundColor(getColor(R.color.booking_list_bg));
 
         MaterialToolbar toolbar = new MaterialToolbar(this);
         toolbar.setId(R.id.appToolbar);
@@ -334,24 +334,22 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
 
     private View createCard(AccountRequestItem item) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(getColor(R.color.white));
-        card.setStrokeColor(getColor(R.color.availability_border));
-        card.setStrokeWidth(dp(1));
-        card.setRadius(dp(8));
-        card.setCardElevation(dp(1));
+        ListScreenUiHelper.styleCard(this, card);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(14), dp(12), dp(14), dp(12));
+        content.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        TextView name = label("Name", item.getName());
-        name.setTypeface(null, android.graphics.Typeface.BOLD);
+        TextView name = ListScreenUiHelper.cardTitle(this, item.getName());
         topRow.addView(name, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         topRow.addView(ListScreenUiHelper.statusChip(this, item.getApprovalStatus()));
         content.addView(topRow);
-        content.addView(label("Department", item.getDepartment()));
+        content.addView(ListScreenUiHelper.cardMeta(this, "Department", item.getDepartment()));
+        if (!isBlank(item.getDesignation())) {
+            content.addView(ListScreenUiHelper.cardMeta(this, "Designation", item.getDesignation()));
+        }
 
         card.addView(content);
         card.setClickable(true);
@@ -372,17 +370,20 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
     private void showAccountDetails(AccountRequestItem item) {
         final AlertDialog[] dialogRef = new AlertDialog[1];
         ScrollView scrollView = new ScrollView(this);
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(10), dp(20), dp(12));
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Account"));
         content.addView(ListScreenUiHelper.detailRow(this, "Name", item.getName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Email", item.getEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Role", item.getRole()));
         content.addView(ListScreenUiHelper.detailRow(this, "Approval Status", item.getApprovalStatus()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Requested", DateTimeUtils.formatUtcToLocal(item.getCreatedAt())));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Profile"));
         content.addView(ListScreenUiHelper.detailRow(this, "Department", item.getDepartment()));
         content.addView(ListScreenUiHelper.detailRow(this, "Designation", item.getDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Mobile", item.getMobile()));
-        content.addView(ListScreenUiHelper.detailRow(this, "Requested", DateTimeUtils.formatUtcToLocal(item.getCreatedAt())));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Review"));
         content.addView(ListScreenUiHelper.detailRow(this, "Approved By", item.getApprovedByName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Approved At", DateTimeUtils.formatUtcToLocal(item.getApprovedAt())));
         content.addView(ListScreenUiHelper.detailRow(this, "Remarks", item.getRemarks()));
@@ -400,9 +401,8 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
 
     private void showQuickAccountActions(AccountRequestItem item) {
         final AlertDialog[] dialogRef = new AlertDialog[1];
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(10), dp(20), dp(12));
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Requester"));
         content.addView(ListScreenUiHelper.detailRow(this, "Name", item.getName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Email", item.getEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Department", item.getDepartment()));
@@ -430,14 +430,14 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
                 dismissDialog(dialogRef);
                 approve(item);
             });
-            actions.addView(approve, new LinearLayout.LayoutParams(0, dp(46), 1f));
+            actions.addView(approve, new LinearLayout.LayoutParams(0, dp(48), 1f));
 
             AppCompatButton reject = makeSecondaryButton("Reject");
             reject.setOnClickListener(v -> {
                 dismissDialog(dialogRef);
                 showRejectDialog(item);
             });
-            LinearLayout.LayoutParams rejectParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
+            LinearLayout.LayoutParams rejectParams = new LinearLayout.LayoutParams(0, dp(48), 1f);
             rejectParams.setMargins(dp(8), 0, 0, 0);
             actions.addView(reject, rejectParams);
             content.addView(actions);
@@ -450,7 +450,7 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
             });
             actions.addView(reject, new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(46)
+                    dp(48)
             ));
             content.addView(actions);
         } else if ("rejected".equalsIgnoreCase(status)) {
@@ -462,7 +462,7 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
             });
             actions.addView(approve, new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(46)
+                    dp(48)
             ));
             content.addView(actions);
         }
@@ -479,9 +479,11 @@ public class AdminRequesterAccountsActivity extends AppCompatActivity {
         remarks.setHint("Remarks (optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(remarks);
         new AlertDialog.Builder(this)
                 .setTitle("Reject " + item.getName())
-                .setView(remarks)
+                .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton("Reject", (dialog, which) -> reject(item, text(remarks)))
                 .show();

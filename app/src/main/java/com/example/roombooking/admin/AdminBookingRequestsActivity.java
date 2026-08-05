@@ -103,7 +103,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         LinearLayout root = new LinearLayout(this);
         root.setId(R.id.rootView);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(getColor(R.color.white));
+        root.setBackgroundColor(getColor(R.color.booking_list_bg));
 
         MaterialToolbar toolbar = new MaterialToolbar(this);
         toolbar.setId(R.id.appToolbar);
@@ -357,27 +357,42 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private View createCard(BookingRequestItem item) {
         MaterialCardView card = new MaterialCardView(this);
-        card.setCardBackgroundColor(getColor(R.color.white));
-        card.setStrokeColor(getColor(R.color.availability_border));
-        card.setStrokeWidth(dp(1));
-        card.setRadius(dp(8));
-        card.setCardElevation(dp(1));
+        ListScreenUiHelper.styleCard(this, card);
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(14), dp(12), dp(14), dp(12));
+        content.setPadding(dp(16), dp(14), dp(16), dp(14));
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(android.view.Gravity.CENTER_VERTICAL);
-        TextView title = label(primaryBookingRequestLabel(item), "");
-        title.setText(primaryBookingRequestLabel(item));
-        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        TextView title = ListScreenUiHelper.cardTitle(this, primaryBookingRequestLabel(item));
         topRow.addView(title, new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         topRow.addView(ListScreenUiHelper.statusChip(this, item.getStatus()));
         content.addView(topRow);
-        content.addView(label(secondaryBookingRequestLabelName(item), secondaryBookingRequestLabelValue(item)));
-        content.addView(label("Dates", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())
-                + " - " + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())));
+        content.addView(ListScreenUiHelper.cardMeta(
+                this,
+                secondaryBookingRequestLabelName(item),
+                secondaryBookingRequestLabelValue(item)
+        ));
+        content.addView(ListScreenUiHelper.cardMeta(
+                this,
+                "Schedule",
+                DateTimeUtils.formatUtcToLocal(item.getArrivalAt())
+                        + " - "
+                        + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())
+        ));
+        if ("correction_required".equalsIgnoreCase(item.getStatus()) && !isBlank(item.getAdminRemarks())) {
+            TextView note = ListScreenUiHelper.cardNote(
+                    this,
+                    "Remarks: " + ListScreenUiHelper.snippet(item.getAdminRemarks(), 90)
+            );
+            LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+            );
+            noteParams.setMargins(0, dp(10), 0, 0);
+            content.addView(note, noteParams);
+        }
 
         card.addView(content);
         card.setClickable(true);
@@ -429,17 +444,21 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
     private void showBookingRequestDetails(BookingRequestItem item) {
         final AlertDialog[] dialogRef = new AlertDialog[1];
         ScrollView scrollView = new ScrollView(this);
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(10), dp(20), dp(12));
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Request"));
         content.addView(ListScreenUiHelper.detailRow(this, "Status", ListScreenUiHelper.displayStatus(item.getStatus())));
         content.addView(ListScreenUiHelper.detailRow(this, "Requester", item.getRequesterName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Requester Email", item.getRequesterEmail()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Requested At", DateTimeUtils.formatUtcToLocal(item.getRequestedAt())));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Requestor"));
         content.addView(ListScreenUiHelper.detailRow(this, "Requestor Name", item.getRequestorName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Requestor Department", item.getRequestorDepartment()));
         content.addView(ListScreenUiHelper.detailRow(this, "Requestor Designation", item.getRequestorDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Requestor Mobile", item.getRequestorMobile()));
         content.addView(ListScreenUiHelper.detailRow(this, "Requestor Email", item.getRequestorEmail()));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Visitor"));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor", item.getVisitorName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Designation", item.getVisitorDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Organisation", item.getVisitorOrganisation()));
@@ -449,6 +468,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Category", item.getVisitorCategory()));
         content.addView(ListScreenUiHelper.detailRow(this, "Purpose", item.getPurposeOfVisit()));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Schedule & Room"));
         content.addView(ListScreenUiHelper.detailRow(this, "Arrival", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())));
         content.addView(ListScreenUiHelper.detailRow(this, "Departure", DateTimeUtils.formatUtcToLocal(item.getDepartureAt())));
         content.addView(ListScreenUiHelper.detailRow(this, "Room Preference", preferenceText(item)));
@@ -456,7 +477,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Required", item.isAttenderRequired() ? "Yes" : "No"));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Count", String.valueOf(item.getAttenderCountPerDay())));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Shift", attenderShiftText(item)));
-        content.addView(ListScreenUiHelper.detailRow(this, "Requested At", DateTimeUtils.formatUtcToLocal(item.getRequestedAt())));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Review"));
         content.addView(ListScreenUiHelper.detailRow(this, "Reviewed By", item.getReviewedByName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Reviewed At", DateTimeUtils.formatUtcToLocal(item.getReviewedAt())));
         content.addView(ListScreenUiHelper.detailRow(this, "Admin Remarks", item.getAdminRemarks()));
@@ -465,11 +487,11 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         if ("pending".equalsIgnoreCase(item.getStatus())) {
             AppCompatButton approve = makePrimaryButton("Approve");
             approve.setOnClickListener(v -> loadRoomsThenApprove(item));
-            actions.addView(approve, new LinearLayout.LayoutParams(0, dp(46), 1f));
+            actions.addView(approve, new LinearLayout.LayoutParams(0, dp(48), 1f));
 
             AppCompatButton reject = makeSecondaryButton("Reject");
             reject.setOnClickListener(v -> showRejectDialog(item));
-            LinearLayout.LayoutParams rejectParams = new LinearLayout.LayoutParams(0, dp(46), 1f);
+            LinearLayout.LayoutParams rejectParams = new LinearLayout.LayoutParams(0, dp(48), 1f);
             rejectParams.setMargins(dp(8), 0, 0, 0);
             actions.addView(reject, rejectParams);
             content.addView(actions);
@@ -478,7 +500,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
             sendBack.setOnClickListener(v -> showSendBackDialog(item));
             LinearLayout.LayoutParams sendBackParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
-                    dp(46)
+                    dp(48)
             );
             sendBackParams.setMargins(0, dp(10), 0, 0);
             content.addView(sendBack, sendBackParams);
@@ -488,7 +510,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         delete.setOnClickListener(v -> confirmDelete(item, dialogRef));
         LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(46)
+                dp(48)
         );
         deleteParams.setMargins(0, dp(10), 0, 0);
         content.addView(delete, deleteParams);
@@ -560,9 +582,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
             return;
         }
 
-        LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(dp(4), dp(4), dp(4), dp(4));
+        LinearLayout layout = ListScreenUiHelper.dialogContent(this);
+        layout.addView(ListScreenUiHelper.sectionHeader(this, "Room"));
 
         Spinner roomSpinner = new Spinner(this);
         List<String> labels = new ArrayList<>();
@@ -574,13 +595,21 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_dropdown_item,
                 labels
         ));
-        layout.addView(roomSpinner);
+        layout.addView(roomSpinner, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(48)
+        ));
 
         EditText remarks = new EditText(this);
         remarks.setHint("Remarks (optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
-        layout.addView(remarks);
+        LinearLayout.LayoutParams remarksParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+        );
+        remarksParams.setMargins(0, dp(12), 0, 0);
+        layout.addView(remarks, remarksParams);
 
         new AlertDialog.Builder(this)
                 .setTitle("Approve Request #" + item.getId())
@@ -599,9 +628,11 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         remarks.setHint("Remarks (optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(remarks);
         new AlertDialog.Builder(this)
                 .setTitle("Reject Request #" + item.getId())
-                .setView(remarks)
+                .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton("Reject", (dialog, which) -> reject(item, text(remarks)))
                 .show();
@@ -612,10 +643,12 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         remarks.setHint("Explain what needs to be corrected");
         remarks.setSingleLine(false);
         remarks.setMinLines(3);
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
+        content.addView(remarks);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Send Back for Correction")
-                .setView(remarks)
+                .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
                 .setPositiveButton("Send Back", null)
                 .create();
@@ -675,9 +708,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
 
-        LinearLayout content = new LinearLayout(this);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setPadding(dp(20), dp(6), dp(20), 0);
+        LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(message);
         content.addView(remarks);
 
@@ -913,7 +944,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private AppCompatButton makeDangerButton(String text) {
         AppCompatButton button = makePrimaryButton(text);
-        button.setBackgroundColor(getColor(R.color.error_red));
+        button.setTextColor(getColor(R.color.error_red));
+        button.setBackgroundResource(R.drawable.bg_create_booking_danger_outline_button);
         return button;
     }
 
