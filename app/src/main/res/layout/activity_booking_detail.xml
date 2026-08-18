@@ -168,26 +168,6 @@
                     android:id="@+id/tvVisitorDetails"
                     style="@style/DetailContentText" />
 
-                <!-- VISIT -->
-                <LinearLayout
-                    style="@style/DetailSectionHeader"
-                    android:layout_marginTop="@dimen/space_20">
-
-                    <ImageView
-                        style="@style/DetailSectionIcon"
-                        android:src="@drawable/ic_calendar_white" />
-
-                    <TextView
-                        style="@style/DetailSectionTitle"
-                        android:text="Visit Details" />
-                </LinearLayout>
-
-                <View style="@style/DetailDivider" />
-
-                <TextView
-                    android:id="@+id/tvVisitDetails"
-                    style="@style/DetailContentText" />
-
                 <!-- VISITOR CATEGORY -->
                 <LinearLayout
                     style="@style/DetailSectionHeader"
@@ -207,47 +187,6 @@
                 <TextView
                     android:id="@+id/tvVisitorCategoryDetails"
                     style="@style/DetailContentText" />
-
-                <!-- ROOM CHARGES -->
-                <LinearLayout
-                    style="@style/DetailSectionHeader"
-                    android:layout_marginTop="@dimen/space_20">
-
-                    <ImageView
-                        style="@style/DetailSectionIcon"
-                        android:src="@drawable/ic_info_white" />
-
-                    <TextView
-                        style="@style/DetailSectionTitle"
-                        android:text="Room Charges" />
-
-                </LinearLayout>
-
-                <View style="@style/DetailDivider" />
-
-                <TextView
-                    android:id="@+id/tvRoomChargesDetails"
-                    style="@style/DetailContentText" />
-                <!-- ATTENDER DETAILS -->
-                <LinearLayout
-                    style="@style/DetailSectionHeader"
-                    android:layout_marginTop="@dimen/space_20">
-
-                    <ImageView
-                        style="@style/DetailSectionIcon"
-                        android:src="@drawable/ic_user_white" />
-
-                    <TextView
-                        style="@style/DetailSectionTitle"
-                        android:text="Attender Details" />
-                </LinearLayout>
-
-                <View style="@style/DetailDivider" />
-
-                <TextView
-                    android:id="@+id/tvAttenderDetails"
-                    style="@style/DetailContentText" />
-
 
                 <!-- BUDGET HEAD -->
                 <LinearLayout
@@ -301,13 +240,54 @@
 
                     <TextView
                         style="@style/DetailSectionTitle"
-                        android:text="Logistics Details" />
+                        android:text="Logistics(Food/Cab) will be looked after by" />
                 </LinearLayout>
 
                 <View style="@style/DetailDivider" />
 
                 <TextView
                     android:id="@+id/tvLogisticsDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- ATTENDER DETAILS -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_user_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Attender Details" />
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvAttenderDetails"
+                    style="@style/DetailContentText" />
+
+                <!-- ROOM CHARGES -->
+                <LinearLayout
+                    style="@style/DetailSectionHeader"
+                    android:layout_marginTop="@dimen/space_20">
+
+                    <ImageView
+                        style="@style/DetailSectionIcon"
+                        android:src="@drawable/ic_info_white" />
+
+                    <TextView
+                        style="@style/DetailSectionTitle"
+                        android:text="Room Charges" />
+
+                </LinearLayout>
+
+                <View style="@style/DetailDivider" />
+
+                <TextView
+                    android:id="@+id/tvRoomChargesDetails"
                     style="@style/DetailContentText" />
 
                 <!-- STATUS -->

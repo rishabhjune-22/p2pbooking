@@ -32,7 +32,6 @@ final class EditBookingFormMapper {
         state.setVisitorDesignation(bookingItem.getVisitorDesignation());
         state.setVisitorOrganisation(bookingItem.getVisitorOrganisation());
         state.setVisitorGender(bookingItem.getVisitorGender());
-        state.setVisitorAddress(bookingItem.getVisitorAddress());
         state.setVisitorMobile(bookingItem.getVisitorMobile());
         state.setVisitorEmail(bookingItem.getVisitorEmail());
         state.setPurpose(bookingItem.getPurposeOfVisit());
@@ -150,7 +149,6 @@ final class EditBookingFormMapper {
                 data.getVisitorDesignation(),
                 data.getVisitorOrganisation(),
                 data.getVisitorGender(),
-                data.getVisitorAddress(),
                 data.getVisitorMobile(),
                 data.getVisitorEmail(),
                 data.getPurpose(),

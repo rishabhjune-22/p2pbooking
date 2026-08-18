@@ -25,9 +25,6 @@ public class BookingUpdateRequest {
     @SerializedName("visitor_gender")
     private final String visitorGender;
 
-    @SerializedName("visitor_address")
-    private final String visitorAddress;
-
     @SerializedName("visitor_mobile")
     private final String visitorMobile;
 
@@ -112,7 +109,6 @@ public class BookingUpdateRequest {
             String visitorDesignation,
             String visitorOrganisation,
             String visitorGender,
-            String visitorAddress,
             String visitorMobile,
             String visitorEmail,
             String purposeOfVisit,
@@ -151,7 +147,6 @@ public class BookingUpdateRequest {
         this.visitorDesignation = visitorDesignation;
         this.visitorOrganisation = visitorOrganisation;
         this.visitorGender = visitorGender;
-        this.visitorAddress = visitorAddress;
         this.visitorMobile = visitorMobile;
         this.visitorEmail = visitorEmail;
         this.purposeOfVisit = purposeOfVisit;

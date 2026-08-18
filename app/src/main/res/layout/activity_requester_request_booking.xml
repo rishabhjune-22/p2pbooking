@@ -321,19 +321,6 @@
                     android:spinnerMode="dropdown" />
 
                 <EditText
-                    android:id="@+id/etVisitorAddress"
-                    style="@style/CreateBookingEditText"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_10"
-                    android:drawableStart="@drawable/ic_location"
-                    android:gravity="top|start"
-                    android:hint="Address"
-                    android:imeOptions="actionNext"
-                    android:inputType="textMultiLine|textCapSentences"
-                    android:maxLines="4"
-                    android:minLines="2" />
-
-                <EditText
                     android:id="@+id/etVisitorMobile"
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
@@ -481,6 +468,14 @@
                     android:layout_marginTop="@dimen/space_12"
                     android:text="Attender Required"
                     android:textColor="@color/create_booking_text_secondary" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:text="(attender charges will be applicable on a per shift basis(8 Hrs) as per govt. applicable rates )"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12" />
 
                 <EditText
                     android:id="@+id/etAttenderCount"

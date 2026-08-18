@@ -11,6 +11,7 @@ import com.example.roombooking.api.RetrofitClient;
 import com.example.roombooking.cache.CachePolicy;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.model.room.RoomInventory;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.room.local.AppDatabase;
@@ -70,7 +71,7 @@ public class RoomRepository {
 
     public void getRooms(RoomRepositoryCallback callback) {
         if (RoomMemoryCache.hasRooms()) {
-            sendSuccess(callback, RoomMemoryCache.getRooms(), true);
+            sendSuccess(callback, RoomInventory.visibleRooms(RoomMemoryCache.getRooms()), true);
             refreshRoomsSilentlyIfStale();
             return;
         }
@@ -95,7 +96,9 @@ public class RoomRepository {
     private void loadRoomsFromLocalDatabase(RoomRepositoryCallback callback) {
         diskExecutor.execute(() -> {
             List<RoomEntity> cachedEntities = roomDao.getAllRooms();
-            List<RoomItem> cachedRooms = RoomMapper.toModelList(cachedEntities);
+            List<RoomItem> cachedRooms = RoomInventory.visibleRooms(
+                    RoomMapper.toModelList(cachedEntities)
+            );
             CacheEntryEntity cacheEntry = cacheEntryDao.getEntry(ROOM_CACHE_KEY);
             long updatedAtMillis = cacheEntry != null
                     ? cacheEntry.getUpdatedAtMillis()
@@ -314,7 +317,7 @@ public class RoomRepository {
             List<RoomItem> apiRooms,
             List<RoomRepositoryCallback> callbacks
     ) {
-        List<RoomItem> finalRooms = NullSafeCollections.copyWithoutNulls(apiRooms);
+        List<RoomItem> finalRooms = RoomInventory.visibleRooms(apiRooms);
         long refreshedAtMillis = System.currentTimeMillis();
         markRoomsApiRefreshSucceeded(refreshedAtMillis);
 

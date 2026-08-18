@@ -26,6 +26,7 @@ import com.example.roombooking.cache.CacheReadResult;
 import com.example.roombooking.cache.LocalJsonCacheStore;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.model.room.RoomInventory;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.requester.BookingRequestItem;
 import com.example.roombooking.utils.ApiErrorUtils;
@@ -423,7 +424,6 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_DESIGNATION, item.getVisitorDesignation());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_ORGANISATION, item.getVisitorOrganisation());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_GENDER, item.getVisitorGender());
-        intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_ADDRESS, item.getVisitorAddress());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_MOBILE, item.getVisitorMobile());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
@@ -463,7 +463,6 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Designation", item.getVisitorDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Organisation", item.getVisitorOrganisation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Gender", item.getVisitorGender()));
-        content.addView(ListScreenUiHelper.detailRow(this, "Visitor Address", item.getVisitorAddress()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Mobile", item.getVisitorMobile()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Category", item.getVisitorCategory()));
@@ -551,9 +550,11 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
                     return;
                 }
 
-                List<RoomItem> rooms = response.body().getData().getResults() != null
-                        ? response.body().getData().getResults()
-                        : Collections.emptyList();
+                List<RoomItem> rooms = RoomInventory.visibleRooms(
+                        response.body().getData().getResults() != null
+                                ? response.body().getData().getResults()
+                                : Collections.emptyList()
+                );
                 showApproveDialog(item, rooms);
             }
 

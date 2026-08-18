@@ -81,7 +81,6 @@ final class CreateBookingFormMapper {
                 data.getVisitorDesignation(),
                 data.getVisitorOrganisation(),
                 data.getVisitorGender(),
-                data.getVisitorAddress(),
                 data.getVisitorMobile(),
                 data.getVisitorEmail(),
                 data.getPurpose(),

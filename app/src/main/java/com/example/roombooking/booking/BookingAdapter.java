@@ -147,6 +147,11 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private void bindBookingData(BookingViewHolder holder, BookingItem item) {
         holder.tvVisitorName.setText(safe(item.getVisitorName()));
+        if (holder.tvReferenceNumber != null) {
+            String referenceNumber = safe(item.getBookingReferenceNumber());
+            holder.tvReferenceNumber.setText(referenceNumber.isEmpty() ? "" : "Booking ID: " + referenceNumber);
+            holder.tvReferenceNumber.setVisibility(referenceNumber.isEmpty() ? View.GONE : View.VISIBLE);
+        }
         holder.tvRoomName.setText(safe(item.getRoomName()));
         holder.tvOrganisation.setText(safe(item.getVisitorOrganisation()));
         holder.tvArrival.setText(DateTimeUtils.formatUtcToLocal(item.getArrivalAt()));
@@ -304,6 +309,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         private final MaterialCardView cardView;
         private final TextView tvVisitorName;
+        private final TextView tvReferenceNumber;
         private final TextView tvRequestedBy;
         private final TextView tvCreatedBy;
         private final TextView tvRoomName;
@@ -320,6 +326,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
             cardView = (MaterialCardView) itemView;
             tvVisitorName = itemView.findViewById(R.id.tvVisitorName);
+            tvReferenceNumber = itemView.findViewById(R.id.tvReferenceNumber);
             tvRoomName = itemView.findViewById(R.id.tvRoomName);
             tvOrganisation = itemView.findViewById(R.id.tvOrganisation);
             tvArrival = itemView.findViewById(R.id.tvArrival);

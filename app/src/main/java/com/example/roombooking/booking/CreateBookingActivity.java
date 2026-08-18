@@ -71,7 +71,6 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_DESIGNATION = "visitor_designation";
     public static final String EXTRA_VISITOR_ORGANISATION = "visitor_organisation";
     public static final String EXTRA_VISITOR_GENDER = "visitor_gender";
-    public static final String EXTRA_VISITOR_ADDRESS = "visitor_address";
     public static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
@@ -90,13 +89,11 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etVisitorDesignation;
     private EditText etVisitorOrganisation;
     private Spinner spinnerGender;
-    private EditText etVisitorAddress;
     private EditText etVisitorMobile;
     private EditText etVisitorEmail;
 
     private EditText etArrivalDT;
     private EditText etDepartureDT;
-    private TextView tvStayDetailsTitle;
     private EditText etPurpose;
 
     private EditText etRequestorName;
@@ -122,7 +119,9 @@ public class CreateBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
-    private RadioGroup rgBudgetHeadFocus;
+    private CheckBox cbBudgetHeadName;
+    private CheckBox cbBudgetHeadDepartmentName;
+    private CheckBox cbBudgetHeadProjectCode;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
     private EditText etBudgetHeadName;
@@ -140,6 +139,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private int bookingRequestId = -1;
     private boolean bookingRequestApprovalMode = false;
     private boolean approvalRequestInFlight = false;
+    private boolean suppressBudgetHeadFocus = false;
     private Call<ApiResponse<BookingRequestItem>> approveRequestCall;
     private Call<ApiResponse<BookingRequestItem>> rejectRequestCall;
     private Call<ApiResponse<BookingRequestItem>> sendBackRequestCall;
@@ -192,13 +192,11 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorDesignation = findViewById(R.id.etVisitorDesignation);
         etVisitorOrganisation = findViewById(R.id.etVisitorOrganisation);
         spinnerGender = findViewById(R.id.spinnerGender);
-        etVisitorAddress = findViewById(R.id.etVisitorAddress);
         etVisitorMobile = findViewById(R.id.etVisitorMobile);
         etVisitorEmail = findViewById(R.id.etVisitorEmail);
 
         etArrivalDT = findViewById(R.id.etArrivalDT);
         etDepartureDT = findViewById(R.id.etDepartureDT);
-        tvStayDetailsTitle = findViewById(R.id.tvStayDetailsTitle);
         etPurpose = findViewById(R.id.etPurpose);
 
         etRequestorName = findViewById(R.id.etRequestorName);
@@ -224,7 +222,9 @@ public class CreateBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
-        rgBudgetHeadFocus = findViewById(R.id.rgBudgetHeadFocus);
+        cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
+        cbBudgetHeadDepartmentName = findViewById(R.id.cbBudgetHeadDepartmentName);
+        cbBudgetHeadProjectCode = findViewById(R.id.cbBudgetHeadProjectCode);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
         etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
@@ -341,7 +341,6 @@ public class CreateBookingActivity extends AppCompatActivity {
 
             currentFormState = state.copy();
             refreshDateTimeFields(currentFormState);
-            updateStayDetailsTitle(currentFormState);
             showPartialRoomInfoIfNeeded(currentFormState);
             updateRoomSelectionState();
         });
@@ -500,7 +499,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorName.setText(intent.getStringExtra(EXTRA_VISITOR_NAME));
         etVisitorDesignation.setText(intent.getStringExtra(EXTRA_VISITOR_DESIGNATION));
         etVisitorOrganisation.setText(intent.getStringExtra(EXTRA_VISITOR_ORGANISATION));
-        etVisitorAddress.setText(intent.getStringExtra(EXTRA_VISITOR_ADDRESS));
         etVisitorMobile.setText(intent.getStringExtra(EXTRA_VISITOR_MOBILE));
         etVisitorEmail.setText(intent.getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(intent.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
@@ -612,18 +610,6 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void refreshDateTimeFields(CreateBookingFormState state) {
         etArrivalDT.setText(displayFormat.format(new java.util.Date(state.getArrivalAtMillis())));
         etDepartureDT.setText(displayFormat.format(new java.util.Date(state.getDepartureAtMillis())));
-    }
-
-    private void updateStayDetailsTitle(CreateBookingFormState state) {
-        if (tvStayDetailsTitle == null) {
-            return;
-        }
-
-        tvStayDetailsTitle.setText(
-                state != null && state.hasPreselectedDateRange()
-                        ? "Arrival/Departure Time"
-                        : "Arrival/Departure Date and Time"
-        );
     }
 
     private void pickDateOrTime(Calendar target, Runnable onDone) {
@@ -797,7 +783,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         data.setVisitorDesignation(getText(etVisitorDesignation));
         data.setVisitorOrganisation(getText(etVisitorOrganisation));
         data.setVisitorGender(getSelectedGender());
-        data.setVisitorAddress(getText(etVisitorAddress));
         data.setVisitorMobile(getText(etVisitorMobile));
         data.setVisitorEmail(getText(etVisitorEmail));
 
@@ -839,11 +824,19 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         data.setBudgetHeadType("");
         data.setBudgetHeadValue("");
-        data.setBudgetHeadName(getText(etBudgetHeadName));
-        data.setBudgetHeadDepartmentName(getText(etBudgetHeadDepartmentName));
-        data.setBudgetHeadProjectCode(getText(etBudgetHeadProjectCode));
+        data.setBudgetHeadName(getBudgetHeadText(cbBudgetHeadName, etBudgetHeadName));
+        data.setBudgetHeadDepartmentName(
+                getBudgetHeadText(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName)
+        );
+        data.setBudgetHeadProjectCode(
+                getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode)
+        );
 
         return data;
+    }
+
+    private String getBudgetHeadText(CheckBox checkbox, EditText field) {
+        return checkbox != null && checkbox.isChecked() ? getText(field) : "";
     }
 
     private void handleValidationError(CreateBookingValidationResult result) {
@@ -879,7 +872,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("visitor_designation", data.getVisitorDesignation());
         payload.put("visitor_organisation", data.getVisitorOrganisation());
         payload.put("visitor_gender", data.getVisitorGender());
-        payload.put("visitor_address", data.getVisitorAddress());
         payload.put("visitor_mobile", data.getVisitorMobile());
         payload.put("visitor_email", data.getVisitorEmail());
         payload.put("purpose_of_visit", data.getPurpose());
@@ -1232,38 +1224,71 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void setupBudgetHeadFocusControls() {
-        if (rgBudgetHeadFocus == null) {
-            return;
-        }
-
-        rgBudgetHeadFocus.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rbBudgetHeadName) {
-                focusAndShowKeyboard(etBudgetHeadName);
-            } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
-                focusAndShowKeyboard(etBudgetHeadDepartmentName);
-            } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
-                focusAndShowKeyboard(etBudgetHeadProjectCode);
-            }
-        });
+        setupBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+        setupBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+        setupBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
 
         View clearButton = findViewById(R.id.btnClearBudgetHeadFocus);
         if (clearButton != null) {
             clearButton.setOnClickListener(v -> {
-                int checkedId = rgBudgetHeadFocus.getCheckedRadioButtonId();
-                if (checkedId == R.id.rbBudgetHeadName) {
-                    etBudgetHeadName.setText("");
-                } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
-                    etBudgetHeadDepartmentName.setText("");
-                } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
-                    etBudgetHeadProjectCode.setText("");
-                }
-                rgBudgetHeadFocus.clearCheck();
-                etBudgetHeadName.clearFocus();
-                etBudgetHeadDepartmentName.clearFocus();
-                etBudgetHeadProjectCode.clearFocus();
+                clearBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+                clearBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+                clearBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
                 hideKeyboard(v);
             });
         }
+    }
+
+    private void setupBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox == null || field == null) {
+            return;
+        }
+
+        updateBudgetHeadFieldVisibility(checkbox, field);
+        checkbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateBudgetHeadFieldVisibility(checkbox, field);
+            if (isChecked) {
+                if (!suppressBudgetHeadFocus) {
+                    focusAndShowKeyboard(field);
+                }
+            } else {
+                field.setText("");
+                field.clearFocus();
+            }
+        });
+    }
+
+    private void clearBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox != null) {
+            checkbox.setChecked(false);
+        }
+        if (field != null) {
+            field.setText("");
+            field.clearFocus();
+            field.setVisibility(View.GONE);
+        }
+    }
+
+    private void setBudgetHeadOptionFromValue(CheckBox checkbox, EditText field, String value) {
+        if (field == null) {
+            return;
+        }
+
+        field.setText(safeText(value));
+        suppressBudgetHeadFocus = true;
+        if (checkbox != null) {
+            checkbox.setChecked(!isBlank(value));
+        }
+        suppressBudgetHeadFocus = false;
+        updateBudgetHeadFieldVisibility(checkbox, field);
+    }
+
+    private void updateBudgetHeadFieldVisibility(CheckBox checkbox, EditText field) {
+        if (field == null) {
+            return;
+        }
+
+        field.setVisibility(checkbox != null && checkbox.isChecked() ? View.VISIBLE : View.GONE);
     }
 
     private void focusAndShowKeyboard(EditText field) {
@@ -1448,7 +1473,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorDesignation.setText(randomValue(designations));
         etVisitorOrganisation.setText(randomValue(organisations));
         spinnerGender.setSelection(getRandomGenderPosition());
-        etVisitorAddress.setText(randomValue(addresses));
         etVisitorMobile.setText(generateRandomMobile());
         etVisitorEmail.setText(generateRandomEmail(visitorName));
 
@@ -1458,9 +1482,17 @@ public class CreateBookingActivity extends AppCompatActivity {
         etRequestorDesignation.setText(randomValue(designations));
         etRequestorDepartment.setText(randomValue(departments));
         etRequestorMobile.setText(generateRandomMobile());
-        etBudgetHeadName.setText("Project Travel");
-        etBudgetHeadDepartmentName.setText(randomValue(departments));
-        etBudgetHeadProjectCode.setText("PRJ-" + (1000 + random.nextInt(9000)));
+        setBudgetHeadOptionFromValue(cbBudgetHeadName, etBudgetHeadName, "Project Travel");
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadDepartmentName,
+                etBudgetHeadDepartmentName,
+                randomValue(departments)
+        );
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadProjectCode,
+                etBudgetHeadProjectCode,
+                "PRJ-" + (1000 + random.nextInt(9000))
+        );
 
         etLogisticsName.setText("Logistics " + (random.nextInt(100) + 1));
         etLogisticsDesignation.setText(randomValue(designations));

@@ -59,7 +59,6 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private TextView tvCreatedByDetails;
     private TextView tvVisitorDetails;
-    private TextView tvVisitDetails;
     private TextView tvVisitorCategoryDetails;
     private TextView tvRoomChargesDetails;
     private TextView tvAttenderDetails;
@@ -142,7 +141,6 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         tvCreatedByDetails = findViewById(R.id.tvCreatedByDetails);
         tvVisitorDetails = findViewById(R.id.tvVisitorDetails);
-        tvVisitDetails = findViewById(R.id.tvVisitDetails);
         tvVisitorCategoryDetails = findViewById(R.id.tvVisitorCategoryDetails);
         tvRoomChargesDetails = findViewById(R.id.tvRoomChargesDetails);
         tvAttenderDetails = findViewById(R.id.tvAttenderDetails);
@@ -320,12 +318,14 @@ public class BookingDetailActivity extends AppCompatActivity {
             return;
         }
 
-        tvBookingId.setText("Booking ID: " + bookingItem.getId());
+        String referenceNumber = safe(bookingItem.getBookingReferenceNumber());
+        tvBookingId.setText(referenceNumber.isEmpty()
+                ? "Booking ID: " + bookingItem.getId()
+                : "Booking ID: " + referenceNumber);
         tvRoomName.setText("Room Name: " + safe(bookingItem.getRoomName()));
 
         tvCreatedByDetails.setText(buildCreatedByDetails());
         tvVisitorDetails.setText(buildVisitorDetails());
-        tvVisitDetails.setText(buildVisitDetails());
         tvVisitorCategoryDetails.setText(buildVisitorCategoryDetails());
         tvRoomChargesDetails.setText(buildRoomChargesDetails());
         tvAttenderDetails.setText(buildAttenderDetails());
@@ -478,18 +478,15 @@ public class BookingDetailActivity extends AppCompatActivity {
         );
     }
     private String buildVisitorDetails() {
-        return "Name: " + safe(bookingItem.getVisitorName()) + "\n"
+        return "Room No: " + safe(bookingItem.getRoomName()) + "\n"
+                + "Check-In: " + DateTimeUtils.formatUtcToLocal(bookingItem.getArrivalAt()) + "\n"
+                + "Check-Out: " + DateTimeUtils.formatUtcToLocal(bookingItem.getDepartureAt()) + "\n"
+                + "Name: " + safe(bookingItem.getVisitorName()) + "\n"
                 + "Designation: " + safe(bookingItem.getVisitorDesignation()) + "\n"
                 + "Organisation: " + safe(bookingItem.getVisitorOrganisation()) + "\n"
                 + "Gender: " + safe(bookingItem.getVisitorGender()) + "\n"
-                + "Address: " + safe(bookingItem.getVisitorAddress()) + "\n"
                 + "Mobile: " + safe(bookingItem.getVisitorMobile()) + "\n"
-                + "Email: " + safe(bookingItem.getVisitorEmail());
-    }
-
-    private String buildVisitDetails() {
-        return "Arrival: " + DateTimeUtils.formatUtcToLocal(bookingItem.getArrivalAt()) + "\n"
-                + "Departure: " + DateTimeUtils.formatUtcToLocal(bookingItem.getDepartureAt()) + "\n"
+                + "Email: " + safe(bookingItem.getVisitorEmail()) + "\n"
                 + "Purpose: " + safe(bookingItem.getPurposeOfVisit());
     }
 

@@ -26,7 +26,6 @@ final class CreateBookingFormState {
     private String visitorDesignation;
     private String visitorOrganisation;
     private String visitorGender;
-    private String visitorAddress;
     private String visitorMobile;
     private String visitorEmail;
     private String purpose;
@@ -74,7 +73,6 @@ final class CreateBookingFormState {
         copy.visitorDesignation = visitorDesignation;
         copy.visitorOrganisation = visitorOrganisation;
         copy.visitorGender = visitorGender;
-        copy.visitorAddress = visitorAddress;
         copy.visitorMobile = visitorMobile;
         copy.visitorEmail = visitorEmail;
         copy.purpose = purpose;
@@ -133,8 +131,6 @@ final class CreateBookingFormState {
     void setVisitorOrganisation(String visitorOrganisation) { this.visitorOrganisation = clean(visitorOrganisation); }
     String getVisitorGender() { return visitorGender; }
     void setVisitorGender(String visitorGender) { this.visitorGender = clean(visitorGender); }
-    String getVisitorAddress() { return visitorAddress; }
-    void setVisitorAddress(String visitorAddress) { this.visitorAddress = clean(visitorAddress); }
     String getVisitorMobile() { return visitorMobile; }
     void setVisitorMobile(String visitorMobile) { this.visitorMobile = clean(visitorMobile); }
     String getVisitorEmail() { return visitorEmail; }

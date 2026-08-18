@@ -17,6 +17,7 @@ import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
+import com.example.roombooking.model.room.RoomInventory;
 import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.requester.RequesterAvailabilityRepository;
@@ -162,7 +163,7 @@ public class LightBackgroundSyncWorker extends Worker {
                 return outcomeForHttpCode(response.code());
             }
 
-            List<RoomItem> rooms = NullSafeCollections.copyWithoutNulls(
+            List<RoomItem> rooms = RoomInventory.visibleRooms(
                     response.body().getData().getResults()
             );
             saveRooms(rooms);
@@ -308,7 +309,7 @@ public class LightBackgroundSyncWorker extends Worker {
     }
 
     private void saveRooms(List<RoomItem> rooms) {
-        List<RoomItem> safeRooms = NullSafeCollections.copyWithoutNulls(rooms);
+        List<RoomItem> safeRooms = RoomInventory.visibleRooms(rooms);
         long refreshedAtMillis = System.currentTimeMillis();
 
         database.runInTransaction(() -> {

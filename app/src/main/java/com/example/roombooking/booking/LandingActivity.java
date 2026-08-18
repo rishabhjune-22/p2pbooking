@@ -5,6 +5,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
@@ -27,6 +28,7 @@ import android.util.TypedValue;
 import com.example.roombooking.R;
 import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.booking.RoomAvailabilityBookingItem;
+import com.example.roombooking.model.room.RoomInventory;
 import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.NullSafeCollections;
@@ -65,6 +67,7 @@ public class LandingActivity extends AppCompatActivity {
     private static final String STATE_ARRIVAL_DATE = "arrival_date";
     private static final String STATE_DEPARTURE_DATE = "departure_date";
     private static final long SYNC_STATUS_REFRESH_INTERVAL_MS = 30L * 1000L;
+    private static final long CHECK_AVAILABILITY_CLICK_DEBOUNCE_MS = 700L;
 
     private MaterialButton btnPreviousMonth;
     private MaterialButton btnNextMonth;
@@ -110,6 +113,7 @@ public class LandingActivity extends AppCompatActivity {
     private TextView activeAvailabilitySheetStatus = null;
     private AvailableRoomsResponse activeAvailableRoomsResponse = null;
     private AvailableRoomsRangeResponse activeAvailableRoomsRangeResponse = null;
+    private long lastCheckAvailabilityClickAtMillis = 0L;
     private final Handler syncStatusHandler = new Handler(Looper.getMainLooper());
     private final Runnable syncStatusRefreshRunnable = new Runnable() {
         @Override
@@ -244,6 +248,10 @@ public class LandingActivity extends AppCompatActivity {
 
     private void setupCheckAvailabilityButton() {
         btnCheckAvailability.setOnClickListener(v -> {
+            if (isRapidCheckAvailabilityClick()) {
+                return;
+            }
+
             if (arrivalDateForRange == null || departureDateForRange == null) {
                 showToast("Please select arrival and departure date first");
                 return;
@@ -251,6 +259,16 @@ public class LandingActivity extends AppCompatActivity {
 
             fetchAvailableRoomsForDateRange(arrivalDateForRange, departureDateForRange);
         });
+    }
+
+    private boolean isRapidCheckAvailabilityClick() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastCheckAvailabilityClickAtMillis < CHECK_AVAILABILITY_CLICK_DEBOUNCE_MS) {
+            return true;
+        }
+
+        lastCheckAvailabilityClickAtMillis = now;
+        return false;
     }
 
     private void setupMonthNavigationButtons() {
@@ -633,7 +651,9 @@ public class LandingActivity extends AppCompatActivity {
             return;
         }
 
-        tvTotalRoomCapacity.setText(String.valueOf(selectedGroup.getTotalRooms()));
+        tvTotalRoomCapacity.setText(String.valueOf(
+                RoomInventory.displayTotalRooms(selectedPrefix, selectedGroup.getTotalRooms())
+        ));
         calendarAdapter.submitList(buildCalendarItems(selectedGroup));
 
         restoreSelectedRangeIfNeeded();
@@ -702,7 +722,7 @@ public class LandingActivity extends AppCompatActivity {
             int availableRooms = 0;
 
             if (availabilityDay != null) {
-                availableRooms = availabilityDay.getAvailableRooms();
+                availableRooms = RoomInventory.displayAvailableRooms(selectedPrefix, availabilityDay);
                 availabilityType = getAvailabilityType(availabilityDay);
             }
 
@@ -757,8 +777,8 @@ public class LandingActivity extends AppCompatActivity {
     }
 
     private int getAvailabilityType(RoomAvailabilityDay day) {
-        int totalRooms = day.getTotalRooms();
-        int availableRooms = day.getAvailableRooms();
+        int totalRooms = RoomInventory.displayTotalRooms(selectedPrefix, day.getTotalRooms());
+        int availableRooms = RoomInventory.displayAvailableRooms(selectedPrefix, day);
 
         if (totalRooms <= 0) {
             return CalendarDayItem.TYPE_AVAILABLE;
@@ -826,6 +846,13 @@ public class LandingActivity extends AppCompatActivity {
                 data.getPrefix(),
                 data.getDate()
         );
+        if (isSameAvailabilitySheetShowing(sheetKey)) {
+            activeAvailableRoomsResponse = data;
+            activeAvailableRoomsRangeResponse = null;
+            updateActiveAvailabilitySheetStatus();
+            AppDiagnostics.logEvent("availability_sheet_duplicate_ignored key=" + safe(sheetKey));
+            return;
+        }
         replaceActiveAvailabilitySheet(sheetKey);
 
         BottomSheetDialog dialog = new BottomSheetDialog(this);
@@ -835,13 +862,17 @@ public class LandingActivity extends AppCompatActivity {
         activeAvailableRoomsRangeResponse = null;
 
         LinearLayout container = createBottomSheetContainer();
+        List<AvailableRoomItem> visibleRooms = RoomInventory.visibleAvailableRooms(
+                data.getPrefix(),
+                data.getRooms()
+        );
 
         TextView title = createBottomSheetTitle("Available Rooms");
 
         TextView subtitle = createBottomSheetSubtitle(
                 "Date: " + safe(data.getDate())
                         + "\nBuilding: " + safe(data.getPrefix())
-                        + "\nTotal Available: " + data.getTotalAvailableRooms()
+                        + "\nTotal Available: " + visibleRooms.size()
         );
 
         container.addView(title);
@@ -852,7 +883,7 @@ public class LandingActivity extends AppCompatActivity {
 
         addAvailableRoomViews(
                 container,
-                data.getRooms(),
+                visibleRooms,
                 "No room available on this date."
         );
 
@@ -873,6 +904,13 @@ public class LandingActivity extends AppCompatActivity {
                 data.getArrivalDate(),
                 data.getDepartureDate()
         );
+        if (isSameAvailabilitySheetShowing(sheetKey)) {
+            activeAvailableRoomsResponse = null;
+            activeAvailableRoomsRangeResponse = data;
+            updateActiveAvailabilitySheetStatus();
+            AppDiagnostics.logEvent("availability_sheet_duplicate_ignored key=" + safe(sheetKey));
+            return;
+        }
         replaceActiveAvailabilitySheet(sheetKey);
 
         BottomSheetDialog dialog = new BottomSheetDialog(this);
@@ -882,6 +920,10 @@ public class LandingActivity extends AppCompatActivity {
         activeAvailableRoomsRangeResponse = data;
 
         LinearLayout container = createBottomSheetContainer();
+        List<AvailableRoomItem> visibleRooms = RoomInventory.visibleAvailableRooms(
+                data.getPrefix(),
+                data.getRooms()
+        );
 
         TextView title = createBottomSheetTitle("Available Rooms");
 
@@ -889,7 +931,7 @@ public class LandingActivity extends AppCompatActivity {
                 "Arrival: " + safe(data.getArrivalDate())
                         + "\nDeparture: " + safe(data.getDepartureDate())
                         + "\nBuilding: " + safe(data.getPrefix())
-                        + "\nTotal Available: " + data.getTotalAvailableRooms()
+                        + "\nTotal Available: " + visibleRooms.size()
         );
 
         container.addView(title);
@@ -902,7 +944,7 @@ public class LandingActivity extends AppCompatActivity {
 
         addAvailableRoomViews(
                 container,
-                data.getRooms(),
+                visibleRooms,
                 "No room available for selected date range."
         );
 
@@ -924,6 +966,13 @@ public class LandingActivity extends AppCompatActivity {
         activeBottomSheetDialog.dismiss();
         replacingAvailabilitySheet = false;
         AppDiagnostics.logEvent("availability_sheet_replaced key=" + safe(nextSheetKey));
+    }
+
+    private boolean isSameAvailabilitySheetShowing(String sheetKey) {
+        return sheetKey != null
+                && sheetKey.equals(activeAvailabilitySheetKey)
+                && activeBottomSheetDialog != null
+                && activeBottomSheetDialog.isShowing();
     }
 
     private void handleAvailabilitySheetDismissed(BottomSheetDialog dialog) {
@@ -1063,7 +1112,10 @@ public class LandingActivity extends AppCompatActivity {
             return;
         }
 
-        List<AvailableRoomItem> validRooms = NullSafeCollections.copyWithoutNulls(rooms);
+        List<AvailableRoomItem> validRooms = RoomInventory.visibleAvailableRooms(
+                selectedPrefix,
+                rooms
+        );
 
         if (validRooms.isEmpty()) {
             addEmptyMessage(container, emptyMessage);

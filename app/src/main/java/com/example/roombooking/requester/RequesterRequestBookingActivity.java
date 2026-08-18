@@ -65,7 +65,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_DESIGNATION = "visitor_designation";
     public static final String EXTRA_VISITOR_ORGANISATION = "visitor_organisation";
     public static final String EXTRA_VISITOR_GENDER = "visitor_gender";
-    public static final String EXTRA_VISITOR_ADDRESS = "visitor_address";
     public static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
@@ -99,7 +98,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private EditText etVisitorDesignation;
     private EditText etVisitorOrganisation;
     private Spinner spinnerGender;
-    private EditText etVisitorAddress;
     private EditText etVisitorMobile;
     private EditText etVisitorEmail;
     private RadioGroup rgVisitorCategory;
@@ -160,7 +158,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etVisitorDesignation = findViewById(R.id.etVisitorDesignation);
         etVisitorOrganisation = findViewById(R.id.etVisitorOrganisation);
         spinnerGender = findViewById(R.id.spinnerGender);
-        etVisitorAddress = findViewById(R.id.etVisitorAddress);
         etVisitorMobile = findViewById(R.id.etVisitorMobile);
         etVisitorEmail = findViewById(R.id.etVisitorEmail);
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
@@ -327,7 +324,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 etVisitorName,
                 etVisitorDesignation,
                 etVisitorOrganisation,
-                etVisitorAddress,
                 etVisitorMobile,
                 etVisitorEmail,
                 etPurpose,
@@ -384,7 +380,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etVisitorName.setText(getIntent().getStringExtra(EXTRA_VISITOR_NAME));
         etVisitorDesignation.setText(getIntent().getStringExtra(EXTRA_VISITOR_DESIGNATION));
         etVisitorOrganisation.setText(getIntent().getStringExtra(EXTRA_VISITOR_ORGANISATION));
-        etVisitorAddress.setText(getIntent().getStringExtra(EXTRA_VISITOR_ADDRESS));
         etVisitorMobile.setText(getIntent().getStringExtra(EXTRA_VISITOR_MOBILE));
         etVisitorEmail.setText(getIntent().getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(getIntent().getStringExtra(EXTRA_PURPOSE_OF_VISIT));
@@ -677,7 +672,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 text(etVisitorDesignation),
                 text(etVisitorOrganisation),
                 selectedGender(),
-                text(etVisitorAddress),
                 text(etVisitorMobile),
                 visitorEmail,
                 selectedVisitorCategory(),

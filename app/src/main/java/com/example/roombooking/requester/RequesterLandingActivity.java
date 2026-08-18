@@ -5,6 +5,7 @@ import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.GestureDetector;
@@ -34,6 +35,7 @@ import com.example.roombooking.booking.CalendarAvailabilityAdapter;
 import com.example.roombooking.booking.CalendarDayItem;
 import com.example.roombooking.booking.RoomAvailabilityDay;
 import com.example.roombooking.booking.RoomAvailabilityGroup;
+import com.example.roombooking.model.room.RoomInventory;
 import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.DateTimeUtils;
@@ -59,6 +61,7 @@ public class RequesterLandingActivity extends AppCompatActivity {
     private static final int CALENDAR_SPAN_COUNT = 7;
     private static final double LESS_THAN_HALF_PERCENTAGE = 50.0;
     private static final long SYNC_STATUS_REFRESH_INTERVAL_MS = 30L * 1000L;
+    private static final long REQUEST_BOOKING_CLICK_DEBOUNCE_MS = 700L;
     private static final String DEFAULT_ROOM_PREFIX = RoomPrefix.DELTA;
     private static final String STATE_SELECTED_MONTH = "requester_selected_month";
     private static final String STATE_SELECTED_PREFIX = "requester_selected_prefix";
@@ -93,6 +96,8 @@ public class RequesterLandingActivity extends AppCompatActivity {
     private boolean hasHandledInitialResume = false;
     private boolean suppressRoomTabLoad = false;
     private BottomSheetDialog activeAvailableRoomsDialog = null;
+    private String activeAvailableRoomsSheetKey = null;
+    private long lastRequestBookingClickAtMillis = 0L;
     private AuthSessionManager sessionManager;
     private RequesterLandingViewModel viewModel;
     private final Handler syncStatusHandler = new Handler(Looper.getMainLooper());
@@ -168,7 +173,13 @@ public class RequesterLandingActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
-        btnRequestBooking.setOnClickListener(v -> openRequestForm());
+        btnRequestBooking.setOnClickListener(v -> {
+            if (isRapidRequestBookingClick()) {
+                return;
+            }
+
+            openRequestForm();
+        });
 
         btnPreviousMonth.setOnClickListener(v -> {
             selectedMonth.add(Calendar.MONTH, -1);
@@ -190,6 +201,16 @@ public class RequesterLandingActivity extends AppCompatActivity {
                 R.color.error_red
         );
         swipeRefreshAvailability.setOnRefreshListener(this::refreshAvailability);
+    }
+
+    private boolean isRapidRequestBookingClick() {
+        long now = SystemClock.elapsedRealtime();
+        if (now - lastRequestBookingClickAtMillis < REQUEST_BOOKING_CLICK_DEBOUNCE_MS) {
+            return true;
+        }
+
+        lastRequestBookingClickAtMillis = now;
+        return false;
     }
 
     private void setupRoomTabs() {
@@ -450,7 +471,9 @@ public class RequesterLandingActivity extends AppCompatActivity {
             return;
         }
 
-        tvCapacity.setText(String.valueOf(group.getTotalRooms()));
+        tvCapacity.setText(String.valueOf(
+                RoomInventory.displayTotalRooms(selectedPrefix, group.getTotalRooms())
+        ));
         calendarAdapter.submitList(buildCalendarItems(group));
         restoreSelectedRangeIfNeeded();
     }
@@ -538,8 +561,14 @@ public class RequesterLandingActivity extends AppCompatActivity {
     }
 
     private void showAvailableRoomsBottomSheet(AvailableRoomsRangeResponse data) {
+        String sheetKey = availableRoomsSheetKey(data);
+        if (isSameAvailableRoomsSheetShowing(sheetKey)) {
+            return;
+        }
+
         BottomSheetDialog dialog = new BottomSheetDialog(this);
         activeAvailableRoomsDialog = dialog;
+        activeAvailableRoomsSheetKey = sheetKey;
         LinearLayout container = createBottomSheetContainer();
 
         container.addView(createBottomSheetTitle("Available Rooms"));
@@ -550,7 +579,10 @@ public class RequesterLandingActivity extends AppCompatActivity {
                         + "\nBuilding: " + safe(data.getPrefix())
         ));
 
-        List<AvailableRoomItem> rooms = NullSafeCollections.copyWithoutNulls(data.getRooms());
+        List<AvailableRoomItem> rooms = RoomInventory.visibleAvailableRooms(
+                data.getPrefix(),
+                data.getRooms()
+        );
 
         if (rooms.isEmpty()) {
             container.addView(createEmptyMessage(
@@ -577,7 +609,27 @@ public class RequesterLandingActivity extends AppCompatActivity {
         }
 
         activeAvailableRoomsDialog = null;
+        activeAvailableRoomsSheetKey = null;
         clearRangeSelectionIfActive();
+    }
+
+    private boolean isSameAvailableRoomsSheetShowing(String sheetKey) {
+        return !isBlank(sheetKey)
+                && sheetKey.equals(activeAvailableRoomsSheetKey)
+                && activeAvailableRoomsDialog != null
+                && activeAvailableRoomsDialog.isShowing();
+    }
+
+    private String availableRoomsSheetKey(AvailableRoomsRangeResponse data) {
+        if (data == null) {
+            return "";
+        }
+
+        return safe(data.getPrefix())
+                + "|"
+                + safe(data.getArrivalDate())
+                + "|"
+                + safe(data.getDepartureDate());
     }
 
     private LinearLayout createBottomSheetContainer() {
@@ -808,7 +860,9 @@ public class RequesterLandingActivity extends AppCompatActivity {
                     availabilityDay != null
                             ? getAvailabilityType(availabilityDay)
                             : CalendarDayItem.TYPE_AVAILABLE,
-                    availabilityDay != null ? availabilityDay.getAvailableRooms() : 0
+                    availabilityDay != null
+                            ? RoomInventory.displayAvailableRooms(selectedPrefix, availabilityDay)
+                            : 0
             ));
         }
         return calendarItems;
@@ -829,8 +883,8 @@ public class RequesterLandingActivity extends AppCompatActivity {
     }
 
     private int getAvailabilityType(RoomAvailabilityDay day) {
-        int totalRooms = day.getTotalRooms();
-        int availableRooms = day.getAvailableRooms();
+        int totalRooms = RoomInventory.displayTotalRooms(selectedPrefix, day.getTotalRooms());
+        int availableRooms = RoomInventory.displayAvailableRooms(selectedPrefix, day);
         if (totalRooms <= 0) {
             return CalendarDayItem.TYPE_AVAILABLE;
         }

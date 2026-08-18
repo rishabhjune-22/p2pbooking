@@ -491,7 +491,6 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_DESIGNATION, item.getVisitorDesignation());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_ORGANISATION, item.getVisitorOrganisation());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_GENDER, item.getVisitorGender());
-        intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_ADDRESS, item.getVisitorAddress());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_MOBILE, item.getVisitorMobile());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());

@@ -57,7 +57,6 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etVisitorName;
     private EditText etVisitorDesignation;
     private EditText etVisitorOrganisation;
-    private EditText etVisitorAddress;
     private EditText etVisitorMobile;
     private EditText etVisitorEmail;
     private EditText etPurpose;
@@ -68,7 +67,9 @@ public class EditBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
-    private RadioGroup rgBudgetHeadFocus;
+    private CheckBox cbBudgetHeadName;
+    private CheckBox cbBudgetHeadDepartmentName;
+    private CheckBox cbBudgetHeadProjectCode;
     private EditText etRoomChargesAmount;
     private EditText etAttenderChargesAmount;
     private EditText etBudgetHeadName;
@@ -98,6 +99,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditBookingFormState currentFormState;
     private BookingItem bookingItem;
     private boolean formBound = false;
+    private boolean suppressBudgetHeadFocus = false;
 
     private final SimpleDateFormat displayFormat =
             new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
@@ -157,7 +159,6 @@ public class EditBookingActivity extends AppCompatActivity {
         etVisitorName = findViewById(R.id.etVisitorName);
         etVisitorDesignation = findViewById(R.id.etVisitorDesignation);
         etVisitorOrganisation = findViewById(R.id.etVisitorOrganisation);
-        etVisitorAddress = findViewById(R.id.etVisitorAddress);
         etVisitorMobile = findViewById(R.id.etVisitorMobile);
         etVisitorEmail = findViewById(R.id.etVisitorEmail);
         etPurpose = findViewById(R.id.etPurpose);
@@ -168,7 +169,9 @@ public class EditBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
-        rgBudgetHeadFocus = findViewById(R.id.rgBudgetHeadFocus);
+        cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
+        cbBudgetHeadDepartmentName = findViewById(R.id.cbBudgetHeadDepartmentName);
+        cbBudgetHeadProjectCode = findViewById(R.id.cbBudgetHeadProjectCode);
         etRoomChargesAmount = findViewById(R.id.etRoomChargesAmount);
         etAttenderChargesAmount = findViewById(R.id.etAttenderChargesAmount);
         etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
@@ -367,7 +370,6 @@ public class EditBookingActivity extends AppCompatActivity {
         etVisitorName.setText(safe(state.getVisitorName()));
         etVisitorDesignation.setText(safe(state.getVisitorDesignation()));
         etVisitorOrganisation.setText(safe(state.getVisitorOrganisation()));
-        etVisitorAddress.setText(safe(state.getVisitorAddress()));
         etVisitorMobile.setText(safe(state.getVisitorMobile()));
         etVisitorEmail.setText(safe(state.getVisitorEmail()));
         etPurpose.setText(safe(state.getPurpose()));
@@ -404,9 +406,21 @@ public class EditBookingActivity extends AppCompatActivity {
                         ? safe(state.getAttenderChargesAmount())
                         : ""
         );
-        etBudgetHeadName.setText(safe(state.getBudgetHeadName()));
-        etBudgetHeadDepartmentName.setText(safe(state.getBudgetHeadDepartmentName()));
-        etBudgetHeadProjectCode.setText(safe(state.getBudgetHeadProjectCode()));
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadName,
+                etBudgetHeadName,
+                state.getBudgetHeadName()
+        );
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadDepartmentName,
+                etBudgetHeadDepartmentName,
+                state.getBudgetHeadDepartmentName()
+        );
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadProjectCode,
+                etBudgetHeadProjectCode,
+                state.getBudgetHeadProjectCode()
+        );
 
         etRequestorName.setText(safe(state.getRequestorName()));
         etRequestorDesignation.setText(safe(state.getRequestorDesignation()));
@@ -624,7 +638,6 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setVisitorDesignation(getText(etVisitorDesignation));
         data.setVisitorOrganisation(getText(etVisitorOrganisation));
         data.setVisitorGender(getSelectedGender());
-        data.setVisitorAddress(getText(etVisitorAddress));
         data.setVisitorMobile(getText(etVisitorMobile));
         data.setVisitorEmail(getText(etVisitorEmail));
         data.setPurpose(getText(etPurpose));
@@ -653,9 +666,13 @@ public class EditBookingActivity extends AppCompatActivity {
                 ? getText(etAttenderChargesAmount)
                 : "0");
 
-        data.setBudgetHeadName(getText(etBudgetHeadName));
-        data.setBudgetHeadDepartmentName(getText(etBudgetHeadDepartmentName));
-        data.setBudgetHeadProjectCode(getText(etBudgetHeadProjectCode));
+        data.setBudgetHeadName(getBudgetHeadText(cbBudgetHeadName, etBudgetHeadName));
+        data.setBudgetHeadDepartmentName(
+                getBudgetHeadText(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName)
+        );
+        data.setBudgetHeadProjectCode(
+                getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode)
+        );
 
         data.setRequestorName(getText(etRequestorName));
         data.setRequestorDesignation(getText(etRequestorDesignation));
@@ -667,6 +684,10 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setLogisticsMobile(getText(etLogisticsMobile));
 
         return data;
+    }
+
+    private String getBudgetHeadText(CheckBox checkbox, EditText field) {
+        return checkbox != null && checkbox.isChecked() ? getText(field) : "";
     }
 
     private Integer getSelectedRoomId() {
@@ -804,38 +825,71 @@ public class EditBookingActivity extends AppCompatActivity {
     }
 
     private void setupBudgetHeadFocusControls() {
-        if (rgBudgetHeadFocus == null) {
-            return;
-        }
-
-        rgBudgetHeadFocus.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rbBudgetHeadName) {
-                focusAndShowKeyboard(etBudgetHeadName);
-            } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
-                focusAndShowKeyboard(etBudgetHeadDepartmentName);
-            } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
-                focusAndShowKeyboard(etBudgetHeadProjectCode);
-            }
-        });
+        setupBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+        setupBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+        setupBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
 
         View clearButton = findViewById(R.id.btnClearBudgetHeadFocus);
         if (clearButton != null) {
             clearButton.setOnClickListener(v -> {
-                int checkedId = rgBudgetHeadFocus.getCheckedRadioButtonId();
-                if (checkedId == R.id.rbBudgetHeadName) {
-                    etBudgetHeadName.setText("");
-                } else if (checkedId == R.id.rbBudgetHeadDepartmentName) {
-                    etBudgetHeadDepartmentName.setText("");
-                } else if (checkedId == R.id.rbBudgetHeadProjectCode) {
-                    etBudgetHeadProjectCode.setText("");
-                }
-                rgBudgetHeadFocus.clearCheck();
-                etBudgetHeadName.clearFocus();
-                etBudgetHeadDepartmentName.clearFocus();
-                etBudgetHeadProjectCode.clearFocus();
+                clearBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+                clearBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+                clearBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
                 hideKeyboard(v);
             });
         }
+    }
+
+    private void setupBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox == null || field == null) {
+            return;
+        }
+
+        updateBudgetHeadFieldVisibility(checkbox, field);
+        checkbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateBudgetHeadFieldVisibility(checkbox, field);
+            if (isChecked) {
+                if (!suppressBudgetHeadFocus) {
+                    focusAndShowKeyboard(field);
+                }
+            } else {
+                field.setText("");
+                field.clearFocus();
+            }
+        });
+    }
+
+    private void clearBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox != null) {
+            checkbox.setChecked(false);
+        }
+        if (field != null) {
+            field.setText("");
+            field.clearFocus();
+            field.setVisibility(View.GONE);
+        }
+    }
+
+    private void setBudgetHeadOptionFromValue(CheckBox checkbox, EditText field, String value) {
+        if (field == null) {
+            return;
+        }
+
+        field.setText(safe(value));
+        suppressBudgetHeadFocus = true;
+        if (checkbox != null) {
+            checkbox.setChecked(!safe(value).trim().isEmpty());
+        }
+        suppressBudgetHeadFocus = false;
+        updateBudgetHeadFieldVisibility(checkbox, field);
+    }
+
+    private void updateBudgetHeadFieldVisibility(CheckBox checkbox, EditText field) {
+        if (field == null) {
+            return;
+        }
+
+        field.setVisibility(checkbox != null && checkbox.isChecked() ? View.VISIBLE : View.GONE);
     }
 
     private void focusAndShowKeyboard(EditText field) {

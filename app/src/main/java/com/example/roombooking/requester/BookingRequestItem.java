@@ -67,9 +67,6 @@ public class BookingRequestItem {
     @SerializedName("visitor_gender")
     private String visitorGender;
 
-    @SerializedName("visitor_address")
-    private String visitorAddress;
-
     @SerializedName("visitor_mobile")
     private String visitorMobile;
 
@@ -194,10 +191,6 @@ public class BookingRequestItem {
 
     public String getVisitorGender() {
         return safe(visitorGender);
-    }
-
-    public String getVisitorAddress() {
-        return safe(visitorAddress);
     }
 
     public String getVisitorMobile() {

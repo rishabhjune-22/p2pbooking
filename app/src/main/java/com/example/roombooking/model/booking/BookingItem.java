@@ -9,12 +9,16 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public class BookingItem implements Parcelable {
 
     @SerializedName("id")
     private int id;
+
+    @SerializedName("booking_reference_number")
+    private String bookingReferenceNumber;
 
     @SerializedName("room")
     private int room;
@@ -48,9 +52,6 @@ public class BookingItem implements Parcelable {
 
     @SerializedName("visitor_gender")
     private String visitorGender;
-
-    @SerializedName("visitor_address")
-    private String visitorAddress;
 
     @SerializedName("visitor_mobile")
     private String visitorMobile;
@@ -136,6 +137,7 @@ public class BookingItem implements Parcelable {
 
     protected BookingItem(Parcel in) {
         id = in.readInt();
+        bookingReferenceNumber = in.readString();
         room = in.readInt();
         roomName = in.readString();
         arrivalAt = in.readString();
@@ -148,7 +150,6 @@ public class BookingItem implements Parcelable {
         visitorDesignation = in.readString();
         visitorOrganisation = in.readString();
         visitorGender = in.readString();
-        visitorAddress = in.readString();
         visitorMobile = in.readString();
         visitorEmail = in.readString();
         purposeOfVisit = in.readString();
@@ -205,6 +206,7 @@ public class BookingItem implements Parcelable {
                 && attenderMorningShift == other.attenderMorningShift
                 && attenderDayShift == other.attenderDayShift
                 && Objects.equals(roomName, other.roomName)
+                && Objects.equals(bookingReferenceNumber, other.bookingReferenceNumber)
                 && Objects.equals(arrivalAt, other.arrivalAt)
                 && Objects.equals(departureAt, other.departureAt)
                 && Objects.equals(createdByName, other.createdByName)
@@ -214,7 +216,6 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(visitorDesignation, other.visitorDesignation)
                 && Objects.equals(visitorOrganisation, other.visitorOrganisation)
                 && Objects.equals(visitorGender, other.visitorGender)
-                && Objects.equals(visitorAddress, other.visitorAddress)
                 && Objects.equals(visitorMobile, other.visitorMobile)
                 && Objects.equals(visitorEmail, other.visitorEmail)
                 && Objects.equals(purposeOfVisit, other.purposeOfVisit)
@@ -240,6 +241,13 @@ public class BookingItem implements Parcelable {
 
     public int getId() {
         return id;
+    }
+
+    public String getBookingReferenceNumber() {
+        if (bookingReferenceNumber != null && !bookingReferenceNumber.trim().isEmpty()) {
+            return bookingReferenceNumber.trim();
+        }
+        return id > 0 ? String.format(Locale.US, "%06d", id) : "";
     }
 
     public int getRoom() {
@@ -284,10 +292,6 @@ public class BookingItem implements Parcelable {
 
     public String getVisitorGender() {
         return visitorGender;
-    }
-
-    public String getVisitorAddress() {
-        return visitorAddress;
     }
 
     public String getVisitorMobile() {
@@ -414,6 +418,7 @@ public class BookingItem implements Parcelable {
     @Override
     public void writeToParcel(@NonNull Parcel parcel, int flags) {
         parcel.writeInt(id);
+        parcel.writeString(bookingReferenceNumber);
         parcel.writeInt(room);
         parcel.writeString(roomName);
         parcel.writeString(arrivalAt);
@@ -426,7 +431,6 @@ public class BookingItem implements Parcelable {
         parcel.writeString(visitorDesignation);
         parcel.writeString(visitorOrganisation);
         parcel.writeString(visitorGender);
-        parcel.writeString(visitorAddress);
         parcel.writeString(visitorMobile);
         parcel.writeString(visitorEmail);
         parcel.writeString(purposeOfVisit);
