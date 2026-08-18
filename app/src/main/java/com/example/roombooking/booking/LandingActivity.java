@@ -1139,10 +1139,11 @@ public class LandingActivity extends AppCompatActivity {
 
     private TextView createAvailableRoomView(AvailableRoomItem room) {
         TextView roomView = new TextView(this);
+        String roomLabel = RoomInventory.displayAvailableRoomLabel(selectedPrefix, room);
 
         if (room.isPartiallyAvailable()) {
             roomView.setText(
-                    room.getSafeSelectionLabel()
+                    roomLabel
                             + "\nAvailable from: "
                             + room.getSafeAvailableFromDate()
                             + ", "
@@ -1152,7 +1153,7 @@ public class LandingActivity extends AppCompatActivity {
             roomView.setBackgroundColor(getColor(R.color.availability_border));
         } else {
             roomView.setText(
-                    room.getSafeSelectionLabel()
+                    roomLabel
                             + "\nAvailable"
             );
 
@@ -1191,7 +1192,10 @@ public class LandingActivity extends AppCompatActivity {
         Intent intent = new Intent(LandingActivity.this, CreateBookingActivity.class);
 
         intent.putExtra(CreateBookingActivity.EXTRA_ROOM_ID, room.getRoomId());
-        intent.putExtra(CreateBookingActivity.EXTRA_ROOM_NAME, room.getSafeSelectionLabel());
+        intent.putExtra(
+                CreateBookingActivity.EXTRA_ROOM_NAME,
+                RoomInventory.displayAvailableRoomLabel(selectedPrefix, room)
+        );
 
         intent.putExtra(CreateBookingActivity.EXTRA_ARRIVAL_DATE, selectedAvailableArrivalDate);
         intent.putExtra(CreateBookingActivity.EXTRA_DEPARTURE_DATE, selectedAvailableDepartureDate);
@@ -1291,7 +1295,7 @@ public class LandingActivity extends AppCompatActivity {
 
         card.setText(
                 "Person Name: " + item.getSafeGuestName() + "\n"
-                        + "Room: " + item.getSafeSelectionLabel() + "\n"
+                        + "Room: " + RoomInventory.displayStoredRoomLabel(item.getSafeSelectionLabel()) + "\n"
                         + "Requestor: " + item.getSafeRequestorName() + "\n"
                         + "Arrival: " + DateTimeUtils.formatUtcToLocal(item.getArrivalAt()) + "\n"
                         + "Departure: " + DateTimeUtils.formatUtcToLocal(item.getDepartureAt())

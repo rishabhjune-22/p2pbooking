@@ -64,6 +64,43 @@ public final class RoomInventory {
         return visibleRooms;
     }
 
+    public static String displayRoomLabel(RoomItem room) {
+        if (room == null) {
+            return "";
+        }
+
+        String label = firstNonBlank(
+                room.getSafeSelectionLabel(),
+                firstNonBlank(room.getSafeRoomName(), room.getSafePrefix() + " " + room.getSafeNumber())
+        );
+        return appendDeltaBathroomSpecification(room.getSafePrefix(), label);
+    }
+
+    public static String displayAvailableRoomLabel(
+            String selectedPrefix,
+            AvailableRoomItem room
+    ) {
+        if (room == null) {
+            return "";
+        }
+
+        String prefix = firstNonBlank(room.getPrefix(), selectedPrefix);
+        String label = firstNonBlank(room.getSafeSelectionLabel(), room.getSafeRoomName());
+        return appendDeltaBathroomSpecification(prefix, label);
+    }
+
+    public static String displayStoredRoomLabel(String label) {
+        String safeLabel = safe(label);
+        if (safeLabel.isEmpty()) {
+            return "";
+        }
+        String normalizedLabel = normalize(safeLabel);
+        if (!normalizedLabel.contains("DELTA")) {
+            return safeLabel;
+        }
+        return appendDeltaBathroomSpecification(RoomPrefix.DELTA, safeLabel);
+    }
+
     private static boolean isVisibleRoom(RoomItem room) {
         if (room == null) {
             return false;
@@ -102,6 +139,36 @@ public final class RoomInventory {
             }
         }
         return false;
+    }
+
+    private static String appendDeltaBathroomSpecification(String prefix, String label) {
+        String safeLabel = safe(label);
+        if (!isDelta(prefix) || safeLabel.isEmpty()) {
+            return safeLabel;
+        }
+
+        String normalizedLabel = normalize(safeLabel);
+        if (normalizedLabel.contains("BATHROOM")) {
+            return safeLabel;
+        }
+
+        String specification = deltaBathroomSpecification(normalizedLabel);
+        if (specification.isEmpty()) {
+            return safeLabel;
+        }
+        return safeLabel + " (" + specification + ")";
+    }
+
+    private static String deltaBathroomSpecification(String normalizedLabel) {
+        for (String roomNumber : DELTA_ROOM_NUMBERS) {
+            if (!normalizedLabel.contains(roomNumber)) {
+                continue;
+            }
+            return roomNumber.endsWith("A") || roomNumber.endsWith("B")
+                    ? "Attached bathroom"
+                    : "Bathroom not attached";
+        }
+        return "";
     }
 
     private static boolean isDelta(String prefix) {

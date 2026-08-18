@@ -417,7 +417,10 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         if (item.getPreferredRoom() != null) {
             intent.putExtra(CreateBookingActivity.EXTRA_ROOM_ID, item.getPreferredRoom());
         }
-        intent.putExtra(CreateBookingActivity.EXTRA_ROOM_NAME, item.getPreferredRoomName());
+        intent.putExtra(
+                CreateBookingActivity.EXTRA_ROOM_NAME,
+                RoomInventory.displayStoredRoomLabel(item.getPreferredRoomName())
+        );
         intent.putExtra(CreateBookingActivity.EXTRA_ARRIVAL_DATE, item.getArrivalAt());
         intent.putExtra(CreateBookingActivity.EXTRA_DEPARTURE_DATE, item.getDepartureAt());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_NAME, item.getVisitorName());
@@ -915,13 +918,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
     }
 
     private String roomLabel(RoomItem room) {
-        String label = room.getSafeSelectionLabel();
-        if (isBlank(label)) {
-            label = room.getSafeRoomName();
-        }
-        if (isBlank(label)) {
-            label = room.getSafePrefix() + " " + room.getSafeNumber();
-        }
+        String label = RoomInventory.displayRoomLabel(room);
         return label + " (#" + room.getId() + ")";
     }
 

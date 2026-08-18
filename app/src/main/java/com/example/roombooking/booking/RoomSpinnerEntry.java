@@ -1,6 +1,7 @@
 package com.example.roombooking.booking;
 
 import com.example.roombooking.model.room.RoomItem;
+import com.example.roombooking.model.room.RoomInventory;
 
 final class RoomSpinnerEntry {
 
@@ -23,7 +24,7 @@ final class RoomSpinnerEntry {
     }
 
     static RoomSpinnerEntry room(RoomItem room) {
-        return new RoomSpinnerEntry(room.getSafeSelectionLabel(), room, false);
+        return new RoomSpinnerEntry(RoomInventory.displayRoomLabel(room), room, false);
     }
 
     RoomItem getRoom() {

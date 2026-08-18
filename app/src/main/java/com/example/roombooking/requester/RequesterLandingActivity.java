@@ -548,7 +548,7 @@ public class RequesterLandingActivity extends AppCompatActivity {
             );
             intent.putExtra(
                     RequesterRequestBookingActivity.EXTRA_PREFERRED_ROOM_NAME,
-                    room.getSafeSelectionLabel()
+                    RoomInventory.displayAvailableRoomLabel(selectedPrefix, room)
             );
         }
         startActivity(intent);
@@ -737,7 +737,9 @@ public class RequesterLandingActivity extends AppCompatActivity {
             TextView roomView,
             AvailableRoomItem room
     ) {
-        StringBuilder text = new StringBuilder(room.getSafeSelectionLabel());
+        StringBuilder text = new StringBuilder(
+                RoomInventory.displayAvailableRoomLabel(selectedPrefix, room)
+        );
         if (room.isPartiallyAvailable()) {
             text.append("\nAvailable from: ").append(formatAvailableFrom(room));
         } else {
