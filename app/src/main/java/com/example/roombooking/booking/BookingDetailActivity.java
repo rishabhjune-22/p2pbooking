@@ -634,8 +634,8 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
 
         if (isExpired()) {
-            btnDeleteBooking.setEnabled(false);
-            btnDeleteBooking.setText("Expired");
+            btnDeleteBooking.setEnabled(true);
+            btnDeleteBooking.setText("Delete Booking");
 
             btnEditBooking.setEnabled(false);
             btnEditBooking.setText("Edit Disabled");
@@ -657,11 +657,6 @@ public class BookingDetailActivity extends AppCompatActivity {
     private void showDeleteDialog() {
         if (bookingItem == null) {
             showToast("No booking details found.");
-            return;
-        }
-
-        if (isExpired()) {
-            showToast("Expired booking cannot be deleted.");
             return;
         }
 

@@ -43,6 +43,21 @@ public class BookingRequestCreateRequest {
     @SerializedName("purpose_of_visit")
     private final String purposeOfVisit;
 
+    @SerializedName("budget_head_type")
+    private final String budgetHeadType;
+
+    @SerializedName("budget_head_value")
+    private final String budgetHeadValue;
+
+    @SerializedName("budget_head_name")
+    private final String budgetHeadName;
+
+    @SerializedName("budget_head_department_name")
+    private final String budgetHeadDepartmentName;
+
+    @SerializedName("budget_head_project_code")
+    private final String budgetHeadProjectCode;
+
     @SerializedName("attender_required")
     private final boolean attenderRequired;
 
@@ -87,6 +102,11 @@ public class BookingRequestCreateRequest {
             String visitorEmail,
             String visitorCategory,
             String purposeOfVisit,
+            String budgetHeadType,
+            String budgetHeadValue,
+            String budgetHeadName,
+            String budgetHeadDepartmentName,
+            String budgetHeadProjectCode,
             boolean attenderRequired,
             int attenderCountPerDay,
             boolean attenderGeneralShift,
@@ -111,6 +131,11 @@ public class BookingRequestCreateRequest {
         this.visitorEmail = visitorEmail;
         this.visitorCategory = visitorCategory;
         this.purposeOfVisit = purposeOfVisit;
+        this.budgetHeadType = budgetHeadType;
+        this.budgetHeadValue = budgetHeadValue;
+        this.budgetHeadName = budgetHeadName;
+        this.budgetHeadDepartmentName = budgetHeadDepartmentName;
+        this.budgetHeadProjectCode = budgetHeadProjectCode;
         this.attenderRequired = attenderRequired;
         this.attenderCountPerDay = attenderCountPerDay;
         this.attenderGeneralShift = attenderGeneralShift;

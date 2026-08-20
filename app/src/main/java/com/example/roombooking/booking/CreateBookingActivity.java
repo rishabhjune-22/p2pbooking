@@ -75,6 +75,11 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
     public static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    public static final String EXTRA_BUDGET_HEAD_TYPE = "budget_head_type";
+    public static final String EXTRA_BUDGET_HEAD_VALUE = "budget_head_value";
+    public static final String EXTRA_BUDGET_HEAD_NAME = "budget_head_name";
+    public static final String EXTRA_BUDGET_HEAD_DEPARTMENT_NAME = "budget_head_department_name";
+    public static final String EXTRA_BUDGET_HEAD_PROJECT_CODE = "budget_head_project_code";
     public static final String EXTRA_REQUESTOR_NAME = "requestor_name";
     public static final String EXTRA_REQUESTOR_DESIGNATION = "requestor_designation";
     public static final String EXTRA_REQUESTOR_DEPARTMENT = "requestor_department";
@@ -104,6 +109,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etLogisticsName;
     private EditText etLogisticsDesignation;
     private EditText etLogisticsMobile;
+    private LinearLayout reviewRemarksContainer;
+    private EditText etReviewRemarks;
 
     private Spinner spinnerRoom;
     private TextView tvMessage;
@@ -207,6 +214,8 @@ public class CreateBookingActivity extends AppCompatActivity {
         etLogisticsName = findViewById(R.id.etLogisticsName);
         etLogisticsDesignation = findViewById(R.id.etLogisticsDesignation);
         etLogisticsMobile = findViewById(R.id.etLogisticsMobile);
+        reviewRemarksContainer = findViewById(R.id.reviewRemarksContainer);
+        etReviewRemarks = findViewById(R.id.etReviewRemarks);
 
         spinnerRoom = findViewById(R.id.spinnerRoom);
         tvMessage = findViewById(R.id.tvMessage);
@@ -305,14 +314,16 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         btnCreateBooking.setOnClickListener(v -> submitBooking());
         if (bookingRequestApprovalMode) {
+            reviewRemarksContainer.setVisibility(View.VISIBLE);
             btnCreateBooking.setText("Approve");
             btnFillDummy.setText("Reject");
-            btnFillDummy.setOnClickListener(v -> showRejectBookingRequestDialog());
+            btnFillDummy.setOnClickListener(v -> rejectBookingRequest(getReviewRemarks()));
             btnSendBackBooking.setVisibility(View.VISIBLE);
-            btnSendBackBooking.setOnClickListener(v -> showSendBackBookingRequestDialog());
+            btnSendBackBooking.setOnClickListener(v -> sendBackBookingRequestFromForm());
             btnDeleteBookingRequest.setVisibility(View.VISIBLE);
             btnDeleteBookingRequest.setOnClickListener(v -> showDeleteBookingRequestDialog());
         } else {
+            reviewRemarksContainer.setVisibility(View.GONE);
             btnSendBackBooking.setVisibility(View.GONE);
             btnDeleteBookingRequest.setVisibility(View.GONE);
             btnFillDummy.setOnClickListener(v -> fillRandomBookingData());
@@ -502,6 +513,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorMobile.setText(intent.getStringExtra(EXTRA_VISITOR_MOBILE));
         etVisitorEmail.setText(intent.getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(intent.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
+        prefillBudgetHeadFromIntent(intent);
 
         etRequestorName.setText(intent.getStringExtra(EXTRA_REQUESTOR_NAME));
         etRequestorDesignation.setText(intent.getStringExtra(EXTRA_REQUESTOR_DESIGNATION));
@@ -523,6 +535,28 @@ public class CreateBookingActivity extends AppCompatActivity {
         }
 
         showMessage("Review requester details before creating or rejecting this booking.");
+    }
+
+    private void prefillBudgetHeadFromIntent(Intent intent) {
+        String name = safeString(intent.getStringExtra(EXTRA_BUDGET_HEAD_NAME));
+        String departmentName = safeString(intent.getStringExtra(EXTRA_BUDGET_HEAD_DEPARTMENT_NAME));
+        String projectCode = safeString(intent.getStringExtra(EXTRA_BUDGET_HEAD_PROJECT_CODE));
+        String type = safeString(intent.getStringExtra(EXTRA_BUDGET_HEAD_TYPE));
+        String value = safeString(intent.getStringExtra(EXTRA_BUDGET_HEAD_VALUE));
+
+        if (name.isEmpty() && departmentName.isEmpty() && projectCode.isEmpty() && !value.isEmpty()) {
+            if ("institute_head".equalsIgnoreCase(type)) {
+                departmentName = value;
+            } else if ("project_head".equalsIgnoreCase(type)) {
+                projectCode = value;
+            } else {
+                name = value;
+            }
+        }
+
+        setBudgetHeadOptionFromValue(cbBudgetHeadName, etBudgetHeadName, name);
+        setBudgetHeadOptionFromValue(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName, departmentName);
+        setBudgetHeadOptionFromValue(cbBudgetHeadProjectCode, etBudgetHeadProjectCode, projectCode);
     }
 
     private void setGenderSelection(String gender) {
@@ -897,7 +931,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("logistics_name", data.getLogisticsName());
         payload.put("logistics_designation", data.getLogisticsDesignation());
         payload.put("logistics_mobile", data.getLogisticsMobile());
-        payload.put("remarks", "");
+        payload.put("remarks", getReviewRemarks());
         return payload;
     }
 
@@ -960,24 +994,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         });
     }
 
-    private void showRejectBookingRequestDialog() {
-        if (isBusy()) {
-            return;
-        }
-
-        EditText remarks = new EditText(this);
-        remarks.setHint("Remarks (optional)");
-        remarks.setSingleLine(false);
-        remarks.setMinLines(2);
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Reject Booking Request?")
-                .setView(remarks)
-                .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton("Reject", (dialog, which) -> rejectBookingRequest(getText(remarks)))
-                .show();
-    }
-
     private void rejectBookingRequest(String remarks) {
         setLoading(true);
         approvalRequestInFlight = true;
@@ -1026,36 +1042,6 @@ public class CreateBookingActivity extends AppCompatActivity {
                 }
             }
         });
-    }
-
-    private void showSendBackBookingRequestDialog() {
-        if (isBusy()) {
-            return;
-        }
-
-        EditText remarks = new EditText(this);
-        remarks.setHint("Explain what needs to be corrected");
-        remarks.setSingleLine(false);
-        remarks.setMinLines(3);
-
-        androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Send Back for Correction")
-                .setView(remarks)
-                .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton("Send Back", null)
-                .create();
-        dialog.setOnShowListener(shownDialog -> dialog
-                .getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE)
-                .setOnClickListener(v -> {
-                    String value = getText(remarks);
-                    if (value.isEmpty()) {
-                        remarks.setError("Remarks are required.");
-                        return;
-                    }
-                    dialog.dismiss();
-                    sendBackBookingRequest(value);
-                }));
-        dialog.show();
     }
 
     private void sendBackBookingRequest(String remarks) {
@@ -1108,8 +1094,36 @@ public class CreateBookingActivity extends AppCompatActivity {
         });
     }
 
+    private void sendBackBookingRequestFromForm() {
+        if (isBusy()) {
+            return;
+        }
+
+        String remarks = getReviewRemarks();
+        if (remarks.isEmpty()) {
+            etReviewRemarks.setError("Remarks are required.");
+            showError("Remarks are required.");
+            focusAndShowKeyboard(etReviewRemarks);
+            return;
+        }
+
+        sendBackBookingRequest(remarks);
+    }
+
+    private String getReviewRemarks() {
+        return etReviewRemarks != null ? getText(etReviewRemarks) : "";
+    }
+
     private void showDeleteBookingRequestDialog() {
         if (isBusy()) {
+            return;
+        }
+
+        String remarks = getReviewRemarks();
+        if (remarks.isEmpty()) {
+            etReviewRemarks.setError("Remarks are required.");
+            showError("Remarks are required.");
+            focusAndShowKeyboard(etReviewRemarks);
             return;
         }
 
@@ -1119,23 +1133,24 @@ public class CreateBookingActivity extends AppCompatActivity {
         message.setTextSize(14);
         message.setPadding(0, 0, 0, getResources().getDimensionPixelSize(R.dimen.space_10));
 
-        EditText remarks = new EditText(this);
-        remarks.setHint("Remarks");
-        remarks.setSingleLine(false);
-        remarks.setMinLines(2);
+        TextView remarksText = new TextView(this);
+        remarksText.setText("Remarks: " + remarks);
+        remarksText.setTextColor(getColor(R.color.detail_text_primary));
+        remarksText.setTextSize(14);
+        remarksText.setPadding(0, 0, 0, getResources().getDimensionPixelSize(R.dimen.space_10));
 
         LinearLayout content = new LinearLayout(this);
         content.setOrientation(LinearLayout.VERTICAL);
         int horizontalPadding = getResources().getDimensionPixelSize(R.dimen.space_20);
         content.setPadding(horizontalPadding, getResources().getDimensionPixelSize(R.dimen.space_6), horizontalPadding, 0);
         content.addView(message);
-        content.addView(remarks);
+        content.addView(remarksText);
 
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle("Delete Request")
                 .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton("Delete", (dialog, which) -> deleteBookingRequest(getText(remarks)))
+                .setPositiveButton("Delete", (dialog, which) -> deleteBookingRequest(remarks))
                 .show();
     }
 
@@ -1520,6 +1535,10 @@ public class CreateBookingActivity extends AppCompatActivity {
     private String generateRandomEmail(String name) {
         String cleanName = name.toLowerCase(Locale.ROOT).replace(" ", ".");
         return cleanName + random.nextInt(1000) + "@test.com";
+    }
+
+    private static String safeString(String value) {
+        return value != null ? value.trim() : "";
     }
 
     @Override

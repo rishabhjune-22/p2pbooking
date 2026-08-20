@@ -431,6 +431,11 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
         intent.putExtra(CreateBookingActivity.EXTRA_PURPOSE_OF_VISIT, item.getPurposeOfVisit());
+        intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_TYPE, item.getBudgetHeadType());
+        intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_VALUE, item.getBudgetHeadValue());
+        intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_NAME, item.getBudgetHeadName());
+        intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_DEPARTMENT_NAME, item.getBudgetHeadDepartmentName());
+        intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_PROJECT_CODE, item.getBudgetHeadProjectCode());
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_NAME, item.getRequestorName());
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_DESIGNATION, item.getRequestorDesignation());
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_DEPARTMENT, item.getRequestorDepartment());
@@ -470,6 +475,11 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Category", item.getVisitorCategory()));
         content.addView(ListScreenUiHelper.detailRow(this, "Purpose", item.getPurposeOfVisit()));
+
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Budget Head"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Individual", item.getBudgetHeadName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Institute Head", item.getBudgetHeadDepartmentName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Project code", item.getBudgetHeadProjectCode()));
 
         content.addView(ListScreenUiHelper.sectionHeader(this, "Schedule & Room"));
         content.addView(ListScreenUiHelper.detailRow(this, "Arrival", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())));
@@ -716,12 +726,24 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(message);
         content.addView(remarks);
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Delete Request")
                 .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton("Delete", (dialog, which) -> deleteRequest(item, detailDialogRef, text(remarks)))
-                .show();
+                .setPositiveButton("Delete", null)
+                .create();
+        dialog.setOnShowListener(shownDialog -> dialog
+                .getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String value = text(remarks);
+                    if (value.isEmpty()) {
+                        remarks.setError("Remarks are required.");
+                        return;
+                    }
+                    dialog.dismiss();
+                    deleteRequest(item, detailDialogRef, value);
+                }));
+        dialog.show();
     }
 
     private void deleteRequest(BookingRequestItem item, AlertDialog[] detailDialogRef, String remarks) {

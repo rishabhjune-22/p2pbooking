@@ -249,21 +249,10 @@ public class RequesterLandingViewModel extends ViewModel {
             return;
         }
 
-        requestedUserId = userId;
-        requestedPrefix = safe(prefix);
-        requestedMonth = month;
-        requestedYear = year;
-        updateAvailabilityStatus(SyncStatusFormatter.REFRESHING);
-        loadAvailabilityInternal(
-                userId,
-                requestedPrefix,
-                month,
-                year,
-                cacheKey,
-                false,
-                true,
-                System.currentTimeMillis()
+        AppDiagnostics.logEvent(
+                "requester_availability_foreground_refresh_cache_first_stale"
         );
+        loadAvailability(userId, prefix, month, year);
     }
 
     public void refreshVisibleSyncStatusAge() {

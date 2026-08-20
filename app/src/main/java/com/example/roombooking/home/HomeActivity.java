@@ -719,10 +719,6 @@ public class HomeActivity extends AppCompatActivity {
             return;
         }
 
-        if (!canDeleteBooking(bookingItem)) {
-            return;
-        }
-
         String displayName = getBookingDisplayName(bookingItem);
 
         new AlertDialog.Builder(this)
@@ -733,15 +729,6 @@ public class HomeActivity extends AppCompatActivity {
                 )
                 .setNegativeButton("Close", null)
                 .show();
-    }
-
-    private boolean canDeleteBooking(BookingItem bookingItem) {
-        if (BookingStatus.isExpired(bookingItem.getStatus())) {
-            showToast("Expired booking cannot be deleted");
-            return false;
-        }
-
-        return true;
     }
 
     private String getBookingDisplayName(BookingItem bookingItem) {

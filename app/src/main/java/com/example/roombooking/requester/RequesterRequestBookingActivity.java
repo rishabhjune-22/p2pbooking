@@ -69,6 +69,11 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
     public static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    public static final String EXTRA_BUDGET_HEAD_TYPE = "budget_head_type";
+    public static final String EXTRA_BUDGET_HEAD_VALUE = "budget_head_value";
+    public static final String EXTRA_BUDGET_HEAD_NAME = "budget_head_name";
+    public static final String EXTRA_BUDGET_HEAD_DEPARTMENT_NAME = "budget_head_department_name";
+    public static final String EXTRA_BUDGET_HEAD_PROJECT_CODE = "budget_head_project_code";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
     public static final String EXTRA_ATTENDER_COUNT_PER_DAY = "attender_count_per_day";
     public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
@@ -103,6 +108,13 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private RadioGroup rgVisitorCategory;
     private TextView btnClearVisitorCategory;
     private EditText etPurpose;
+    private CheckBox cbBudgetHeadName;
+    private CheckBox cbBudgetHeadDepartmentName;
+    private CheckBox cbBudgetHeadProjectCode;
+    private EditText etBudgetHeadName;
+    private EditText etBudgetHeadDepartmentName;
+    private EditText etBudgetHeadProjectCode;
+    private TextView btnClearBudgetHeadFocus;
     private CheckBox cbAttenderRequired;
     private EditText etAttenderCount;
     private TextView tvSelectShiftLabel;
@@ -124,6 +136,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private Integer preferredRoomId = null;
     private boolean editMode = false;
     private boolean resubmitMode = false;
+    private boolean suppressBudgetHeadFocus = false;
     private int bookingRequestId = -1;
     private Call<ApiResponse<BookingRequestItem>> submitCall;
 
@@ -163,6 +176,13 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         btnClearVisitorCategory = findViewById(R.id.btnClearVisitorCategory);
         etPurpose = findViewById(R.id.etPurpose);
+        cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
+        cbBudgetHeadDepartmentName = findViewById(R.id.cbBudgetHeadDepartmentName);
+        cbBudgetHeadProjectCode = findViewById(R.id.cbBudgetHeadProjectCode);
+        etBudgetHeadName = findViewById(R.id.etBudgetHeadName);
+        etBudgetHeadDepartmentName = findViewById(R.id.etBudgetHeadDepartmentName);
+        etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
+        btnClearBudgetHeadFocus = findViewById(R.id.btnClearBudgetHeadFocus);
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         etAttenderCount = findViewById(R.id.etAttenderCount);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
@@ -316,6 +336,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         });
 
         btnSubmit.setOnClickListener(v -> submit());
+        setupBudgetHeadControls();
         updateAttenderControlsState();
     }
 
@@ -327,6 +348,9 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 etVisitorMobile,
                 etVisitorEmail,
                 etPurpose,
+                etBudgetHeadName,
+                etBudgetHeadDepartmentName,
+                etBudgetHeadProjectCode,
                 etAttenderCount,
                 etRequestorName,
                 etRequestorDesignation,
@@ -383,6 +407,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etVisitorMobile.setText(getIntent().getStringExtra(EXTRA_VISITOR_MOBILE));
         etVisitorEmail.setText(getIntent().getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(getIntent().getStringExtra(EXTRA_PURPOSE_OF_VISIT));
+        prefillBudgetHeadFields();
 
         etRequestorName.setText(getIntent().getStringExtra(EXTRA_REQUESTOR_NAME));
         etRequestorDesignation.setText(getIntent().getStringExtra(EXTRA_REQUESTOR_DESIGNATION));
@@ -403,6 +428,28 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
             cbDayShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
             updateAttenderControlsState();
         }
+    }
+
+    private void prefillBudgetHeadFields() {
+        String name = safe(getIntent().getStringExtra(EXTRA_BUDGET_HEAD_NAME));
+        String departmentName = safe(getIntent().getStringExtra(EXTRA_BUDGET_HEAD_DEPARTMENT_NAME));
+        String projectCode = safe(getIntent().getStringExtra(EXTRA_BUDGET_HEAD_PROJECT_CODE));
+        String type = safe(getIntent().getStringExtra(EXTRA_BUDGET_HEAD_TYPE));
+        String value = safe(getIntent().getStringExtra(EXTRA_BUDGET_HEAD_VALUE));
+
+        if (name.isEmpty() && departmentName.isEmpty() && projectCode.isEmpty() && !value.isEmpty()) {
+            if ("institute_head".equalsIgnoreCase(type)) {
+                departmentName = value;
+            } else if ("project_head".equalsIgnoreCase(type)) {
+                projectCode = value;
+            } else {
+                name = value;
+            }
+        }
+
+        setBudgetHeadOptionFromValue(cbBudgetHeadName, etBudgetHeadName, name);
+        setBudgetHeadOptionFromValue(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName, departmentName);
+        setBudgetHeadOptionFromValue(cbBudgetHeadProjectCode, etBudgetHeadProjectCode, projectCode);
     }
 
     private void initializeDateCalendars(String arrivalAt, String departureAt) {
@@ -528,14 +575,14 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     }
 
     private boolean validateSelectedSchedule() {
-        if (departureCalendar.getTime().after(arrivalCalendar.getTime())) {
-            hideError();
-            return true;
+        if (!departureCalendar.getTime().after(arrivalCalendar.getTime())) {
+            showError("Departure must be after arrival.");
+            scrollToView(etSelectedDeparture);
+            return false;
         }
 
-        showError("Departure must be after arrival.");
-        scrollToView(etSelectedDeparture);
-        return false;
+        hideError();
+        return true;
     }
 
     private void submit() {
@@ -547,9 +594,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         String visitorEmail = text(etVisitorEmail);
         String requestorEmail = text(etRequestorEmail);
 
-        if (!departureCalendar.getTime().after(arrivalCalendar.getTime())) {
-            showError("Departure must be after arrival.");
-            scrollToView(etSelectedDeparture);
+        if (!validateSelectedSchedule()) {
             return;
         }
         if (visitorName.isEmpty()) {
@@ -676,6 +721,11 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 visitorEmail,
                 selectedVisitorCategory(),
                 text(etPurpose),
+                "",
+                "",
+                getBudgetHeadText(cbBudgetHeadName, etBudgetHeadName),
+                getBudgetHeadText(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName),
+                getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode),
                 attenderRequired,
                 attenderRequired ? attenderCount : 0,
                 attenderRequired && cbGeneralShift.isChecked(),
@@ -687,6 +737,80 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 text(etRequestorMobile),
                 requestorEmail
         );
+    }
+
+    private void setupBudgetHeadControls() {
+        setupBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+        setupBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+        setupBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
+
+        if (btnClearBudgetHeadFocus != null) {
+            btnClearBudgetHeadFocus.setOnClickListener(v -> {
+                clearBudgetHeadOption(cbBudgetHeadName, etBudgetHeadName);
+                clearBudgetHeadOption(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName);
+                clearBudgetHeadOption(cbBudgetHeadProjectCode, etBudgetHeadProjectCode);
+                hideKeyboard(v);
+            });
+        }
+    }
+
+    private void setupBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox == null || field == null) {
+            return;
+        }
+
+        updateBudgetHeadFieldVisibility(checkbox, field);
+        checkbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateBudgetHeadFieldVisibility(checkbox, field);
+            if (isChecked) {
+                if (!suppressBudgetHeadFocus) {
+                    focusAndShowKeyboard(field);
+                }
+            } else {
+                field.setText("");
+                field.clearFocus();
+            }
+        });
+    }
+
+    private void clearBudgetHeadOption(CheckBox checkbox, EditText field) {
+        if (checkbox != null) {
+            checkbox.setChecked(false);
+        }
+        if (field != null) {
+            field.setText("");
+            field.clearFocus();
+            field.setVisibility(View.GONE);
+        }
+    }
+
+    private void updateBudgetHeadFieldVisibility(CheckBox checkbox, EditText field) {
+        if (checkbox == null || field == null) {
+            return;
+        }
+        field.setVisibility(checkbox.isChecked() ? View.VISIBLE : View.GONE);
+    }
+
+    private void setBudgetHeadOptionFromValue(CheckBox checkbox, EditText field, String value) {
+        if (checkbox == null || field == null) {
+            return;
+        }
+        suppressBudgetHeadFocus = true;
+        try {
+            String cleanValue = safe(value);
+            checkbox.setChecked(!cleanValue.isEmpty());
+            field.setText(cleanValue);
+            updateBudgetHeadFieldVisibility(checkbox, field);
+        } finally {
+            suppressBudgetHeadFocus = false;
+        }
+    }
+
+    private String getBudgetHeadText(CheckBox checkbox, EditText field) {
+        if (checkbox == null || field == null || !checkbox.isChecked()) {
+            return "";
+        }
+        return text(field);
     }
 
     private void updateAttenderControlsState() {

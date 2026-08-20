@@ -429,6 +429,11 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Purpose", item.getPurposeOfVisit()));
 
+        content.addView(ListScreenUiHelper.sectionHeader(this, "Budget Head"));
+        content.addView(ListScreenUiHelper.detailRow(this, "Individual", item.getBudgetHeadName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Institute Head", item.getBudgetHeadDepartmentName()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Project code", item.getBudgetHeadProjectCode()));
+
         content.addView(ListScreenUiHelper.sectionHeader(this, "Room"));
         content.addView(ListScreenUiHelper.detailRow(this, "Preference", preferenceText(item)));
         content.addView(ListScreenUiHelper.detailRow(this, "Assigned Room", item.getAssignedRoomName()));
@@ -495,6 +500,11 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_PURPOSE_OF_VISIT, item.getPurposeOfVisit());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_TYPE, item.getBudgetHeadType());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_VALUE, item.getBudgetHeadValue());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_NAME, item.getBudgetHeadName());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_DEPARTMENT_NAME, item.getBudgetHeadDepartmentName());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_PROJECT_CODE, item.getBudgetHeadProjectCode());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_REQUIRED, item.isAttenderRequired());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_COUNT_PER_DAY, item.getAttenderCountPerDay());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_GENERAL_SHIFT, item.isAttenderGeneralShift());
@@ -548,7 +558,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         message.setPadding(0, 0, 0, dp(10));
 
         android.widget.EditText remarks = new android.widget.EditText(this);
-        remarks.setHint("Remarks");
+        remarks.setHint("Remarks (optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
 

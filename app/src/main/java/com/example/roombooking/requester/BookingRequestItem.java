@@ -79,6 +79,21 @@ public class BookingRequestItem {
     @SerializedName("purpose_of_visit")
     private String purposeOfVisit;
 
+    @SerializedName("budget_head_type")
+    private String budgetHeadType;
+
+    @SerializedName("budget_head_value")
+    private String budgetHeadValue;
+
+    @SerializedName("budget_head_name")
+    private String budgetHeadName;
+
+    @SerializedName("budget_head_department_name")
+    private String budgetHeadDepartmentName;
+
+    @SerializedName("budget_head_project_code")
+    private String budgetHeadProjectCode;
+
     @SerializedName("attender_required")
     private boolean attenderRequired;
 
@@ -207,6 +222,26 @@ public class BookingRequestItem {
 
     public String getPurposeOfVisit() {
         return safe(purposeOfVisit);
+    }
+
+    public String getBudgetHeadType() {
+        return safe(budgetHeadType);
+    }
+
+    public String getBudgetHeadValue() {
+        return safe(budgetHeadValue);
+    }
+
+    public String getBudgetHeadName() {
+        return safe(budgetHeadName);
+    }
+
+    public String getBudgetHeadDepartmentName() {
+        return safe(budgetHeadDepartmentName);
+    }
+
+    public String getBudgetHeadProjectCode() {
+        return safe(budgetHeadProjectCode);
     }
 
     public boolean isAttenderRequired() {
