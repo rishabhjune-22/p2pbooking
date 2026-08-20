@@ -329,6 +329,9 @@ public class RequesterLandingActivity extends AppCompatActivity {
                             clearRangeSelectionIfActive();
                             return true;
                         }
+                        if (isBeforeToday(item)) {
+                            return true;
+                        }
                         handleCalendarDateSingleTap(item);
                         return true;
                     }
@@ -337,6 +340,9 @@ public class RequesterLandingActivity extends AppCompatActivity {
                     public void onLongPress(MotionEvent e) {
                         CalendarDayItem item = getCalendarItemFromTouch(e);
                         if (item == null || item.isEmpty()) {
+                            return;
+                        }
+                        if (isBeforeToday(item)) {
                             return;
                         }
                         startRangeSelection(item);
@@ -376,6 +382,24 @@ public class RequesterLandingActivity extends AppCompatActivity {
         }
 
         return calendarAdapter.getItemAt(position);
+    }
+
+    private boolean isBeforeToday(CalendarDayItem item) {
+        return item != null && isDateBeforeToday(item.getSafeDate());
+    }
+
+    private boolean isDateBeforeToday(String dateValue) {
+        if (isBlank(dateValue)) {
+            return false;
+        }
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                .format(Calendar.getInstance().getTime());
+        return dateValue.trim().compareTo(today) < 0;
+    }
+
+    private boolean selectedRangeStartsBeforeToday() {
+        return isDateBeforeToday(arrivalDateForRange)
+                || isDateBeforeToday(departureDateForRange);
     }
 
     private void startRangeSelection(CalendarDayItem item) {
@@ -495,6 +519,10 @@ public class RequesterLandingActivity extends AppCompatActivity {
         if (hasActiveRangeSelection
                 && !isBlank(arrivalDateForRange)
                 && !isBlank(departureDateForRange)) {
+            if (selectedRangeStartsBeforeToday()) {
+                clearRangeSelection();
+                return;
+            }
             calendarAdapter.setSelectedRange(arrivalDateForRange, departureDateForRange);
         }
     }
@@ -511,6 +539,12 @@ public class RequesterLandingActivity extends AppCompatActivity {
 
         if (departureDateForRange.compareTo(arrivalDateForRange) < 0) {
             showToast("Departure date cannot be before arrival date.");
+            return;
+        }
+
+        if (selectedRangeStartsBeforeToday()) {
+            clearRangeSelection();
+            showToast("Past dates cannot be selected.");
             return;
         }
 
@@ -890,14 +924,11 @@ public class RequesterLandingActivity extends AppCompatActivity {
         if (totalRooms <= 0) {
             return CalendarDayItem.TYPE_AVAILABLE;
         }
-        if (day.hasPartialBooking() || day.hasBefore6pmBooking()) {
-            return CalendarDayItem.TYPE_HALF_AVAILABLE;
+        if (availableRooms <= 0) {
+            return CalendarDayItem.TYPE_NOT_AVAILABLE;
         }
         if (availableRooms == totalRooms) {
             return CalendarDayItem.TYPE_AVAILABLE;
-        }
-        if (availableRooms <= 0) {
-            return CalendarDayItem.TYPE_NOT_AVAILABLE;
         }
         double availablePercentage = (availableRooms * 100.0) / totalRooms;
         if (availablePercentage < LESS_THAN_HALF_PERCENTAGE) {

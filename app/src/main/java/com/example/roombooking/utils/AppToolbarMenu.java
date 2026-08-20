@@ -10,6 +10,7 @@ import android.widget.PopupMenu;
 import com.example.roombooking.R;
 import com.example.roombooking.admin.AdminBookingRequestsActivity;
 import com.example.roombooking.admin.AdminRequesterAccountsActivity;
+import com.example.roombooking.admin.SuperadminUserProfilesActivity;
 import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.booking.LandingActivity;
@@ -103,6 +104,10 @@ public final class AppToolbarMenu {
     ) {
         PopupMenu popupMenu = new PopupMenu(activity, anchor, Gravity.END);
         popupMenu.getMenuInflater().inflate(popupMenuRes, popupMenu.getMenu());
+        AuthSessionManager sessionManager = new AuthSessionManager(activity);
+        if (!sessionManager.isSuperadmin()) {
+            popupMenu.getMenu().removeItem(R.id.menuUserProfiles);
+        }
         if (currentMenuItemId != 0) {
             popupMenu.getMenu().removeItem(currentMenuItemId);
         }
@@ -125,6 +130,10 @@ public final class AppToolbarMenu {
 
         if (activity instanceof AdminRequesterAccountsActivity) {
             return R.id.menuRequesterAccounts;
+        }
+
+        if (activity instanceof SuperadminUserProfilesActivity) {
+            return R.id.menuUserProfiles;
         }
 
         return 0;
@@ -170,6 +179,11 @@ public final class AppToolbarMenu {
 
         if (itemId == R.id.menuRequesterAccounts) {
             open(activity, AdminRequesterAccountsActivity.class);
+            return true;
+        }
+
+        if (itemId == R.id.menuUserProfiles) {
+            open(activity, SuperadminUserProfilesActivity.class);
             return true;
         }
 

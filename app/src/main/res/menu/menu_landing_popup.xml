@@ -18,6 +18,10 @@
         android:title="Manage Requesters" />
 
     <item
+        android:id="@+id/menuUserProfiles"
+        android:title="User Profiles" />
+
+    <item
         android:id="@+id/menuLogout"
         android:title="@string/logout" />
 

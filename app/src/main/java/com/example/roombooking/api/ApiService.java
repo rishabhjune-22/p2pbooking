@@ -196,4 +196,32 @@ public interface ApiService {
             @Body AccountApprovalDecisionRequest request
     );
 
+    @GET("api/superadmin/account-requests/")
+    Call<ApiResponse<List<AccountRequestItem>>> getSuperadminAccountRequests(
+            @Query("role") String role,
+            @Query("status") String status
+    );
+
+    @GET("api/superadmin/account-requests/{pk}/")
+    Call<ApiResponse<AccountRequestItem>> getSuperadminAccountRequest(
+            @Path("pk") int requestId
+    );
+
+    @POST("api/superadmin/account-requests/{pk}/approve/")
+    Call<ApiResponse<AccountRequestItem>> approveSuperadminAccountRequest(
+            @Path("pk") int requestId,
+            @Body AccountApprovalDecisionRequest request
+    );
+
+    @POST("api/superadmin/account-requests/{pk}/reject/")
+    Call<ApiResponse<AccountRequestItem>> rejectSuperadminAccountRequest(
+            @Path("pk") int requestId,
+            @Body AccountApprovalDecisionRequest request
+    );
+
+    @DELETE("api/superadmin/account-requests/{pk}/delete/")
+    Call<ApiResponse<Map<String, Object>>> deleteSuperadminAccountRequest(
+            @Path("pk") int requestId
+    );
+
 }
