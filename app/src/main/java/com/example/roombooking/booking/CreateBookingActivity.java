@@ -317,7 +317,7 @@ public class CreateBookingActivity extends AppCompatActivity {
             reviewRemarksContainer.setVisibility(View.VISIBLE);
             btnCreateBooking.setText("Approve");
             btnFillDummy.setText("Reject");
-            btnFillDummy.setOnClickListener(v -> rejectBookingRequest(getReviewRemarks()));
+            btnFillDummy.setOnClickListener(v -> rejectBookingRequestFromForm());
             btnSendBackBooking.setVisibility(View.VISIBLE);
             btnSendBackBooking.setOnClickListener(v -> sendBackBookingRequestFromForm());
             btnDeleteBookingRequest.setVisibility(View.VISIBLE);
@@ -1042,6 +1042,22 @@ public class CreateBookingActivity extends AppCompatActivity {
                 }
             }
         });
+    }
+
+    private void rejectBookingRequestFromForm() {
+        if (isBusy()) {
+            return;
+        }
+
+        String remarks = getReviewRemarks();
+        if (remarks.isEmpty()) {
+            etReviewRemarks.setError("Remarks are required.");
+            showError("Remarks are required.");
+            focusAndShowKeyboard(etReviewRemarks);
+            return;
+        }
+
+        rejectBookingRequest(remarks);
     }
 
     private void sendBackBookingRequest(String remarks) {

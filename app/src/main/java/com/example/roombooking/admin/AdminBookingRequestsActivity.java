@@ -639,17 +639,29 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private void showRejectDialog(BookingRequestItem item) {
         EditText remarks = new EditText(this);
-        remarks.setHint("Remarks (optional)");
+        remarks.setHint("Remarks");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
         LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(remarks);
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Reject Request #" + item.getId())
                 .setView(content)
                 .setNegativeButton(R.string.action_cancel, null)
-                .setPositiveButton("Reject", (dialog, which) -> reject(item, text(remarks)))
-                .show();
+                .setPositiveButton("Reject", null)
+                .create();
+        dialog.setOnShowListener(shownDialog -> dialog
+                .getButton(AlertDialog.BUTTON_POSITIVE)
+                .setOnClickListener(v -> {
+                    String value = text(remarks);
+                    if (TextUtils.isEmpty(value)) {
+                        remarks.setError("Remarks are required.");
+                        return;
+                    }
+                    dialog.dismiss();
+                    reject(item, value);
+                }));
+        dialog.show();
     }
 
     private void showSendBackDialog(BookingRequestItem item) {

@@ -763,6 +763,60 @@
 
                 </LinearLayout>
 
+                <LinearLayout
+                    android:id="@+id/reviewRemarksContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_18"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="@dimen/space_30"
+                            android:layout_height="@dimen/space_30"
+                            android:background="@drawable/bg_section_icon_requestor"
+                            android:padding="@dimen/space_5"
+                            android:src="@drawable/ic_documents"
+                            app:tint="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_8"
+                            android:text="Review Remarks"
+                            android:textColor="@color/create_booking_text_secondary"
+                            android:textSize="@dimen/text_15"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="@dimen/space_30"
+                        android:layout_height="@dimen/space_3"
+                        android:layout_marginStart="@dimen/space_34"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@color/section_requestor" />
+
+                    <EditText
+                        android:id="@+id/etReviewRemarks"
+                        style="@style/CreateBookingEditText"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_12"
+                        android:drawableStart="@drawable/ic_documents"
+                        android:gravity="top|start"
+                        android:hint="Remarks"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:maxLines="5"
+                        android:minLines="3" />
+
+                </LinearLayout>
+
                 <!-- MESSAGE -->
                 <TextView
                     android:id="@+id/tvMessage"
@@ -801,6 +855,32 @@
                     android:textColor="@color/create_booking_outline_text"
                     android:textSize="@dimen/text_14"
                     android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnSendBackBooking"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:background="@drawable/bg_create_booking_outline_button"
+                    android:text="Send Back"
+                    android:textAllCaps="false"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnDeleteBookingRequest"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_50"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:background="@drawable/bg_create_booking_danger_outline_button"
+                    android:text="Delete Request"
+                    android:textAllCaps="false"
+                    android:textColor="@color/error_red"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
 
             </LinearLayout>
 
