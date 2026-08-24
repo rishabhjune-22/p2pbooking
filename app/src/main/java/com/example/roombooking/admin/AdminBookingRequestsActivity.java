@@ -441,7 +441,6 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_DEPARTMENT, item.getRequestorDepartment());
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_MOBILE, item.getRequestorMobile());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_REQUIRED, item.isAttenderRequired());
-        intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_COUNT_PER_DAY, item.getAttenderCountPerDay());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_GENERAL_SHIFT, item.isAttenderGeneralShift());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_MORNING_SHIFT, item.isAttenderMorningShift());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_DAY_SHIFT, item.isAttenderDayShift());
@@ -487,7 +486,6 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Room Preference", preferenceText(item)));
         content.addView(ListScreenUiHelper.detailRow(this, "Assigned Room", item.getAssignedRoomName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Required", item.isAttenderRequired() ? "Yes" : "No"));
-        content.addView(ListScreenUiHelper.detailRow(this, "Attender Count", String.valueOf(item.getAttenderCountPerDay())));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Shift", attenderShiftText(item)));
 
         content.addView(ListScreenUiHelper.sectionHeader(this, "Review"));

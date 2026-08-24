@@ -63,7 +63,6 @@ public class CreateBookingFormMapperTest {
 
         CreateBookingFormState missingShift = validState();
         missingShift.setAttenderRequired(true);
-        missingShift.setAttenderCountPerDay(1);
         missingShift.setAttenderGeneralShift(false);
         missingShift.setAttenderMorningShift(false);
         missingShift.setAttenderDayShift(false);
@@ -88,7 +87,6 @@ public class CreateBookingFormMapperTest {
         CreateBookingFormState state = validState();
         state.setVisitorCategory("conference_workshop_guest");
         state.setAttenderRequired(true);
-        state.setAttenderCountPerDay(2);
         state.setAttenderMorningShift(true);
         state.setRoomChargesStatus("yes");
         state.setRoomChargesAmount("1500");
@@ -104,7 +102,7 @@ public class CreateBookingFormMapperTest {
         assertEquals("Visitor One", json.get("visitor_name").getAsString());
         assertEquals("conference_workshop_guest", json.get("visitor_category").getAsString());
         assertTrue(json.get("attender_required").getAsBoolean());
-        assertEquals(2, json.get("attender_count_per_day").getAsInt());
+        assertFalse(json.has("attender_count_per_day"));
         assertTrue(json.get("attender_morning_shift").getAsBoolean());
         assertFalse(json.has("attender_night_shift"));
         assertEquals("yes", json.get("room_charges_status").getAsString());

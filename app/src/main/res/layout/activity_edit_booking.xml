@@ -444,15 +444,6 @@
                     android:textColor="@color/detail_text_secondary"
                     android:textSize="@dimen/text_12" />
 
-                <EditText
-                    android:id="@+id/etAttenderCount"
-                    style="@style/EditBookingInput"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:alpha="0.45"
-                    android:enabled="false"
-                    android:hint="Attender Count Per Day"
-                    android:inputType="number" />
-
                 <TextView
                     android:id="@+id/tvSelectShiftLabel"
                     android:layout_width="wrap_content"

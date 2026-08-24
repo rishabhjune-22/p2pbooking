@@ -25,7 +25,6 @@ final class EditBookingFormState {
     private String visitorCategory;
 
     private boolean attenderRequired;
-    private int attenderCountPerDay;
     private boolean attenderGeneralShift;
     private boolean attenderMorningShift;
     private boolean attenderDayShift;
@@ -65,7 +64,6 @@ final class EditBookingFormState {
         copy.purpose = purpose;
         copy.visitorCategory = visitorCategory;
         copy.attenderRequired = attenderRequired;
-        copy.attenderCountPerDay = attenderCountPerDay;
         copy.attenderGeneralShift = attenderGeneralShift;
         copy.attenderMorningShift = attenderMorningShift;
         copy.attenderDayShift = attenderDayShift;
@@ -116,8 +114,6 @@ final class EditBookingFormState {
     void setVisitorCategory(String visitorCategory) { this.visitorCategory = clean(visitorCategory); }
     boolean isAttenderRequired() { return attenderRequired; }
     void setAttenderRequired(boolean attenderRequired) { this.attenderRequired = attenderRequired; }
-    int getAttenderCountPerDay() { return attenderCountPerDay; }
-    void setAttenderCountPerDay(int attenderCountPerDay) { this.attenderCountPerDay = attenderCountPerDay; }
     boolean isAttenderGeneralShift() { return attenderGeneralShift; }
     void setAttenderGeneralShift(boolean attenderGeneralShift) { this.attenderGeneralShift = attenderGeneralShift; }
     boolean isAttenderMorningShift() { return attenderMorningShift; }

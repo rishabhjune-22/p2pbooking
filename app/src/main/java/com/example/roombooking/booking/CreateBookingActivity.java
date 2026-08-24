@@ -18,8 +18,6 @@ import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.text.Editable;
-import android.text.TextWatcher;
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -58,6 +56,7 @@ import retrofit2.Response;
 public class CreateBookingActivity extends AppCompatActivity {
 
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
+    private static final String EXTRA_CREATED_STATUS = "created_status";
 
     public static final String EXTRA_ROOM_ID = "room_id";
     public static final String EXTRA_ROOM_NAME = "room_name";
@@ -85,7 +84,6 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_REQUESTOR_DEPARTMENT = "requestor_department";
     public static final String EXTRA_REQUESTOR_MOBILE = "requestor_mobile";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
-    public static final String EXTRA_ATTENDER_COUNT_PER_DAY = "attender_count_per_day";
     public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
     public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
@@ -136,7 +134,6 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etBudgetHeadProjectCode;
     private CheckBox cbAttenderRequired;
     private TextView tvSelectShiftLabel;
-    private EditText etAttenderCount;
     private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
     private CheckBox cbDayShift;
@@ -241,7 +238,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
-        etAttenderCount = findViewById(R.id.etAttenderCount);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
         cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
@@ -526,8 +522,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         boolean attenderRequired = intent.getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
         cbAttenderRequired.setChecked(attenderRequired);
         if (attenderRequired) {
-            int count = intent.getIntExtra(EXTRA_ATTENDER_COUNT_PER_DAY, 0);
-            etAttenderCount.setText(count > 0 ? String.valueOf(count) : "");
             cbGeneralShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_GENERAL_SHIFT, false));
             cbMorningShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
             cbDayShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
@@ -627,20 +621,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         return "";
     }
 
-    private int getAttenderCount() {
-        String countText = getText(etAttenderCount);
-
-        if (countText.isEmpty()) {
-            return 0;
-        }
-
-        try {
-            return Integer.parseInt(countText);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
     private void refreshDateTimeFields(CreateBookingFormState state) {
         etArrivalDT.setText(displayFormat.format(new java.util.Date(state.getArrivalAtMillis())));
         etDepartureDT.setText(displayFormat.format(new java.util.Date(state.getDepartureAtMillis())));
@@ -674,7 +654,6 @@ public class CreateBookingActivity extends AppCompatActivity {
                 day
         );
 
-        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePickerDialog.show();
     }
 
@@ -703,29 +682,10 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void setupAttenderRequirementControls() {
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isChecked) {
-                etAttenderCount.setText("");
-                etAttenderCount.setError(null);
                 clearAttenderShifts();
             }
 
             updateAttenderControlsState();
-        });
-
-        etAttenderCount.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No action required.
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // No action required.
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                updateAttenderControlsState();
-            }
         });
 
         updateAttenderControlsState();
@@ -733,14 +693,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private void updateAttenderControlsState() {
         boolean attenderRequired = cbAttenderRequired.isChecked();
-
-        setViewEnabled(etAttenderCount, attenderRequired);
-
-        boolean validAttenderCount = attenderRequired && getAttenderCount() > 0;
-
-        setShiftControlsEnabled(validAttenderCount);
-
-        if (!validAttenderCount) {
+        setShiftControlsEnabled(attenderRequired);
+        if (!attenderRequired) {
             clearAttenderShifts();
         }
     }
@@ -835,7 +789,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         data.setVisitorCategory(getSelectedVisitorCategory());
 
         data.setAttenderRequired(cbAttenderRequired.isChecked());
-        data.setAttenderCountPerDay(getAttenderCount());
         data.setAttenderGeneralShift(cbGeneralShift.isChecked());
         data.setAttenderMorningShift(cbMorningShift.isChecked());
         data.setAttenderDayShift(cbDayShift.isChecked());
@@ -892,7 +845,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void handleCreateSuccess(CreateBookingResult result) {
-        sendBookingCreatedResult();
+        sendBookingCreatedResult(result.getStatus());
         showMessage(result.getMessage());
         finish();
     }
@@ -911,7 +864,6 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("purpose_of_visit", data.getPurpose());
         payload.put("visitor_category", data.getVisitorCategory());
         payload.put("attender_required", data.isAttenderRequired());
-        payload.put("attender_count_per_day", data.getAttenderCountPerDay());
         payload.put("attender_general_shift", data.isAttenderGeneralShift());
         payload.put("attender_morning_shift", data.isAttenderMorningShift());
         payload.put("attender_day_shift", data.isAttenderDayShift());
@@ -1391,8 +1343,15 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void sendBookingCreatedResult() {
+        sendBookingCreatedResult("");
+    }
+
+    private void sendBookingCreatedResult(String createdStatus) {
         Intent resultIntent = new Intent();
         resultIntent.putExtra(EXTRA_BOOKING_CREATED, true);
+        if (!isBlank(createdStatus)) {
+            resultIntent.putExtra(EXTRA_CREATED_STATUS, createdStatus);
+        }
         setResult(RESULT_OK, resultIntent);
     }
 

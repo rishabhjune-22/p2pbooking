@@ -68,9 +68,6 @@ public class BookingItem implements Parcelable {
     @SerializedName("attender_required")
     private boolean attenderRequired;
 
-    @SerializedName("attender_count_per_day")
-    private int attenderCountPerDay;
-
     @SerializedName("attender_general_shift")
     private boolean attenderGeneralShift;
 
@@ -156,7 +153,6 @@ public class BookingItem implements Parcelable {
         visitorCategory = in.readString();
 
         attenderRequired = in.readByte() != 0;
-        attenderCountPerDay = in.readInt();
         attenderGeneralShift = in.readByte() != 0;
         attenderMorningShift = in.readByte() != 0;
         attenderDayShift = in.readByte() != 0;
@@ -201,7 +197,6 @@ public class BookingItem implements Parcelable {
         return id == other.id
                 && room == other.room
                 && attenderRequired == other.attenderRequired
-                && attenderCountPerDay == other.attenderCountPerDay
                 && attenderGeneralShift == other.attenderGeneralShift
                 && attenderMorningShift == other.attenderMorningShift
                 && attenderDayShift == other.attenderDayShift
@@ -312,10 +307,6 @@ public class BookingItem implements Parcelable {
 
     public boolean isAttenderRequired() {
         return attenderRequired;
-    }
-
-    public int getAttenderCountPerDay() {
-        return attenderCountPerDay;
     }
 
     public boolean isAttenderGeneralShift() {
@@ -437,7 +428,6 @@ public class BookingItem implements Parcelable {
         parcel.writeString(visitorCategory);
 
         parcel.writeByte((byte) (attenderRequired ? 1 : 0));
-        parcel.writeInt(attenderCountPerDay);
         parcel.writeByte((byte) (attenderGeneralShift ? 1 : 0));
         parcel.writeByte((byte) (attenderMorningShift ? 1 : 0));
         parcel.writeByte((byte) (attenderDayShift ? 1 : 0));

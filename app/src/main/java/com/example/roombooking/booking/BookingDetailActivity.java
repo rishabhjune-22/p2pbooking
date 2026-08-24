@@ -273,11 +273,6 @@ public class BookingDetailActivity extends AppCompatActivity {
             return;
         }
 
-        if (isInactiveBooking()) {
-            showToast("This booking cannot be edited.");
-            return;
-        }
-
         Intent intent = new Intent(BookingDetailActivity.this, EditBookingActivity.class);
         intent.putExtra(EXTRA_BOOKING_DATA, bookingItem);
         editBookingLauncher.launch(intent);
@@ -496,7 +491,6 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private String buildAttenderDetails() {
         return "Required: " + (bookingItem.isAttenderRequired() ? "Yes" : "No") + "\n"
-                + "Count per day: " + bookingItem.getAttenderCountPerDay() + "\n"
                 + "Shifts: " + getAttenderShiftText() + "\n"
                 + "Attender charges received: "
                 + getChargeStatusWithAmount(
@@ -633,15 +627,6 @@ public class BookingDetailActivity extends AppCompatActivity {
             return;
         }
 
-        if (isExpired()) {
-            btnDeleteBooking.setEnabled(true);
-            btnDeleteBooking.setText("Delete Booking");
-
-            btnEditBooking.setEnabled(false);
-            btnEditBooking.setText("Edit Disabled");
-            return;
-        }
-
         btnDeleteBooking.setEnabled(true);
         btnDeleteBooking.setText("Delete Booking");
 
@@ -771,11 +756,6 @@ public class BookingDetailActivity extends AppCompatActivity {
     }
 
     private void resetDeleteButton() {
-        if (isInactiveBooking()) {
-            updateButtonState();
-            return;
-        }
-
         setDeletingState(false);
     }
 
@@ -791,15 +771,6 @@ public class BookingDetailActivity extends AppCompatActivity {
         resultIntent.putExtra(EXTRA_DEPARTURE_AT, bookingItem.getDepartureAt());
 
         setResult(RESULT_OK, resultIntent);
-    }
-
-    private boolean isInactiveBooking() {
-        return isExpired();
-    }
-
-    private boolean isExpired() {
-        return bookingItem != null
-                && BookingStatus.isExpired(bookingItem.getStatus());
     }
 
     private String getDisplayStatus() {

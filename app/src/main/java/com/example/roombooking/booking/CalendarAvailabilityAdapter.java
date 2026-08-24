@@ -12,11 +12,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.roombooking.R;
 import com.google.android.material.card.MaterialCardView;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class CalendarAvailabilityAdapter
         extends RecyclerView.Adapter<CalendarAvailabilityAdapter.CalendarDayViewHolder> {
@@ -241,12 +238,7 @@ public class CalendarAvailabilityAdapter
             tvDayNumber.setText(String.valueOf(item.getDayNumber()));
             tvAvailableRooms.setText(String.valueOf(item.getAvailableRooms()));
 
-            if (isBeforeToday(item.getDate())) {
-                applyPastDateStyle();
-                cardDay.setOnClickListener(null);
-                cardDay.setClickable(false);
-                cardDay.setEnabled(false);
-            } else if (isInSelectedRange) {
+            if (isInSelectedRange) {
                 applySelectedRangeStyle();
                 cardDay.setOnClickListener(v -> {
                     if (listener != null) {
@@ -261,15 +253,6 @@ public class CalendarAvailabilityAdapter
                     }
                 });
             }
-        }
-
-        private boolean isBeforeToday(String dateValue) {
-            if (isBlank(dateValue)) {
-                return false;
-            }
-            String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    .format(Calendar.getInstance().getTime());
-            return dateValue.compareTo(today) < 0;
         }
 
         private void applySelectedRangeStyle() {
@@ -318,21 +301,6 @@ public class CalendarAvailabilityAdapter
 
             tvAvailableRooms.setTextColor(
                     itemView.getContext().getColor(R.color.info_blue)
-            );
-        }
-
-        private void applyPastDateStyle() {
-            cardDay.setCardBackgroundColor(
-                    itemView.getContext().getColor(R.color.surface_light)
-            );
-            cardDay.setAlpha(0.5f);
-
-            tvDayNumber.setTextColor(
-                    itemView.getContext().getColor(R.color.detail_text_secondary)
-            );
-
-            tvAvailableRooms.setTextColor(
-                    itemView.getContext().getColor(R.color.detail_text_secondary)
             );
         }
 

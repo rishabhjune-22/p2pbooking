@@ -97,9 +97,6 @@ public class BookingRequestItem {
     @SerializedName("attender_required")
     private boolean attenderRequired;
 
-    @SerializedName("attender_count_per_day")
-    private int attenderCountPerDay;
-
     @SerializedName("attender_general_shift")
     private boolean attenderGeneralShift;
 
@@ -246,10 +243,6 @@ public class BookingRequestItem {
 
     public boolean isAttenderRequired() {
         return attenderRequired;
-    }
-
-    public int getAttenderCountPerDay() {
-        return attenderCountPerDay;
     }
 
     public boolean isAttenderGeneralShift() {

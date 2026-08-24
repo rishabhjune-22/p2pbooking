@@ -37,7 +37,6 @@ final class EditBookingFormMapper {
         state.setPurpose(bookingItem.getPurposeOfVisit());
         state.setVisitorCategory(bookingItem.getVisitorCategory());
         state.setAttenderRequired(bookingItem.isAttenderRequired());
-        state.setAttenderCountPerDay(bookingItem.getAttenderCountPerDay());
         state.setAttenderGeneralShift(bookingItem.isAttenderGeneralShift());
         state.setAttenderMorningShift(bookingItem.isAttenderMorningShift());
         state.setAttenderDayShift(bookingItem.isAttenderDayShift());
@@ -155,7 +154,6 @@ final class EditBookingFormMapper {
 
                 data.getVisitorCategory(),
                 data.isAttenderRequired(),
-                data.getAttenderCountPerDay(),
                 data.isAttenderGeneralShift(),
                 data.isAttenderMorningShift(),
                 data.isAttenderDayShift(),
@@ -209,12 +207,6 @@ final class EditBookingFormMapper {
 
         if (data.getDepartureAtMillis() <= data.getArrivalAtMillis()) {
             return EditBookingValidationResult.invalid("Departure must be after arrival.");
-        }
-
-        if (data.isAttenderRequired() && data.getAttenderCountPerDay() <= 0) {
-            return EditBookingValidationResult.invalid(
-                    "Enter number of attenders required per day."
-            );
         }
 
         if (data.isAttenderRequired()

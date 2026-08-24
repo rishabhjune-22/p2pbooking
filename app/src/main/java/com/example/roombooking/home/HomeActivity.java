@@ -57,6 +57,7 @@ public class HomeActivity extends AppCompatActivity {
     private static final String EXTRA_ARRIVAL_AT = "arrival_at";
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
+    private static final String EXTRA_CREATED_STATUS = "created_status";
     private static final String EXTRA_BOOKING_DELETED = "booking_deleted";
     private static final String STATE_COMPACT_VIEW = "compact_view";
 
@@ -769,9 +770,21 @@ public class HomeActivity extends AppCompatActivity {
         boolean bookingCreated = data.getBooleanExtra(EXTRA_BOOKING_CREATED, false);
 
         if (bookingCreated) {
+            String createdStatus = data.getStringExtra(EXTRA_CREATED_STATUS);
             viewModel.invalidateBookingPageOneCacheForMutation();
+            if (!isBlank(createdStatus)) {
+                selectedStatus = BookingStatus.normalizeForList(createdStatus);
+                updateStatusToggleUi();
+                updateFilterTitle();
+                applyCurrentFilter();
+                return;
+            }
             viewModel.refreshBookings();
         }
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private void showToast(String message) {

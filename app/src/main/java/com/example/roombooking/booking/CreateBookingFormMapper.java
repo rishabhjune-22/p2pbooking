@@ -87,7 +87,6 @@ final class CreateBookingFormMapper {
                 data.getVisitorCategory(),
 
                 data.isAttenderRequired(),
-                data.getAttenderCountPerDay(),
                 data.isAttenderGeneralShift(),
                 data.isAttenderMorningShift(),
                 data.isAttenderDayShift(),
@@ -142,12 +141,6 @@ final class CreateBookingFormMapper {
         if (data.getDepartureAtMillis() <= data.getArrivalAtMillis()) {
             return CreateBookingValidationResult.invalid(
                     "Departure date/time must be after arrival date/time."
-            );
-        }
-
-        if (data.isAttenderRequired() && data.getAttenderCountPerDay() <= 0) {
-            return CreateBookingValidationResult.invalid(
-                    "Enter number of attenders required per day."
             );
         }
 

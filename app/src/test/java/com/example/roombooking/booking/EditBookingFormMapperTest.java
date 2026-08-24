@@ -27,10 +27,12 @@ public class EditBookingFormMapperTest {
         invalidRequestorMobile.setRequestorMobile("123");
         assertInvalid(invalidRequestorMobile, "Requestor mobile must be 10 digits.");
 
-        EditBookingFormState missingAttenderCount = validState();
-        missingAttenderCount.setAttenderRequired(true);
-        missingAttenderCount.setAttenderCountPerDay(0);
-        assertInvalid(missingAttenderCount, "Enter number of attenders required per day.");
+        EditBookingFormState missingShift = validState();
+        missingShift.setAttenderRequired(true);
+        missingShift.setAttenderGeneralShift(false);
+        missingShift.setAttenderMorningShift(false);
+        missingShift.setAttenderDayShift(false);
+        assertInvalid(missingShift, "Please select at least one attender shift.");
 
         EditBookingFormState missingCharges = validState();
         missingCharges.setAttenderChargesStatus("yes");
@@ -51,7 +53,6 @@ public class EditBookingFormMapperTest {
         EditBookingFormState state = validState();
         state.setVisitorCategory("other_guest");
         state.setAttenderRequired(true);
-        state.setAttenderCountPerDay(1);
         state.setAttenderDayShift(true);
         state.setAttenderChargesStatus("yes");
         state.setAttenderChargesAmount("500");
@@ -66,7 +67,7 @@ public class EditBookingFormMapperTest {
         assertEquals("Edited Visitor", json.get("visitor_name").getAsString());
         assertEquals("other_guest", json.get("visitor_category").getAsString());
         assertTrue(json.get("attender_required").getAsBoolean());
-        assertEquals(1, json.get("attender_count_per_day").getAsInt());
+        assertFalse(json.has("attender_count_per_day"));
         assertTrue(json.get("attender_day_shift").getAsBoolean());
         assertFalse(json.has("attender_night_shift"));
         assertEquals("yes", json.get("attender_charges_status").getAsString());

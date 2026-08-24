@@ -24,8 +24,6 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
-import android.text.Editable;
-import android.text.TextWatcher;
 import com.example.roombooking.R;
 import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.booking.BookingItem;
@@ -77,7 +75,6 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etBudgetHeadProjectCode;
     private TextView tvSelectShiftLabel;
     private CheckBox cbAttenderRequired;
-    private EditText etAttenderCount;
     private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
     private CheckBox cbDayShift;
@@ -179,7 +176,6 @@ public class EditBookingActivity extends AppCompatActivity {
         etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
-        etAttenderCount = findViewById(R.id.etAttenderCount);
         cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
         cbDayShift = findViewById(R.id.cbDayShift);
@@ -378,7 +374,6 @@ public class EditBookingActivity extends AppCompatActivity {
         selectVisitorCategory(state.getVisitorCategory());
 
         cbAttenderRequired.setChecked(state.isAttenderRequired());
-        etAttenderCount.setText(String.valueOf(state.getAttenderCountPerDay()));
         cbGeneralShift.setChecked(state.isAttenderGeneralShift());
         cbMorningShift.setChecked(state.isAttenderMorningShift());
         cbDayShift.setChecked(state.isAttenderDayShift());
@@ -537,29 +532,10 @@ public class EditBookingActivity extends AppCompatActivity {
     private void setupAttenderRequirementControls() {
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isChecked) {
-                etAttenderCount.setText("");
-                etAttenderCount.setError(null);
                 clearAttenderShifts();
             }
 
             updateAttenderControlsState();
-        });
-
-        etAttenderCount.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No action required.
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // No action required.
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                updateAttenderControlsState();
-            }
         });
 
         updateAttenderControlsState();
@@ -567,14 +543,8 @@ public class EditBookingActivity extends AppCompatActivity {
 
     private void updateAttenderControlsState() {
         boolean attenderRequired = cbAttenderRequired.isChecked();
-
-        setViewEnabled(etAttenderCount, attenderRequired);
-
-        boolean validAttenderCount = attenderRequired && getAttenderCount() > 0;
-
-        setShiftControlsEnabled(validAttenderCount);
-
-        if (!validAttenderCount) {
+        setShiftControlsEnabled(attenderRequired);
+        if (!attenderRequired) {
             clearAttenderShifts();
         }
     }
@@ -645,7 +615,6 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setVisitorCategory(getSelectedVisitorCategory());
 
         data.setAttenderRequired(cbAttenderRequired.isChecked());
-        data.setAttenderCountPerDay(getAttenderCount());
         data.setAttenderGeneralShift(cbGeneralShift.isChecked());
         data.setAttenderMorningShift(cbMorningShift.isChecked());
         data.setAttenderDayShift(cbDayShift.isChecked());
@@ -726,20 +695,6 @@ public class EditBookingActivity extends AppCompatActivity {
         }
 
         return "";
-    }
-
-    private int getAttenderCount() {
-        String countText = getText(etAttenderCount);
-
-        if (countText.isEmpty()) {
-            return 0;
-        }
-
-        try {
-            return Integer.parseInt(countText);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 
     private void handleValidationError(EditBookingValidationResult result) {
@@ -981,7 +936,6 @@ public class EditBookingActivity extends AppCompatActivity {
                 day
         );
 
-        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
         datePickerDialog.show();
     }
 

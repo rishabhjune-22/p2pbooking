@@ -4,9 +4,7 @@ import android.app.TimePickerDialog;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Patterns;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -75,7 +73,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_BUDGET_HEAD_DEPARTMENT_NAME = "budget_head_department_name";
     public static final String EXTRA_BUDGET_HEAD_PROJECT_CODE = "budget_head_project_code";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
-    public static final String EXTRA_ATTENDER_COUNT_PER_DAY = "attender_count_per_day";
     public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
     public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
@@ -116,7 +113,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private EditText etBudgetHeadProjectCode;
     private TextView btnClearBudgetHeadFocus;
     private CheckBox cbAttenderRequired;
-    private EditText etAttenderCount;
     private TextView tvSelectShiftLabel;
     private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
@@ -184,7 +180,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
         btnClearBudgetHeadFocus = findViewById(R.id.btnClearBudgetHeadFocus);
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
-        etAttenderCount = findViewById(R.id.etAttenderCount);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
         cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
@@ -297,33 +292,9 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isChecked) {
-                etAttenderCount.setText("");
-                etAttenderCount.setError(null);
-                etAttenderCount.clearFocus();
-                hideKeyboard(etAttenderCount);
                 clearAttenderShifts();
             }
             updateAttenderControlsState();
-            if (isChecked) {
-                focusAndShowKeyboard(etAttenderCount);
-            }
-        });
-
-        etAttenderCount.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-                // No action required.
-            }
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                // No action required.
-            }
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                updateAttenderControlsState();
-            }
         });
 
         etRequestorEmail.setOnEditorActionListener((v, actionId, event) -> {
@@ -351,7 +322,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 etBudgetHeadName,
                 etBudgetHeadDepartmentName,
                 etBudgetHeadProjectCode,
-                etAttenderCount,
                 etRequestorName,
                 etRequestorDesignation,
                 etRequestorDepartment,
@@ -421,8 +391,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         boolean attenderRequired = getIntent().getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
         cbAttenderRequired.setChecked(attenderRequired);
         if (attenderRequired) {
-            int count = getIntent().getIntExtra(EXTRA_ATTENDER_COUNT_PER_DAY, 0);
-            etAttenderCount.setText(count > 0 ? String.valueOf(count) : "");
             cbGeneralShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_GENERAL_SHIFT, false));
             cbMorningShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
             cbDayShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
@@ -614,12 +582,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         }
 
         boolean attenderRequired = cbAttenderRequired.isChecked();
-        int attenderCount = parsePositiveInt(text(etAttenderCount));
-        if (attenderRequired && attenderCount <= 0) {
-            showError("Enter number of attenders required per day.");
-            etAttenderCount.requestFocus();
-            return;
-        }
         if (attenderRequired
                 && !cbGeneralShift.isChecked()
                 && !cbMorningShift.isChecked()
@@ -640,8 +602,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 visitorName,
                 visitorEmail,
                 requestorEmail,
-                attenderRequired,
-                attenderCount
+                attenderRequired
         );
 
         submitCall = editMode
@@ -704,8 +665,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
             String visitorName,
             String visitorEmail,
             String requestorEmail,
-            boolean attenderRequired,
-            int attenderCount
+            boolean attenderRequired
     ) {
         return new BookingRequestCreateRequest(
                 apiDateTimeFormat.format(arrivalCalendar.getTime()),
@@ -727,7 +687,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 getBudgetHeadText(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName),
                 getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode),
                 attenderRequired,
-                attenderRequired ? attenderCount : 0,
                 attenderRequired && cbGeneralShift.isChecked(),
                 attenderRequired && cbMorningShift.isChecked(),
                 attenderRequired && cbDayShift.isChecked(),
@@ -815,13 +774,11 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
     private void updateAttenderControlsState() {
         boolean attenderRequired = cbAttenderRequired.isChecked();
-        setViewEnabled(etAttenderCount, attenderRequired);
-        boolean validAttenderCount = attenderRequired && parsePositiveInt(text(etAttenderCount)) > 0;
-        setViewEnabled(tvSelectShiftLabel, validAttenderCount);
-        setViewEnabled(cbGeneralShift, validAttenderCount);
-        setViewEnabled(cbMorningShift, validAttenderCount);
-        setViewEnabled(cbDayShift, validAttenderCount);
-        if (!validAttenderCount) {
+        setViewEnabled(tvSelectShiftLabel, attenderRequired);
+        setViewEnabled(cbGeneralShift, attenderRequired);
+        setViewEnabled(cbMorningShift, attenderRequired);
+        setViewEnabled(cbDayShift, attenderRequired);
+        if (!attenderRequired) {
             clearAttenderShifts();
         }
     }
@@ -926,14 +883,6 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
     private String text(EditText editText) {
         return editText.getText() != null ? editText.getText().toString().trim() : "";
-    }
-
-    private int parsePositiveInt(String value) {
-        try {
-            return value.isEmpty() ? 0 : Math.max(Integer.parseInt(value), 0);
-        } catch (NumberFormatException ignored) {
-            return 0;
-        }
     }
 
     private static String safe(String value) {

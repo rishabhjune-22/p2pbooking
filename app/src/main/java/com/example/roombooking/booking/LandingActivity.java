@@ -257,12 +257,6 @@ public class LandingActivity extends AppCompatActivity {
                 return;
             }
 
-            if (selectedRangeStartsBeforeToday()) {
-                clearRangeSelectionAndEnableRefresh();
-                showToast("Past dates cannot be selected.");
-                return;
-            }
-
             fetchAvailableRoomsForDateRange(arrivalDateForRange, departureDateForRange);
         });
     }
@@ -437,11 +431,6 @@ public class LandingActivity extends AppCompatActivity {
                             return true;
                         }
 
-                        if (isBeforeToday(item)) {
-                            clearRangeSelectionIfActive();
-                            return true;
-                        }
-
                         handleCalendarDateSingleTap(item);
                         return true;
                     }
@@ -454,10 +443,6 @@ public class LandingActivity extends AppCompatActivity {
                             return true;
                         }
 
-                        if (isBeforeToday(item)) {
-                            return true;
-                        }
-
                         fetchAvailableRoomsForDate(item.getDate());
                         return true;
                     }
@@ -467,11 +452,6 @@ public class LandingActivity extends AppCompatActivity {
                         CalendarDayItem item = getCalendarItemFromTouch(e);
 
                         if (item == null || item.isEmpty()) {
-                            return;
-                        }
-
-                        if (isBeforeToday(item)) {
-                            clearRangeSelectionIfActive();
                             return;
                         }
 
@@ -517,26 +497,6 @@ public class LandingActivity extends AppCompatActivity {
         }
 
         return calendarAdapter.getItemAt(position);
-    }
-
-    private boolean isBeforeToday(CalendarDayItem item) {
-        return item != null && isDateBeforeToday(item.getDate());
-    }
-
-    private boolean isDateBeforeToday(String dateValue) {
-        if (dateValue == null || dateValue.trim().isEmpty()) {
-            return false;
-        }
-
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                .format(Calendar.getInstance().getTime());
-
-        return dateValue.trim().compareTo(today) < 0;
-    }
-
-    private boolean selectedRangeStartsBeforeToday() {
-        return isDateBeforeToday(arrivalDateForRange)
-                || isDateBeforeToday(departureDateForRange);
     }
 
     private void startRangeSelection(CalendarDayItem item) {
@@ -720,11 +680,6 @@ public class LandingActivity extends AppCompatActivity {
         if (hasActiveRangeSelection
                 && arrivalDateForRange != null
                 && departureDateForRange != null) {
-            if (selectedRangeStartsBeforeToday()) {
-                clearRangeSelectionAndEnableRefresh();
-                return;
-            }
-
             calendarAdapter.setSelectedRange(arrivalDateForRange, departureDateForRange);
         }
     }

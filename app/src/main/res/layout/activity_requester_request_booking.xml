@@ -587,17 +587,6 @@
                     android:textColor="@color/create_booking_label"
                     android:textSize="@dimen/text_12" />
 
-                <EditText
-                    android:id="@+id/etAttenderCount"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_10"
-                    android:alpha="0.45"
-                    android:drawableStart="@drawable/ic_attendee"
-                    android:enabled="false"
-                    android:hint="Number of Attenders Required Per Day"
-                    android:imeOptions="actionNext"
-                    android:inputType="number" />
-
                 <TextView
                     android:id="@+id/tvSelectShiftLabel"
                     android:layout_width="wrap_content"

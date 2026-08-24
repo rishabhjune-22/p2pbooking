@@ -40,9 +40,6 @@ public class BookingCreateRequest {
     @SerializedName("attender_required")
     private final boolean attenderRequired;
 
-    @SerializedName("attender_count_per_day")
-    private final int attenderCountPerDay;
-
     @SerializedName("attender_general_shift")
     private final boolean attenderGeneralShift;
 
@@ -115,7 +112,6 @@ public class BookingCreateRequest {
             String visitorCategory,
 
             boolean attenderRequired,
-            int attenderCountPerDay,
             boolean attenderGeneralShift,
             boolean attenderMorningShift,
             boolean attenderDayShift,
@@ -153,7 +149,6 @@ public class BookingCreateRequest {
         this.visitorCategory = visitorCategory;
 
         this.attenderRequired = attenderRequired;
-        this.attenderCountPerDay = attenderCountPerDay;
         this.attenderGeneralShift = attenderGeneralShift;
         this.attenderMorningShift = attenderMorningShift;
         this.attenderDayShift = attenderDayShift;
