@@ -88,6 +88,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
     public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
+    public static final String EXTRA_REMARKS = "remarks";
 
     private EditText etVisitorName;
     private EditText etVisitorDesignation;
@@ -99,6 +100,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etArrivalDT;
     private EditText etDepartureDT;
     private EditText etPurpose;
+    private EditText etRemarks;
 
     private EditText etRequestorName;
     private EditText etRequestorDesignation;
@@ -203,6 +205,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etArrivalDT = findViewById(R.id.etArrivalDT);
         etDepartureDT = findViewById(R.id.etDepartureDT);
         etPurpose = findViewById(R.id.etPurpose);
+        etRemarks = findViewById(R.id.etRemarks);
 
         etRequestorName = findViewById(R.id.etRequestorName);
         etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
@@ -510,6 +513,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorMobile.setText(intent.getStringExtra(EXTRA_VISITOR_MOBILE));
         etVisitorEmail.setText(intent.getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(intent.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
+        etRemarks.setText(intent.getStringExtra(EXTRA_REMARKS));
         prefillBudgetHeadFromIntent(intent);
 
         etRequestorName.setText(intent.getStringExtra(EXTRA_REQUESTOR_NAME));
@@ -776,6 +780,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         data.setVisitorEmail(getText(etVisitorEmail));
 
         data.setPurpose(getText(etPurpose));
+        data.setRemarks(getText(etRemarks));
 
         data.setRequestorName(getText(etRequestorName));
         data.setRequestorDesignation(getText(etRequestorDesignation));
@@ -863,6 +868,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("visitor_mobile", data.getVisitorMobile());
         payload.put("visitor_email", data.getVisitorEmail());
         payload.put("purpose_of_visit", data.getPurpose());
+        payload.put("booking_remarks", data.getRemarks());
         payload.put("visitor_category", data.getVisitorCategory());
         payload.put("attender_required", data.isAttenderRequired());
         payload.put("attender_general_shift", data.isAttenderGeneralShift());
@@ -1468,6 +1474,11 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorEmail.setText(generateRandomEmail(visitorName));
 
         etPurpose.setText(randomValue(purposes));
+        etRemarks.setText(randomValue(new String[]{
+                "Needs early breakfast",
+                "Please keep the room ready before arrival",
+                "Guest may arrive late"
+        }));
 
         etRequestorName.setText("Rishabh");
         etRequestorDesignation.setText(randomValue(designations));

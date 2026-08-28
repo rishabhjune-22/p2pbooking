@@ -29,6 +29,7 @@ final class CreateBookingFormState {
     private String visitorMobile;
     private String visitorEmail;
     private String purpose;
+    private String remarks;
     private String visitorCategory;
 
     private boolean attenderRequired;
@@ -75,6 +76,7 @@ final class CreateBookingFormState {
         copy.visitorMobile = visitorMobile;
         copy.visitorEmail = visitorEmail;
         copy.purpose = purpose;
+        copy.remarks = remarks;
         copy.visitorCategory = visitorCategory;
         copy.attenderRequired = attenderRequired;
         copy.attenderGeneralShift = attenderGeneralShift;
@@ -135,6 +137,8 @@ final class CreateBookingFormState {
     void setVisitorEmail(String visitorEmail) { this.visitorEmail = clean(visitorEmail); }
     String getPurpose() { return purpose; }
     void setPurpose(String purpose) { this.purpose = clean(purpose); }
+    String getRemarks() { return remarks; }
+    void setRemarks(String remarks) { this.remarks = clean(remarks); }
     String getVisitorCategory() { return visitorCategory; }
     void setVisitorCategory(String visitorCategory) { this.visitorCategory = clean(visitorCategory); }
     boolean isAttenderRequired() { return attenderRequired; }

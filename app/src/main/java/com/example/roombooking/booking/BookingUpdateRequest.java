@@ -34,6 +34,9 @@ public class BookingUpdateRequest {
     @SerializedName("purpose_of_visit")
     private final String purposeOfVisit;
 
+    @SerializedName("remarks")
+    private final String remarks;
+
     @SerializedName("visitor_category")
     private final String visitorCategory;
 
@@ -109,6 +112,7 @@ public class BookingUpdateRequest {
             String visitorMobile,
             String visitorEmail,
             String purposeOfVisit,
+            String remarks,
             String visitorCategory,
 
             boolean attenderRequired,
@@ -146,6 +150,7 @@ public class BookingUpdateRequest {
         this.visitorMobile = visitorMobile;
         this.visitorEmail = visitorEmail;
         this.purposeOfVisit = purposeOfVisit;
+        this.remarks = remarks;
         this.visitorCategory = visitorCategory;
 
         this.attenderRequired = attenderRequired;

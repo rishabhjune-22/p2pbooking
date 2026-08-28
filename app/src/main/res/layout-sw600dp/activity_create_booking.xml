@@ -258,6 +258,18 @@
                     android:maxLines="5"
                     android:minLines="3" />
 
+                <EditText
+                    android:id="@+id/etRemarks"
+                    style="@style/CreateBookingEditText"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_10"
+                    android:drawableStart="@drawable/ic_documents"
+                    android:gravity="top|start"
+                    android:hint="Remarks"
+                    android:inputType="textMultiLine|textCapSentences"
+                    android:maxLines="5"
+                    android:minLines="3" />
+
                 <!-- VISITOR CATEGORY -->
                 <LinearLayout
                     android:layout_width="match_parent"

@@ -93,6 +93,7 @@ public class CreateBookingFormMapperTest {
         state.setBudgetHeadName("Project Travel");
         state.setBudgetHeadDepartmentName("Computer Science");
         state.setBudgetHeadProjectCode("PRJ-2026-001");
+        state.setRemarks("Needs early breakfast.");
 
         BookingCreateRequest request = CreateBookingFormMapper.toCreateRequest(state);
         JsonObject json = JsonParser.parseString(new Gson().toJson(request)).getAsJsonObject();
@@ -100,6 +101,7 @@ public class CreateBookingFormMapperTest {
         assertEquals(7, json.get("room").getAsInt());
         assertFalse(json.has("created_by_name"));
         assertEquals("Visitor One", json.get("visitor_name").getAsString());
+        assertEquals("Needs early breakfast.", json.get("remarks").getAsString());
         assertEquals("conference_workshop_guest", json.get("visitor_category").getAsString());
         assertTrue(json.get("attender_required").getAsBoolean());
         assertFalse(json.has("attender_count_per_day"));
@@ -128,6 +130,7 @@ public class CreateBookingFormMapperTest {
         state.setVisitorMobile("9876543210");
         state.setVisitorGender("Male");
         state.setPurpose("Workshop");
+        state.setRemarks("");
         state.setRoomChargesStatus("no");
         state.setRoomChargesAmount("0");
         state.setAttenderChargesStatus("no");
