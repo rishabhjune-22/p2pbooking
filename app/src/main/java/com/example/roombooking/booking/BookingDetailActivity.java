@@ -482,7 +482,8 @@ public class BookingDetailActivity extends AppCompatActivity {
                 + "Gender: " + safe(bookingItem.getVisitorGender()) + "\n"
                 + "Mobile: " + safe(bookingItem.getVisitorMobile()) + "\n"
                 + "Email: " + safe(bookingItem.getVisitorEmail()) + "\n"
-                + "Purpose: " + safe(bookingItem.getPurposeOfVisit());
+                + "Purpose: " + safe(bookingItem.getPurposeOfVisit()) + "\n"
+                + "Remarks: " + safe(bookingItem.getRemarks());
     }
 
     private String buildVisitorCategoryDetails() {

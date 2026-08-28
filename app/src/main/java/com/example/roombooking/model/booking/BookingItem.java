@@ -62,6 +62,9 @@ public class BookingItem implements Parcelable {
     @SerializedName("purpose_of_visit")
     private String purposeOfVisit;
 
+    @SerializedName("remarks")
+    private String remarks;
+
     @SerializedName("visitor_category")
     private String visitorCategory;
 
@@ -150,6 +153,7 @@ public class BookingItem implements Parcelable {
         visitorMobile = in.readString();
         visitorEmail = in.readString();
         purposeOfVisit = in.readString();
+        remarks = in.readString();
         visitorCategory = in.readString();
 
         attenderRequired = in.readByte() != 0;
@@ -214,6 +218,7 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(visitorMobile, other.visitorMobile)
                 && Objects.equals(visitorEmail, other.visitorEmail)
                 && Objects.equals(purposeOfVisit, other.purposeOfVisit)
+                && Objects.equals(remarks, other.remarks)
                 && Objects.equals(visitorCategory, other.visitorCategory)
                 && Objects.equals(roomChargesStatus, other.roomChargesStatus)
                 && Objects.equals(attenderChargesStatus, other.attenderChargesStatus)
@@ -299,6 +304,10 @@ public class BookingItem implements Parcelable {
 
     public String getPurposeOfVisit() {
         return purposeOfVisit;
+    }
+
+    public String getRemarks() {
+        return remarks;
     }
 
     public String getVisitorCategory() {
@@ -425,6 +434,7 @@ public class BookingItem implements Parcelable {
         parcel.writeString(visitorMobile);
         parcel.writeString(visitorEmail);
         parcel.writeString(purposeOfVisit);
+        parcel.writeString(remarks);
         parcel.writeString(visitorCategory);
 
         parcel.writeByte((byte) (attenderRequired ? 1 : 0));

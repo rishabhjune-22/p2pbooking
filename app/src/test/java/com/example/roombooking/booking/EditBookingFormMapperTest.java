@@ -59,12 +59,14 @@ public class EditBookingFormMapperTest {
         state.setBudgetHeadName("Institute Visit");
         state.setBudgetHeadDepartmentName("Computer Science");
         state.setBudgetHeadProjectCode("PRJ-EDIT-001");
+        state.setRemarks("Keep one extra chair.");
 
         BookingUpdateRequest request = EditBookingFormMapper.toUpdateRequest(state);
         JsonObject json = JsonParser.parseString(new Gson().toJson(request)).getAsJsonObject();
 
         assertEquals(11, json.get("room").getAsInt());
         assertEquals("Edited Visitor", json.get("visitor_name").getAsString());
+        assertEquals("Keep one extra chair.", json.get("remarks").getAsString());
         assertEquals("other_guest", json.get("visitor_category").getAsString());
         assertTrue(json.get("attender_required").getAsBoolean());
         assertFalse(json.has("attender_count_per_day"));
@@ -93,6 +95,7 @@ public class EditBookingFormMapperTest {
         state.setVisitorMobile("9876543210");
         state.setVisitorGender("Female");
         state.setPurpose("Review");
+        state.setRemarks("");
         state.setRoomChargesStatus("no");
         state.setRoomChargesAmount("0");
         state.setAttenderChargesStatus("no");

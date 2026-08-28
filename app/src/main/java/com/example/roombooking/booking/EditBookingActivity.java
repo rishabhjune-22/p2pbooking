@@ -58,6 +58,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etVisitorMobile;
     private EditText etVisitorEmail;
     private EditText etPurpose;
+    private EditText etRemarks;
 
     private EditText etArrivalAt;
     private EditText etDepartureAt;
@@ -159,6 +160,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etVisitorMobile = findViewById(R.id.etVisitorMobile);
         etVisitorEmail = findViewById(R.id.etVisitorEmail);
         etPurpose = findViewById(R.id.etPurpose);
+        etRemarks = findViewById(R.id.etRemarks);
 
         etArrivalAt = findViewById(R.id.etArrivalAt);
         etDepartureAt = findViewById(R.id.etDepartureAt);
@@ -369,6 +371,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etVisitorMobile.setText(safe(state.getVisitorMobile()));
         etVisitorEmail.setText(safe(state.getVisitorEmail()));
         etPurpose.setText(safe(state.getPurpose()));
+        etRemarks.setText(safe(state.getRemarks()));
 
         selectGender(state.getVisitorGender());
         selectVisitorCategory(state.getVisitorCategory());
@@ -611,6 +614,7 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setVisitorMobile(getText(etVisitorMobile));
         data.setVisitorEmail(getText(etVisitorEmail));
         data.setPurpose(getText(etPurpose));
+        data.setRemarks(getText(etRemarks));
 
         data.setVisitorCategory(getSelectedVisitorCategory());
 
