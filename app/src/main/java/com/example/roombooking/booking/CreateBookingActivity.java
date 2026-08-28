@@ -38,6 +38,7 @@ import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
+import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 
 import java.text.SimpleDateFormat;
@@ -151,7 +152,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private final Random random = new Random();
 
     private final SimpleDateFormat displayFormat =
-            new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
+            DateTimeUtils.newDisplayDateTimeFormat();
 
     private RoomSpinnerAdapter roomAdapter;
 

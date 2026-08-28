@@ -70,10 +70,10 @@ public class RequesterLandingActivity extends AppCompatActivity {
     private static final String STATE_ARRIVAL_DATE = "requester_arrival_date";
     private static final String STATE_DEPARTURE_DATE = "requester_departure_date";
 
-    private final Calendar selectedMonth = Calendar.getInstance();
+    private final Calendar selectedMonth = DateTimeUtils.newBookingCalendar();
     private final List<RoomAvailabilityGroup> allGroups = new ArrayList<>();
     private final SimpleDateFormat monthYearFormat =
-            new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
+            DateTimeUtils.newMonthYearFormat();
 
     private MaterialToolbar toolbar;
     private MaterialButton btnPreviousMonth;
@@ -905,7 +905,7 @@ public class RequesterLandingActivity extends AppCompatActivity {
 
     private String buildDateString(int day) {
         return String.format(
-                Locale.getDefault(),
+                Locale.US,
                 "%04d-%02d-%02d",
                 selectedMonth.get(Calendar.YEAR),
                 selectedMonth.get(Calendar.MONTH) + 1,

@@ -13,6 +13,7 @@ import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.room.RoomResult;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppDiagnostics;
+import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.UiEvent;
@@ -20,7 +21,6 @@ import com.example.roombooking.utils.UiEvent;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -35,7 +35,7 @@ public class EditBookingViewModel extends ViewModel {
     private final BookingRepository bookingRepository;
     private final RoomRepository roomRepository;
     private final SimpleDateFormat apiDateTimeFormat =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+            DateTimeUtils.newApiDateTimeFormat();
 
     private final MutableLiveData<EditBookingFormState> formStateLiveData =
             new MutableLiveData<>();

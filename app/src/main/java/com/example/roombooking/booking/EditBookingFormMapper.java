@@ -65,8 +65,8 @@ final class EditBookingFormMapper {
         state.setLogisticsDesignation(bookingItem.getLogisticsDesignation());
         state.setLogisticsMobile(bookingItem.getLogisticsMobile());
 
-        Calendar arrival = Calendar.getInstance();
-        Calendar departure = Calendar.getInstance();
+        Calendar arrival = DateTimeUtils.newBookingCalendar();
+        Calendar departure = DateTimeUtils.newBookingCalendar();
         parseCalendarFromApiString(bookingItem.getArrivalAt(), arrival, apiDateTimeFormat);
         parseCalendarFromApiString(bookingItem.getDepartureAt(), departure, apiDateTimeFormat);
         ensureDepartureAfterArrival(arrival, departure);
@@ -127,7 +127,7 @@ final class EditBookingFormMapper {
     }
 
     static Calendar calendarFromMillis(long millis) {
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = DateTimeUtils.newBookingCalendar();
         calendar.setTimeInMillis(millis);
         return calendar;
     }

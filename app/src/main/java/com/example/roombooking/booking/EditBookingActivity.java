@@ -32,13 +32,13 @@ import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
+import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Locale;
 
 public class EditBookingActivity extends AppCompatActivity {
 
@@ -99,7 +99,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private boolean suppressBudgetHeadFocus = false;
 
     private final SimpleDateFormat displayFormat =
-            new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
+            DateTimeUtils.newDisplayDateTimeFormat();
 
     private RoomSpinnerAdapter roomAdapter;
 

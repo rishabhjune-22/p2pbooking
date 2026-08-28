@@ -20,8 +20,8 @@ public class DateTimeUtilsTest {
     public void setUp() {
         originalTimeZone = TimeZone.getDefault();
         originalLocale = Locale.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Kolkata"));
-        Locale.setDefault(Locale.US);
+        TimeZone.setDefault(TimeZone.getTimeZone("America/New_York"));
+        Locale.setDefault(Locale.FRANCE);
     }
 
     @After
@@ -35,6 +35,14 @@ public class DateTimeUtilsTest {
         assertEquals(
                 "15 Jun 2026, 03:30 PM",
                 DateTimeUtils.formatUtcToLocal("2026-06-15T10:00:00Z")
+        );
+    }
+
+    @Test
+    public void compactDateTimeUsesFullReadableDisplayFormat() {
+        assertEquals(
+                "15 Jun 2026, 03:30 PM",
+                DateTimeUtils.formatUtcToCompactLocal("2026-06-15T10:00:00Z")
         );
     }
 

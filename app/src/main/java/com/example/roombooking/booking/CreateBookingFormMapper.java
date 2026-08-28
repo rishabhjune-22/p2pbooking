@@ -1,5 +1,7 @@
 package com.example.roombooking.booking;
 
+import com.example.roombooking.utils.DateTimeUtils;
+
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -16,8 +18,8 @@ final class CreateBookingFormMapper {
             SimpleDateFormat apiDateTimeFormat
     ) {
         CreateBookingFormState state = new CreateBookingFormState();
-        Calendar arrival = Calendar.getInstance();
-        Calendar departure = Calendar.getInstance();
+        Calendar arrival = DateTimeUtils.newBookingCalendar();
+        Calendar departure = DateTimeUtils.newBookingCalendar();
         departure.setTimeInMillis(arrival.getTimeInMillis() + ONE_HOUR_MILLIS);
 
         if (initialData != null) {
@@ -60,7 +62,7 @@ final class CreateBookingFormMapper {
     }
 
     static Calendar calendarFromMillis(long millis) {
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = DateTimeUtils.newBookingCalendar();
         calendar.setTimeInMillis(millis);
         return calendar;
     }

@@ -1,6 +1,7 @@
 package com.example.roombooking.utils;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -9,8 +10,17 @@ import java.util.regex.Pattern;
 
 public final class DateTimeUtils {
 
-    private static final String DISPLAY_FORMAT = "dd MMM yyyy, hh:mm a";
-    private static final String COMPACT_DISPLAY_FORMAT = "dd MMM h a";
+    public static final String API_DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssXXX";
+    public static final String API_DATE_FORMAT = "yyyy-MM-dd";
+    public static final String DISPLAY_DATE_TIME_FORMAT = "dd MMM yyyy, hh:mm a";
+    public static final String DISPLAY_DATE_FORMAT = "dd MMM yyyy";
+    public static final String MONTH_YEAR_FORMAT = "MMMM yyyy";
+
+    private static final Locale DATE_TIME_LOCALE = Locale.ENGLISH;
+    private static final TimeZone INDIA_TIME_ZONE = TimeZone.getTimeZone("Asia/Kolkata");
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+    private static final String DISPLAY_FORMAT = DISPLAY_DATE_TIME_FORMAT;
+    private static final String COMPACT_DISPLAY_FORMAT = DISPLAY_DATE_TIME_FORMAT;
 
     private static final Pattern API_DATE_TIME_IN_TEXT = Pattern.compile(
             "\\d{4}-\\d{2}-\\d{2}[T ]\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:?\\d{2})"
@@ -30,6 +40,30 @@ public final class DateTimeUtils {
 
     private DateTimeUtils() {
         // Utility class. No object required.
+    }
+
+    public static SimpleDateFormat newApiDateTimeFormat() {
+        return newFormatter(API_DATE_TIME_FORMAT);
+    }
+
+    public static SimpleDateFormat newApiDateFormat() {
+        return newFormatter(API_DATE_FORMAT);
+    }
+
+    public static SimpleDateFormat newDisplayDateTimeFormat() {
+        return newFormatter(DISPLAY_DATE_TIME_FORMAT);
+    }
+
+    public static SimpleDateFormat newDisplayDateFormat() {
+        return newFormatter(DISPLAY_DATE_FORMAT);
+    }
+
+    public static SimpleDateFormat newMonthYearFormat() {
+        return newFormatter(MONTH_YEAR_FORMAT);
+    }
+
+    public static Calendar newBookingCalendar() {
+        return Calendar.getInstance(INDIA_TIME_ZONE, DATE_TIME_LOCALE);
     }
 
     public static String formatUtcToLocal(String apiDateTime) {
@@ -101,10 +135,12 @@ public final class DateTimeUtils {
     private static Date parseWithFormat(String apiDateTime, String format) {
         try {
             SimpleDateFormat formatter =
-                    new SimpleDateFormat(format, Locale.getDefault());
+                    new SimpleDateFormat(format, DATE_TIME_LOCALE);
 
             if (format.endsWith("'Z'")) {
-                formatter.setTimeZone(TimeZone.getTimeZone("UTC"));
+                formatter.setTimeZone(UTC_TIME_ZONE);
+            } else {
+                formatter.setTimeZone(INDIA_TIME_ZONE);
             }
 
             return formatter.parse(apiDateTime);
@@ -120,10 +156,7 @@ public final class DateTimeUtils {
 
     private static String formatForDisplay(Date date, String displayFormat) {
         try {
-            SimpleDateFormat displayFormatter =
-                    new SimpleDateFormat(displayFormat, Locale.getDefault());
-
-            displayFormatter.setTimeZone(TimeZone.getDefault());
+            SimpleDateFormat displayFormatter = newFormatter(displayFormat);
             return displayFormatter.format(date);
 
         } catch (Exception ignored) {
@@ -133,5 +166,11 @@ public final class DateTimeUtils {
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private static SimpleDateFormat newFormatter(String format) {
+        SimpleDateFormat formatter = new SimpleDateFormat(format, DATE_TIME_LOCALE);
+        formatter.setTimeZone(INDIA_TIME_ZONE);
+        return formatter;
     }
 }

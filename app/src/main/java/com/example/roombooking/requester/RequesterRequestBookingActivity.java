@@ -85,9 +85,9 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private static final long ONE_HOUR_MILLIS = 60L * 60L * 1000L;
 
     private final SimpleDateFormat apiDateTimeFormat =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.getDefault());
+            DateTimeUtils.newApiDateTimeFormat();
     private final SimpleDateFormat displayFormat =
-            new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
+            DateTimeUtils.newDisplayDateTimeFormat();
 
     private MaterialToolbar toolbar;
     private ImageButton btnBack;
@@ -125,8 +125,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private TextView tvError;
     private AppCompatButton btnSubmit;
 
-    private final Calendar arrivalCalendar = Calendar.getInstance();
-    private final Calendar departureCalendar = Calendar.getInstance();
+    private final Calendar arrivalCalendar = DateTimeUtils.newBookingCalendar();
+    private final Calendar departureCalendar = DateTimeUtils.newBookingCalendar();
     private String selectedPrefixValue = RoomPrefix.DELTA;
     private String preferredRoomName = "";
     private Integer preferredRoomId = null;
@@ -421,7 +421,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     }
 
     private void initializeDateCalendars(String arrivalAt, String departureAt) {
-        Calendar now = Calendar.getInstance();
+        Calendar now = DateTimeUtils.newBookingCalendar();
         arrivalCalendar.setTimeInMillis(now.getTimeInMillis());
         arrivalCalendar.set(Calendar.SECOND, 0);
         arrivalCalendar.set(Calendar.MILLISECOND, 0);

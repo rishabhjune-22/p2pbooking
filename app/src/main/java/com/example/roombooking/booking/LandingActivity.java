@@ -86,10 +86,10 @@ public class LandingActivity extends AppCompatActivity {
     private LandingViewModel viewModel;
     private CalendarAvailabilityAdapter calendarAdapter;
 
-    private final Calendar selectedMonth = Calendar.getInstance();
+    private final Calendar selectedMonth = DateTimeUtils.newBookingCalendar();
 
     private final SimpleDateFormat monthYearFormat =
-            new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
+            DateTimeUtils.newMonthYearFormat();
 
     private final List<RoomAvailabilityGroup> allGroups = new ArrayList<>();
 
@@ -805,7 +805,7 @@ public class LandingActivity extends AppCompatActivity {
         int year = selectedMonth.get(Calendar.YEAR);
 
         return String.format(
-                Locale.getDefault(),
+                Locale.US,
                 "%04d-%02d-%02d",
                 year,
                 month,

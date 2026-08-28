@@ -37,6 +37,7 @@ import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.AppToolbarMenu;
+import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -47,8 +48,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -100,10 +99,10 @@ public class HomeActivity extends AppCompatActivity {
     private TextView activeDateRangeTextView;
 
     private final SimpleDateFormat apiDateFormat =
-            new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            DateTimeUtils.newApiDateFormat();
 
     private final SimpleDateFormat displayDateFormat =
-            new SimpleDateFormat("dd MMM yyyy", Locale.getDefault());
+            DateTimeUtils.newDisplayDateFormat();
 
     private MaterialDatePicker<Pair<Long, Long>> dateRangePicker;
     private long lastPaginationTriggerAtMillis = 0L;
@@ -127,8 +126,6 @@ public class HomeActivity extends AppCompatActivity {
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
 
-        setupDateFormats();
-
         initViews();
         initViewModel();
         initDateRangePicker();
@@ -140,11 +137,6 @@ public class HomeActivity extends AppCompatActivity {
         observeViewModel();
 
         viewModel.loadInitialBookings();
-    }
-
-    private void setupDateFormats() {
-        apiDateFormat.setTimeZone(TimeZone.getDefault());
-        displayDateFormat.setTimeZone(TimeZone.getDefault());
     }
 
     private void initViews() {
@@ -581,7 +573,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void applyQuickMonthRange(int months, TextView tvDateRange) {
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = DateTimeUtils.newBookingCalendar();
 
         Date endDate = calendar.getTime();
 
