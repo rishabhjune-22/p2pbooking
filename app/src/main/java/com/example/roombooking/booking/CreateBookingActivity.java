@@ -32,7 +32,9 @@ import com.example.roombooking.R;
 import com.example.roombooking.admin.BookingRequestDecisionRequest;
 import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.api.RetrofitClient;
+import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.common.ApiResponse;
+import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.requester.BookingRequestItem;
 import com.example.roombooking.room.RoomRepository;
@@ -47,11 +49,13 @@ import com.example.roombooking.utils.RequiredMarkStyler;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.TimeZone;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -145,14 +149,18 @@ public class CreateBookingActivity extends AppCompatActivity {
     private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
     private CheckBox cbDayShift;
+    private CheckBox cbFillFromPreviousBooking;
 
+    private BookingRepository bookingRepository;
     private CreateBookingViewModel viewModel;
     private CreateBookingFormState currentFormState;
+    private BookingItem latestPreviousBooking;
     private int bookingRequestId = -1;
     private boolean bookingRequestApprovalMode = false;
     private boolean approvalRequestInFlight = false;
     private boolean suppressBudgetHeadFocus = false;
     private boolean suppressLogisticsSameAsRequestorChange = false;
+    private Call<ApiResponse<PaginatedData<BookingItem>>> previousBookingCall;
     private Call<ApiResponse<BookingRequestItem>> approveRequestCall;
     private Call<ApiResponse<BookingRequestItem>> rejectRequestCall;
     private Call<ApiResponse<BookingRequestItem>> sendBackRequestCall;
@@ -161,6 +169,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private final SimpleDateFormat displayFormat =
             DateTimeUtils.newDisplayDateTimeFormat();
+    private final SimpleDateFormat apiDateTimeFormat =
+            DateTimeUtils.newApiDateTimeFormat();
 
     private RoomSpinnerAdapter roomAdapter;
 
@@ -192,7 +202,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void initDependencies() {
-        BookingRepository bookingRepository = new BookingRepository(getApplicationContext());
+        bookingRepository = new BookingRepository(getApplicationContext());
         RoomRepository roomRepository = new RoomRepository(getApplicationContext());
         CreateBookingViewModelFactory factory = new CreateBookingViewModelFactory(
                 bookingRepository,
@@ -255,6 +265,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
         cbDayShift = findViewById(R.id.cbDayShift);
+        cbFillFromPreviousBooking = findViewById(R.id.cbFillFromPreviousBooking);
     }
 
     private void setupScrollInsets() {
@@ -325,6 +336,9 @@ public class CreateBookingActivity extends AppCompatActivity {
         btnCreateBookingAndMail.setOnClickListener(v -> submitBookingAndGenerateMailTemplate());
         if (bookingRequestApprovalMode) {
             reviewRemarksContainer.setVisibility(View.VISIBLE);
+            if (cbFillFromPreviousBooking != null) {
+                cbFillFromPreviousBooking.setVisibility(View.GONE);
+            }
             btnCreateBooking.setText("Approve");
             btnCreateBookingAndMail.setVisibility(View.GONE);
             btnFillDummy.setText("Reject");
@@ -338,6 +352,7 @@ public class CreateBookingActivity extends AppCompatActivity {
             btnSendBackBooking.setVisibility(View.GONE);
             btnDeleteBookingRequest.setVisibility(View.GONE);
             btnFillDummy.setOnClickListener(v -> fillRandomBookingData());
+            setupFillFromPreviousBookingControl();
         }
         btnBack.setOnClickListener(v -> handleBackPress());
 
@@ -592,6 +607,8 @@ public class CreateBookingActivity extends AppCompatActivity {
             rgVisitorCategory.check(R.id.rbConferenceGuest);
         } else if ("other_guest".equalsIgnoreCase(visitorCategory)) {
             rgVisitorCategory.check(R.id.rbOtherGuest);
+        } else {
+            rgVisitorCategory.clearCheck();
         }
     }
 
@@ -815,6 +832,278 @@ public class CreateBookingActivity extends AppCompatActivity {
         setViewEnabled(etLogisticsName, enabled);
         setViewEnabled(etLogisticsDesignation, enabled);
         setViewEnabled(etLogisticsMobile, enabled);
+    }
+
+    private void setupFillFromPreviousBookingControl() {
+        if (cbFillFromPreviousBooking == null) {
+            return;
+        }
+
+        cbFillFromPreviousBooking.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                fillFromPreviousBooking();
+            }
+        });
+    }
+
+    private void fillFromPreviousBooking() {
+        if (latestPreviousBooking != null) {
+            applyPreviousBookingFields(latestPreviousBooking);
+            return;
+        }
+
+        if (previousBookingCall != null) {
+            return;
+        }
+
+        setFillFromPreviousLoading(true);
+        Call<ApiResponse<PaginatedData<BookingItem>>> requestCall =
+                bookingRepository.getBookings(1, null, null, null, null);
+        previousBookingCall = requestCall;
+        requestCall.enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
+                    @NonNull Response<ApiResponse<PaginatedData<BookingItem>>> response
+            ) {
+                if (call != previousBookingCall) return;
+                previousBookingCall = null;
+                setFillFromPreviousLoading(false);
+                InternetErrorBanner.hide(CreateBookingActivity.this);
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    resetFillFromPreviousSelection();
+                    showError(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Previous booking could not be loaded."
+                    ));
+                    return;
+                }
+
+                ApiResponse<PaginatedData<BookingItem>> apiResponse = response.body();
+                PaginatedData<BookingItem> data = apiResponse.getData();
+                List<BookingItem> bookings = data != null ? data.getResults() : null;
+                if (!apiResponse.isSuccess() || bookings == null || bookings.isEmpty()) {
+                    resetFillFromPreviousSelection();
+                    showError(ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            "No previous booking is available yet."
+                    ));
+                    return;
+                }
+
+                latestPreviousBooking = bookings.get(0);
+                applyPreviousBookingFields(latestPreviousBooking);
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<PaginatedData<BookingItem>>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != previousBookingCall) return;
+                previousBookingCall = null;
+                setFillFromPreviousLoading(false);
+                if (!call.isCanceled()) {
+                    resetFillFromPreviousSelection();
+                    InternetErrorBanner.show(CreateBookingActivity.this);
+                    showError(ApiErrorUtils.messageFromThrowable(t));
+                }
+            }
+        });
+    }
+
+    private void applyPreviousBookingFields(BookingItem booking) {
+        if (booking == null) {
+            resetFillFromPreviousSelection();
+            showError("No previous booking is available yet.");
+            return;
+        }
+
+        applyPreviousBookingDateTimes(booking);
+        etPurpose.setText(safeString(booking.getPurposeOfVisit()));
+        setVisitorCategorySelection(booking.getVisitorCategory());
+        applyPreviousBookingBudgetHead(booking);
+        applyPreviousBookingRequestorAndLogistics(booking);
+        setChargeSelection(
+                rgRoomChargesStatus,
+                R.id.rbRoomChargesYes,
+                R.id.rbRoomChargesNo,
+                R.id.rbRoomChargesWaived,
+                etRoomChargesAmount,
+                booking.getRoomChargesStatus(),
+                booking.getRoomChargesAmount()
+        );
+        setChargeSelection(
+                rgAttenderChargesStatus,
+                R.id.rbAttenderChargesYes,
+                R.id.rbAttenderChargesNo,
+                R.id.rbAttenderChargesWaived,
+                etAttenderChargesAmount,
+                booking.getAttenderChargesStatus(),
+                booking.getAttenderChargesAmount()
+        );
+        showMessage("Filled from previous booking.");
+    }
+
+    private void applyPreviousBookingDateTimes(BookingItem booking) {
+        Calendar arrival = calendarFromApiDateTime(booking.getArrivalAt());
+        Calendar departure = calendarFromApiDateTime(booking.getDepartureAt());
+        if (arrival == null && departure == null) {
+            return;
+        }
+
+        CreateBookingFormState state = currentFormState != null
+                ? currentFormState.copy()
+                : new CreateBookingFormState();
+        if (arrival == null) {
+            arrival = CreateBookingFormMapper.calendarFromMillis(state.getArrivalAtMillis());
+        }
+        if (departure == null) {
+            departure = CreateBookingFormMapper.calendarFromMillis(state.getDepartureAtMillis());
+        }
+        CreateBookingFormMapper.ensureDepartureAfterArrival(arrival, departure);
+        CreateBookingFormMapper.applyDateTimes(state, arrival, departure, apiDateTimeFormat);
+        currentFormState = state;
+        refreshDateTimeFields(currentFormState);
+    }
+
+    private Calendar calendarFromApiDateTime(String value) {
+        if (isBlank(value)) {
+            return null;
+        }
+
+        String normalizedValue = value.trim().replace(" ", "T")
+                .replaceFirst("(\\.\\d{3})\\d+(Z|[+-]\\d{2}:?\\d{2})$", "$1$2");
+        String[] formats = {
+                "yyyy-MM-dd'T'HH:mm:ssXXX",
+                "yyyy-MM-dd'T'HH:mm:ss.SSSXXX",
+                "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        };
+
+        for (String format : formats) {
+            try {
+                SimpleDateFormat parser = new SimpleDateFormat(format, Locale.ENGLISH);
+                parser.setTimeZone(format.endsWith("'Z'")
+                        ? TimeZone.getTimeZone("UTC")
+                        : TimeZone.getTimeZone("Asia/Kolkata"));
+                Date date = parser.parse(normalizedValue);
+                if (date != null) {
+                    Calendar calendar = DateTimeUtils.newBookingCalendar();
+                    calendar.setTime(date);
+                    return calendar;
+                }
+            } catch (Exception ignored) {
+                // Try the next supported server datetime format.
+            }
+        }
+
+        return null;
+    }
+
+    private void applyPreviousBookingBudgetHead(BookingItem booking) {
+        String type = safeString(booking.getBudgetHeadType());
+        String value = safeString(booking.getBudgetHeadValue());
+        String individual = safeString(booking.getBudgetHeadName());
+        String instituteHead = safeString(booking.getBudgetHeadDepartmentName());
+        String projectCode = safeString(booking.getBudgetHeadProjectCode());
+
+        if (individual.isEmpty()
+                && (CreateBookingFormState.BUDGET_HEAD_INDIVIDUAL.equals(type)
+                || (type.isEmpty() && !value.isEmpty()))) {
+            individual = value;
+        }
+        if (instituteHead.isEmpty()
+                && CreateBookingFormState.BUDGET_HEAD_INSTITUTE.equals(type)) {
+            instituteHead = value;
+        }
+        if (projectCode.isEmpty()
+                && CreateBookingFormState.BUDGET_HEAD_PROJECT.equals(type)) {
+            projectCode = value;
+        }
+
+        setBudgetHeadOptionFromValue(cbBudgetHeadName, etBudgetHeadName, individual);
+        setBudgetHeadOptionFromValue(
+                cbBudgetHeadDepartmentName,
+                etBudgetHeadDepartmentName,
+                instituteHead
+        );
+        setBudgetHeadOptionFromValue(cbBudgetHeadProjectCode, etBudgetHeadProjectCode, projectCode);
+    }
+
+    private void applyPreviousBookingRequestorAndLogistics(BookingItem booking) {
+        etRequestorName.setText(safeString(booking.getRequestorName()));
+        etRequestorDesignation.setText(safeString(booking.getRequestorDesignation()));
+        etRequestorDepartment.setText(safeString(booking.getRequestorDepartment()));
+        etRequestorMobile.setText(safeString(booking.getRequestorMobile()));
+
+        String logisticsName = safeString(booking.getLogisticsName());
+        String logisticsDesignation = safeString(booking.getLogisticsDesignation());
+        String logisticsMobile = safeString(booking.getLogisticsMobile());
+        boolean requestorHasValue = !isBlank(
+                getText(etRequestorName)
+                        + getText(etRequestorDesignation)
+                        + getText(etRequestorMobile)
+        );
+        boolean logisticsMatchesRequestor = requestorHasValue
+                && logisticsName.equals(getText(etRequestorName))
+                && logisticsDesignation.equals(getText(etRequestorDesignation))
+                && logisticsMobile.equals(getText(etRequestorMobile));
+
+        suppressLogisticsSameAsRequestorChange = true;
+        try {
+            if (cbLogisticsSameAsRequestor != null) {
+                cbLogisticsSameAsRequestor.setChecked(logisticsMatchesRequestor);
+            }
+        } finally {
+            suppressLogisticsSameAsRequestorChange = false;
+        }
+
+        if (logisticsMatchesRequestor) {
+            copyRequestorToLogistics();
+        } else {
+            etLogisticsName.setText(logisticsName);
+            etLogisticsDesignation.setText(logisticsDesignation);
+            etLogisticsMobile.setText(logisticsMobile);
+        }
+        updateLogisticsFieldsEnabled();
+    }
+
+    private void setChargeSelection(
+            RadioGroup group,
+            int yesId,
+            int noId,
+            int waivedId,
+            EditText amountField,
+            String status,
+            String amount
+    ) {
+        if ("yes".equals(status)) {
+            group.check(yesId);
+            amountField.setText(safeString(amount));
+        } else if ("waived_off".equals(status)) {
+            group.check(waivedId);
+        } else {
+            group.check(noId);
+        }
+    }
+
+    private void setFillFromPreviousLoading(boolean loading) {
+        if (cbFillFromPreviousBooking == null) {
+            return;
+        }
+        cbFillFromPreviousBooking.setEnabled(!loading && !isBusy());
+        cbFillFromPreviousBooking.setAlpha(loading ? 0.65f : 1.0f);
+        cbFillFromPreviousBooking.setText(
+                loading ? "Loading previous booking..." : "Fill from previous booking"
+        );
+    }
+
+    private void resetFillFromPreviousSelection() {
+        if (cbFillFromPreviousBooking != null) {
+            cbFillFromPreviousBooking.setChecked(false);
+        }
     }
 
     private void clearAttenderShifts() {
@@ -1478,6 +1767,12 @@ public class CreateBookingActivity extends AppCompatActivity {
             btnCreateBookingAndMail.setAlpha(loading ? 0.65f : 1.0f);
             btnCreateBookingAndMail.setText(loading ? "Please wait..." : "Create Booking and Mail");
         }
+        if (!bookingRequestApprovalMode
+                && cbFillFromPreviousBooking != null
+                && previousBookingCall == null) {
+            cbFillFromPreviousBooking.setEnabled(!loading);
+            cbFillFromPreviousBooking.setAlpha(loading ? 0.65f : 1.0f);
+        }
         if (bookingRequestApprovalMode && btnFillDummy != null) {
             btnFillDummy.setEnabled(!loading);
             btnFillDummy.setAlpha(loading ? 0.65f : 1.0f);
@@ -1654,10 +1949,14 @@ public class CreateBookingActivity extends AppCompatActivity {
         if (deleteRequestCall != null && !deleteRequestCall.isCanceled()) {
             deleteRequestCall.cancel();
         }
+        if (previousBookingCall != null && !previousBookingCall.isCanceled()) {
+            previousBookingCall.cancel();
+        }
         approveRequestCall = null;
         rejectRequestCall = null;
         sendBackRequestCall = null;
         deleteRequestCall = null;
+        previousBookingCall = null;
         super.onDestroy();
     }
 
