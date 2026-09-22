@@ -149,6 +149,14 @@ public class CreateBookingViewModel extends ViewModel {
     }
 
     public void create(CreateBookingFormState formState) {
+        create(formState, false);
+    }
+
+    public void createAndGenerateMailTemplate(CreateBookingFormState formState) {
+        create(formState, true);
+    }
+
+    private void create(CreateBookingFormState formState, boolean generateMailTemplate) {
         if (createBookingCall != null || isCreating()) {
             return;
         }
@@ -165,9 +173,10 @@ public class CreateBookingViewModel extends ViewModel {
         formStateLiveData.setValue(state.copy());
         creatingLiveData.setValue(true);
 
-        Call<ApiResponse<BookingActionData>> call = bookingRepository.createBooking(
-                CreateBookingFormMapper.toCreateRequest(state)
-        );
+        BookingCreateRequest request = CreateBookingFormMapper.toCreateRequest(state);
+        Call<ApiResponse<BookingActionData>> call = generateMailTemplate
+                ? bookingRepository.createBookingMailTemplate(request)
+                : bookingRepository.createBooking(request);
         createBookingCall = call;
         call.enqueue(new Callback<ApiResponse<BookingActionData>>() {
             @Override
@@ -204,7 +213,11 @@ public class CreateBookingViewModel extends ViewModel {
                 BookingActionData actionData = apiResponse.getData();
                 String createdStatus = actionData != null ? actionData.getSafeStatus() : "";
                 resultLiveData.setValue(new UiEvent<>(
-                        new CreateBookingResult(apiResponse.getSafeMessage(), createdStatus)
+                        new CreateBookingResult(
+                                apiResponse.getSafeMessage(),
+                                createdStatus,
+                                actionData != null ? actionData.getMailTemplate() : null
+                        )
                 ));
             }
 

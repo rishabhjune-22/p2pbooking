@@ -25,6 +25,10 @@ public class BookingActionData {
     @Nullable
     private String status;
 
+    @SerializedName("mail_template")
+    @Nullable
+    private BookingMailTemplate mailTemplate;
+
     public int getBookingId() {
         return bookingId;
     }
@@ -59,5 +63,10 @@ public class BookingActionData {
 
     public String getSafeStatus() {
         return status != null ? status : "";
+    }
+
+    @Nullable
+    public BookingMailTemplate getMailTemplate() {
+        return mailTemplate;
     }
 }

@@ -24,6 +24,7 @@ import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.sync.LightBackgroundSyncScheduler;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
+import com.example.roombooking.utils.RequiredMarkStyler;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -61,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
         EdgeToEdgeUtils.applySystemBarAndImeInsets(this, findViewById(R.id.rootView));
 
         bindViews();
+        RequiredMarkStyler.applyTo(rootView);
         selectRole(getIntent().getStringExtra(EXTRA_SELECTED_ROLE));
         setupListeners();
         showSessionMessageIfNeeded();

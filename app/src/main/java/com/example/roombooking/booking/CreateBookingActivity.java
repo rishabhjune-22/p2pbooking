@@ -6,6 +6,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -40,6 +42,7 @@ import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
+import com.example.roombooking.utils.RequiredMarkStyler;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -110,6 +113,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etLogisticsName;
     private EditText etLogisticsDesignation;
     private EditText etLogisticsMobile;
+    private CheckBox cbLogisticsSameAsRequestor;
     private LinearLayout reviewRemarksContainer;
     private EditText etReviewRemarks;
 
@@ -119,6 +123,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private ScrollView scrollCreateBooking;
 
     private Button btnCreateBooking;
+    private Button btnCreateBookingAndMail;
     private Button btnFillDummy;
     private Button btnSendBackBooking;
     private Button btnDeleteBookingRequest;
@@ -147,6 +152,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private boolean bookingRequestApprovalMode = false;
     private boolean approvalRequestInFlight = false;
     private boolean suppressBudgetHeadFocus = false;
+    private boolean suppressLogisticsSameAsRequestorChange = false;
     private Call<ApiResponse<BookingRequestItem>> approveRequestCall;
     private Call<ApiResponse<BookingRequestItem>> rejectRequestCall;
     private Call<ApiResponse<BookingRequestItem>> sendBackRequestCall;
@@ -170,6 +176,7 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         initDependencies();
         bindViews();
+        RequiredMarkStyler.applyTo(findViewById(R.id.rootView));
         setupScrollInsets();
         AppToolbarMenu.setup(this, findViewById(R.id.appToolbar));
         configureBookingRequestApprovalMode();
@@ -215,6 +222,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etLogisticsName = findViewById(R.id.etLogisticsName);
         etLogisticsDesignation = findViewById(R.id.etLogisticsDesignation);
         etLogisticsMobile = findViewById(R.id.etLogisticsMobile);
+        cbLogisticsSameAsRequestor = findViewById(R.id.cbLogisticsSameAsRequestor);
         reviewRemarksContainer = findViewById(R.id.reviewRemarksContainer);
         etReviewRemarks = findViewById(R.id.etReviewRemarks);
 
@@ -224,6 +232,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         scrollCreateBooking = findViewById(R.id.scrollCreateBooking);
 
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
+        btnCreateBookingAndMail = findViewById(R.id.btnCreateBookingAndMail);
         btnFillDummy = findViewById(R.id.btnFillDummy);
         btnSendBackBooking = findViewById(R.id.btnSendBackBooking);
         btnDeleteBookingRequest = findViewById(R.id.btnDeleteBookingRequest);
@@ -313,9 +322,11 @@ public class CreateBookingActivity extends AppCompatActivity {
         });
 
         btnCreateBooking.setOnClickListener(v -> submitBooking());
+        btnCreateBookingAndMail.setOnClickListener(v -> submitBookingAndGenerateMailTemplate());
         if (bookingRequestApprovalMode) {
             reviewRemarksContainer.setVisibility(View.VISIBLE);
             btnCreateBooking.setText("Approve");
+            btnCreateBookingAndMail.setVisibility(View.GONE);
             btnFillDummy.setText("Reject");
             btnFillDummy.setOnClickListener(v -> rejectBookingRequestFromForm());
             btnSendBackBooking.setVisibility(View.VISIBLE);
@@ -344,6 +355,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
         setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
+        setupLogisticsSameAsRequestorControls();
     }
 
     private void observeViewModel() {
@@ -532,6 +544,7 @@ public class CreateBookingActivity extends AppCompatActivity {
             cbDayShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
             updateAttenderControlsState();
         }
+        initializeLogisticsSameAsRequestorState();
 
         showMessage("Review requester details before creating or rejecting this booking.");
     }
@@ -723,6 +736,87 @@ public class CreateBookingActivity extends AppCompatActivity {
         view.setAlpha(enabled ? 1.0f : 0.45f);
     }
 
+    private void setupLogisticsSameAsRequestorControls() {
+        if (cbLogisticsSameAsRequestor == null) {
+            return;
+        }
+
+        cbLogisticsSameAsRequestor.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (suppressLogisticsSameAsRequestorChange) {
+                updateLogisticsFieldsEnabled();
+                return;
+            }
+            if (isChecked) {
+                copyRequestorToLogistics();
+            } else {
+                clearLogisticsFields();
+            }
+            updateLogisticsFieldsEnabled();
+        });
+
+        TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // No-op.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (cbLogisticsSameAsRequestor.isChecked()) {
+                    copyRequestorToLogistics();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // No-op.
+            }
+        };
+        etRequestorName.addTextChangedListener(watcher);
+        etRequestorDesignation.addTextChangedListener(watcher);
+        etRequestorMobile.addTextChangedListener(watcher);
+
+        initializeLogisticsSameAsRequestorState();
+    }
+
+    private void initializeLogisticsSameAsRequestorState() {
+        if (cbLogisticsSameAsRequestor == null) {
+            return;
+        }
+        boolean sameAsRequestor =
+                !isBlank(getText(etRequestorName) + getText(etRequestorDesignation) + getText(etRequestorMobile))
+                        && getText(etRequestorName).equals(getText(etLogisticsName))
+                        && getText(etRequestorDesignation).equals(getText(etLogisticsDesignation))
+                        && getText(etRequestorMobile).equals(getText(etLogisticsMobile));
+        suppressLogisticsSameAsRequestorChange = true;
+        try {
+            cbLogisticsSameAsRequestor.setChecked(sameAsRequestor);
+            updateLogisticsFieldsEnabled();
+        } finally {
+            suppressLogisticsSameAsRequestorChange = false;
+        }
+    }
+
+    private void copyRequestorToLogistics() {
+        etLogisticsName.setText(getText(etRequestorName));
+        etLogisticsDesignation.setText(getText(etRequestorDesignation));
+        etLogisticsMobile.setText(getText(etRequestorMobile));
+    }
+
+    private void clearLogisticsFields() {
+        etLogisticsName.setText("");
+        etLogisticsDesignation.setText("");
+        etLogisticsMobile.setText("");
+    }
+
+    private void updateLogisticsFieldsEnabled() {
+        boolean enabled = cbLogisticsSameAsRequestor == null
+                || !cbLogisticsSameAsRequestor.isChecked();
+        setViewEnabled(etLogisticsName, enabled);
+        setViewEnabled(etLogisticsDesignation, enabled);
+        setViewEnabled(etLogisticsMobile, enabled);
+    }
+
     private void clearAttenderShifts() {
         cbGeneralShift.setChecked(false);
         cbMorningShift.setChecked(false);
@@ -742,6 +836,15 @@ public class CreateBookingActivity extends AppCompatActivity {
         }
 
         viewModel.create(collectFormData());
+    }
+
+    private void submitBookingAndGenerateMailTemplate() {
+        if (isBusy() || bookingRequestApprovalMode) {
+            return;
+        }
+
+        tvMessage.setVisibility(View.GONE);
+        viewModel.createAndGenerateMailTemplate(collectFormData());
     }
 
     @Override
@@ -853,6 +956,10 @@ public class CreateBookingActivity extends AppCompatActivity {
     private void handleCreateSuccess(CreateBookingResult result) {
         sendBookingCreatedResult(result.getStatus());
         showMessage(result.getMessage());
+        if (result.getMailTemplate() != null && result.getMailTemplate().hasContent()) {
+            BookingMailTemplateDialog.show(this, result.getMailTemplate(), this::finish);
+            return;
+        }
         finish();
     }
 
@@ -1366,6 +1473,11 @@ public class CreateBookingActivity extends AppCompatActivity {
         btnCreateBooking.setEnabled(!loading);
         btnCreateBooking.setAlpha(loading ? 0.65f : 1.0f);
         btnCreateBooking.setText(loading ? "Please wait..." : (bookingRequestApprovalMode ? "Approve" : "Create Booking"));
+        if (!bookingRequestApprovalMode && btnCreateBookingAndMail != null) {
+            btnCreateBookingAndMail.setEnabled(!loading);
+            btnCreateBookingAndMail.setAlpha(loading ? 0.65f : 1.0f);
+            btnCreateBookingAndMail.setText(loading ? "Please wait..." : "Create Booking and Mail");
+        }
         if (bookingRequestApprovalMode && btnFillDummy != null) {
             btnFillDummy.setEnabled(!loading);
             btnFillDummy.setAlpha(loading ? 0.65f : 1.0f);

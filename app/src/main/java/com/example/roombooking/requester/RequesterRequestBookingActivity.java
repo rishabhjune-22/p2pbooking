@@ -37,6 +37,7 @@ import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
+import com.example.roombooking.utils.RequiredMarkStyler;
 import com.google.android.material.appbar.MaterialToolbar;
 
 import java.text.ParseException;
@@ -146,6 +147,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
         EdgeToEdgeUtils.applySystemBarInsets(this, findViewById(R.id.rootView));
         bindViews();
+        RequiredMarkStyler.applyTo(findViewById(R.id.rootView));
         setupScrollInsets();
         setupToolbar();
         setupScheduleFields();

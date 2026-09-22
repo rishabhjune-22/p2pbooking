@@ -360,6 +360,18 @@
                     android:textStyle="bold" />
 
                 <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/btnGenerateMailTemplate"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/space_48"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@drawable/bg_create_booking_outline_button"
+                    android:text="Generate Mail Template"
+                    android:textAllCaps="false"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_16"
+                    android:textStyle="bold" />
+
+                <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/btnDeleteBooking"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/space_48"

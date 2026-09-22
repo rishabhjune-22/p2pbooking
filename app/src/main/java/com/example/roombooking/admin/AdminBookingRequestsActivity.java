@@ -35,6 +35,7 @@ import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.ListScreenCache;
 import com.example.roombooking.utils.ListScreenUiHelper;
+import com.example.roombooking.utils.RequiredMarkStyler;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.card.MaterialCardView;
 import com.google.gson.reflect.TypeToken;
@@ -595,7 +596,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         }
 
         LinearLayout layout = ListScreenUiHelper.dialogContent(this);
-        layout.addView(ListScreenUiHelper.sectionHeader(this, "Room"));
+        layout.addView(ListScreenUiHelper.sectionHeader(this, "Room *"));
 
         Spinner roomSpinner = new Spinner(this);
         List<String> labels = new ArrayList<>();
@@ -613,7 +614,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         ));
 
         EditText remarks = new EditText(this);
-        remarks.setHint("Remarks (optional)");
+        remarks.setHint("Remarks (Optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
         LinearLayout.LayoutParams remarksParams = new LinearLayout.LayoutParams(
@@ -622,6 +623,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         );
         remarksParams.setMargins(0, dp(12), 0, 0);
         layout.addView(remarks, remarksParams);
+        RequiredMarkStyler.applyTo(layout);
 
         new AlertDialog.Builder(this)
                 .setTitle("Approve Request #" + item.getId())
@@ -637,11 +639,12 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private void showRejectDialog(BookingRequestItem item) {
         EditText remarks = new EditText(this);
-        remarks.setHint("Remarks");
+        remarks.setHint("Remarks *");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
         LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(remarks);
+        RequiredMarkStyler.applyTo(content);
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Reject Request #" + item.getId())
                 .setView(content)
@@ -664,11 +667,12 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private void showSendBackDialog(BookingRequestItem item) {
         EditText remarks = new EditText(this);
-        remarks.setHint("Explain what needs to be corrected");
+        remarks.setHint("Explain what needs to be corrected *");
         remarks.setSingleLine(false);
         remarks.setMinLines(3);
         LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(remarks);
+        RequiredMarkStyler.applyTo(content);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Send Back for Correction")
@@ -728,13 +732,14 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         message.setPadding(0, 0, 0, dp(10));
 
         EditText remarks = new EditText(this);
-        remarks.setHint("Remarks");
+        remarks.setHint("Remarks *");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
 
         LinearLayout content = ListScreenUiHelper.dialogContent(this);
         content.addView(message);
         content.addView(remarks);
+        RequiredMarkStyler.applyTo(content);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("Delete Request")

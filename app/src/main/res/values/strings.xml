@@ -14,14 +14,14 @@
     <string name="logging_in_as_requester">Logging in as Requester</string>
     <string name="creating_admin_account">Creating an Admin account</string>
     <string name="creating_requester_account">Creating a Requester account</string>
-    <string name="full_name">Full Name</string>
-    <string name="email">Email</string>
-    <string name="password">Password</string>
-    <string name="confirm_password">Confirm Password</string>
-    <string name="admin_invite_code">Admin Invite Code</string>
-    <string name="designation_optional">Designation (optional)</string>
-    <string name="department_optional">Department (optional)</string>
-    <string name="mobile_optional">Mobile (optional)</string>
+    <string name="full_name">Full Name *</string>
+    <string name="email">Email *</string>
+    <string name="password">Password *</string>
+    <string name="confirm_password">Confirm Password *</string>
+    <string name="admin_invite_code">Admin Invite Code *</string>
+    <string name="designation_optional">Designation (Optional)</string>
+    <string name="department_optional">Department (Optional)</string>
+    <string name="mobile_optional">Mobile (Optional)</string>
     <string name="action_login">Login</string>
     <string name="action_logging_in">Logging in...</string>
     <string name="action_create_account">Create Account</string>
@@ -48,7 +48,7 @@
     <string name="message_logged_out">Logged out successfully.</string>
     <string name="action_cancel">Cancel</string>
     <string-array name="gender_options">
-        <item>Select Gender</item>
+        <item>Select Gender (Optional)</item>
         <item>Male</item>
         <item>Female</item>
         <item>Other</item>

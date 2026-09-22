@@ -7,6 +7,8 @@ import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
@@ -33,6 +35,7 @@ import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.DateTimeUtils;
+import com.example.roombooking.utils.RequiredMarkStyler;
 import com.example.roombooking.utils.InternetErrorBanner;
 
 import java.text.SimpleDateFormat;
@@ -88,6 +91,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etLogisticsName;
     private EditText etLogisticsDesignation;
     private EditText etLogisticsMobile;
+    private CheckBox cbLogisticsSameAsRequestor;
 
     private TextView tvMessage;
     private ScrollView scrollViewEditBooking;
@@ -98,6 +102,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private BookingItem bookingItem;
     private boolean formBound = false;
     private boolean suppressBudgetHeadFocus = false;
+    private boolean suppressLogisticsSameAsRequestorChange = false;
 
     private final SimpleDateFormat displayFormat =
             DateTimeUtils.newDisplayDateTimeFormat();
@@ -115,6 +120,7 @@ public class EditBookingActivity extends AppCompatActivity {
 
         initDependencies();
         bindViews();
+        RequiredMarkStyler.applyTo(findViewById(R.id.rootView));
         setupScrollInsets();
         AppToolbarMenu.setup(this, findViewById(R.id.appToolbar));
         setupRoomSpinner();
@@ -190,6 +196,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etLogisticsName = findViewById(R.id.etLogisticsName);
         etLogisticsDesignation = findViewById(R.id.etLogisticsDesignation);
         etLogisticsMobile = findViewById(R.id.etLogisticsMobile);
+        cbLogisticsSameAsRequestor = findViewById(R.id.cbLogisticsSameAsRequestor);
 
         tvMessage = findViewById(R.id.tvMessage);
         btnSaveBooking = findViewById(R.id.btnSaveBooking);
@@ -273,6 +280,7 @@ public class EditBookingActivity extends AppCompatActivity {
         setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
         setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
+        setupLogisticsSameAsRequestorControls();
     }
 
     private void observeViewModel() {
@@ -428,6 +436,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etLogisticsName.setText(safe(state.getLogisticsName()));
         etLogisticsDesignation.setText(safe(state.getLogisticsDesignation()));
         etLogisticsMobile.setText(safe(state.getLogisticsMobile()));
+        initializeLogisticsSameAsRequestorState();
 
         refreshDateTimeFields(state);
     }
@@ -566,6 +575,87 @@ public class EditBookingActivity extends AppCompatActivity {
 
         view.setEnabled(enabled);
         view.setAlpha(enabled ? 1.0f : 0.45f);
+    }
+
+    private void setupLogisticsSameAsRequestorControls() {
+        if (cbLogisticsSameAsRequestor == null) {
+            return;
+        }
+
+        cbLogisticsSameAsRequestor.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (suppressLogisticsSameAsRequestorChange) {
+                updateLogisticsFieldsEnabled();
+                return;
+            }
+            if (isChecked) {
+                copyRequestorToLogistics();
+            } else {
+                clearLogisticsFields();
+            }
+            updateLogisticsFieldsEnabled();
+        });
+
+        TextWatcher watcher = new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                // No-op.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (cbLogisticsSameAsRequestor.isChecked()) {
+                    copyRequestorToLogistics();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                // No-op.
+            }
+        };
+        etRequestorName.addTextChangedListener(watcher);
+        etRequestorDesignation.addTextChangedListener(watcher);
+        etRequestorMobile.addTextChangedListener(watcher);
+
+        initializeLogisticsSameAsRequestorState();
+    }
+
+    private void initializeLogisticsSameAsRequestorState() {
+        if (cbLogisticsSameAsRequestor == null) {
+            return;
+        }
+        boolean sameAsRequestor =
+                !isBlank(getText(etRequestorName) + getText(etRequestorDesignation) + getText(etRequestorMobile))
+                        && getText(etRequestorName).equals(getText(etLogisticsName))
+                        && getText(etRequestorDesignation).equals(getText(etLogisticsDesignation))
+                        && getText(etRequestorMobile).equals(getText(etLogisticsMobile));
+        suppressLogisticsSameAsRequestorChange = true;
+        try {
+            cbLogisticsSameAsRequestor.setChecked(sameAsRequestor);
+            updateLogisticsFieldsEnabled();
+        } finally {
+            suppressLogisticsSameAsRequestorChange = false;
+        }
+    }
+
+    private void copyRequestorToLogistics() {
+        etLogisticsName.setText(getText(etRequestorName));
+        etLogisticsDesignation.setText(getText(etRequestorDesignation));
+        etLogisticsMobile.setText(getText(etRequestorMobile));
+    }
+
+    private void clearLogisticsFields() {
+        etLogisticsName.setText("");
+        etLogisticsDesignation.setText("");
+        etLogisticsMobile.setText("");
+    }
+
+    private void updateLogisticsFieldsEnabled() {
+        boolean enabled = cbLogisticsSameAsRequestor == null
+                || !cbLogisticsSameAsRequestor.isChecked();
+        setViewEnabled(etLogisticsName, enabled);
+        setViewEnabled(etLogisticsDesignation, enabled);
+        setViewEnabled(etLogisticsMobile, enabled);
     }
 
     private void clearAttenderShifts() {
@@ -1003,6 +1093,10 @@ public class EditBookingActivity extends AppCompatActivity {
         return editText.getText() != null
                 ? editText.getText().toString().trim()
                 : "";
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 
     private String safe(String value) {

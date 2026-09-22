@@ -569,7 +569,7 @@ public class SuperadminUserProfilesActivity extends AppCompatActivity {
 
     private void showRejectDialog(AccountRequestItem item) {
         EditText remarks = new EditText(this);
-        remarks.setHint("Remarks (optional)");
+        remarks.setHint("Remarks (Optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
         LinearLayout content = ListScreenUiHelper.dialogContent(this);

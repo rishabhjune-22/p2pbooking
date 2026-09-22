@@ -557,7 +557,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         message.setPadding(0, 0, 0, dp(10));
 
         android.widget.EditText remarks = new android.widget.EditText(this);
-        remarks.setHint("Remarks (optional)");
+        remarks.setHint("Remarks (Optional)");
         remarks.setSingleLine(false);
         remarks.setMinLines(2);
 

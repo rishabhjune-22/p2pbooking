@@ -173,6 +173,11 @@ public class RequesterLandingActivity extends AppCompatActivity {
     }
 
     private void setupListeners() {
+        View mainView = findViewById(R.id.main);
+        if (mainView != null) {
+            mainView.setOnClickListener(v -> clearRangeSelectionIfActive());
+        }
+
         btnRequestBooking.setOnClickListener(v -> {
             if (isRapidRequestBookingClick()) {
                 return;

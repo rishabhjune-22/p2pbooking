@@ -87,7 +87,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_16"
-                    android:text="Room No"
+                    android:text="Room No *"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -106,7 +106,7 @@
                     android:clickable="true"
                     android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
-                    android:hint="Check-In Date &amp; Time"
+                    android:hint="Check-In Date &amp; Time *"
                     android:inputType="none" />
 
                 <EditText
@@ -116,7 +116,7 @@
                     android:clickable="true"
                     android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
-                    android:hint="Check-Out Date &amp; Time"
+                    android:hint="Check-Out Date &amp; Time *"
                     android:inputType="none" />
 
                 <EditText
@@ -124,19 +124,19 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_16"
                     android:drawableStart="@drawable/ic_user"
-                    android:hint="Visitor Name" />
+                    android:hint="Visitor Name *" />
 
                 <EditText
                     android:id="@+id/etVisitorDesignation"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Visitor Designation" />
+                    android:hint="Visitor Designation (Optional)" />
 
                 <EditText
                     android:id="@+id/etVisitorOrganisation"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Visitor Organisation" />
+                    android:hint="Visitor Organisation (Optional)" />
 
                 <Spinner
                     android:id="@+id/spinnerGender"
@@ -151,7 +151,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:drawableStart="@drawable/ic_phone"
-                    android:hint="Visitor Mobile"
+                    android:hint="Visitor Mobile (Optional)"
                     android:inputType="phone"
                     android:maxLength="10" />
 
@@ -159,7 +159,7 @@
                     android:id="@+id/etVisitorEmail"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Visitor Email"
+                    android:hint="Visitor Email (Optional)"
                     android:inputType="textEmailAddress" />
 
                 <EditText
@@ -169,7 +169,7 @@
                     android:layout_marginTop="@dimen/space_12"
                     android:drawableStart="@drawable/ic_documents"
                     android:gravity="top|start"
-                    android:hint="Purpose of Visit"
+                    android:hint="Purpose of Visit (Optional)"
                     android:inputType="textMultiLine|textCapSentences"
                     android:maxLines="5"
                     android:minLines="3" />
@@ -181,7 +181,7 @@
                     android:layout_marginTop="@dimen/space_12"
                     android:drawableStart="@drawable/ic_documents"
                     android:gravity="top|start"
-                    android:hint="Remarks"
+                    android:hint="Remarks (Optional)"
                     android:inputType="textMultiLine|textCapSentences"
                     android:maxLines="5"
                     android:minLines="3" />
@@ -200,7 +200,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Visitor Category"
+                    android:text="Visitor Category (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
@@ -264,7 +264,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Budget Head"
+                    android:text="Budget Head (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
@@ -287,7 +287,7 @@
                         android:id="@+id/etBudgetHeadName"
                         style="@style/EditBookingInput"
                         android:layout_marginTop="@dimen/space_4"
-                        android:hint="Name"
+                        android:hint="Name (Optional)"
                         android:visibility="gone" />
 
                     <CheckBox
@@ -302,7 +302,7 @@
                         android:id="@+id/etBudgetHeadDepartmentName"
                         style="@style/EditBookingInput"
                         android:layout_marginTop="@dimen/space_4"
-                        android:hint="Department Name"
+                        android:hint="Department Name (Optional)"
                         android:visibility="gone" />
 
                     <CheckBox
@@ -317,7 +317,7 @@
                         android:id="@+id/etBudgetHeadProjectCode"
                         style="@style/EditBookingInput"
                         android:layout_marginTop="@dimen/space_4"
-                        android:hint="Project Code"
+                        android:hint="Project Code (Optional)"
                         android:visibility="gone" />
 
                 </LinearLayout>
@@ -351,7 +351,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Requestor Details"
+                    android:text="Requestor Details (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
@@ -360,25 +360,25 @@
                     android:id="@+id/etRequestorName"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_16"
-                    android:hint="Requestor Name" />
+                    android:hint="Requestor Name (Optional)" />
 
                 <EditText
                     android:id="@+id/etRequestorDesignation"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Requestor Designation" />
+                    android:hint="Requestor Designation (Optional)" />
 
                 <EditText
                     android:id="@+id/etRequestorDepartment"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Requestor Department" />
+                    android:hint="Requestor Department (Optional)" />
 
                 <EditText
                     android:id="@+id/etRequestorMobile"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Requestor Mobile"
+                    android:hint="Requestor Mobile (Optional)"
                     android:inputType="phone"
                     android:maxLength="10" />
 
@@ -396,28 +396,36 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Logistics(Food/Cab) will be looked after by"
+                    android:text="Logistics(Food/Cab) will be looked after by (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
 
+                <CheckBox
+                    android:id="@+id/cbLogisticsSameAsRequestor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Same as requestor details"
+                    android:textColor="@color/detail_text_primary" />
+
                 <EditText
                     android:id="@+id/etLogisticsName"
                     style="@style/EditBookingInput"
-                    android:layout_marginTop="@dimen/space_16"
-                    android:hint="Logistics Name" />
+                    android:layout_marginTop="@dimen/space_8"
+                    android:hint="Logistics Name (Optional)" />
 
                 <EditText
                     android:id="@+id/etLogisticsDesignation"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Logistics Designation" />
+                    android:hint="Logistics Designation (Optional)" />
 
                 <EditText
                     android:id="@+id/etLogisticsMobile"
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
-                    android:hint="Logistics Mobile"
+                    android:hint="Logistics Mobile (Optional)"
                     android:inputType="phone"
                     android:maxLength="10" />
 
@@ -435,7 +443,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Attender Details"
+                    android:text="Attender Details (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
@@ -445,7 +453,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Attender Required"
+                    android:text="Attender Required (Optional)"
                     android:textColor="@color/detail_text_primary" />
 
                 <TextView
@@ -462,7 +470,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
                     android:alpha="0.45"
-                    android:text="Select Shift(s)"
+                    android:text="Select Shift(s) * (if attender required)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -490,14 +498,14 @@
                     android:layout_height="wrap_content"
                     android:alpha="0.45"
                     android:enabled="false"
-                    android:text="Day Shift (3 PM - 11 PM)"
+                    android:text="Evening Shift (3 PM - 11 PM)"
                     android:textColor="@color/detail_text_primary" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Attender Charges Received"
+                    android:text="Attender Charges Received (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -536,7 +544,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:enabled="false"
-                    android:hint="Attender Charges Amount"
+                    android:hint="Attender Charges Amount * (if Yes)"
                     android:inputType="numberDecimal" />
 
             </LinearLayout>
@@ -553,7 +561,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Room Charges"
+                    android:text="Room Charges (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textSize="@dimen/text_17"
                     android:textStyle="bold" />
@@ -562,7 +570,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_16"
-                    android:text="Room Charges Received"
+                    android:text="Room Charges Received (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -601,7 +609,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:enabled="false"
-                    android:hint="Room Charges Amount"
+                    android:hint="Room Charges Amount * (if Yes)"
                     android:inputType="numberDecimal" />
 
             </LinearLayout>

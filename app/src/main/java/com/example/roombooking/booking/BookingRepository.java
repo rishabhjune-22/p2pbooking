@@ -9,6 +9,7 @@ import com.example.roombooking.cache.CacheReadResult;
 import com.example.roombooking.cache.LocalJsonCacheStore;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.google.gson.reflect.TypeToken;
@@ -60,6 +61,16 @@ public class BookingRepository {
 
     public Call<ApiResponse<BookingActionData>> createBooking(BookingCreateRequest request) {
         return apiService.createBooking(request);
+    }
+
+    public Call<ApiResponse<BookingActionData>> createBookingMailTemplate(
+            BookingCreateRequest request
+    ) {
+        return apiService.createBookingMailTemplate(request);
+    }
+
+    public Call<ApiResponse<BookingMailTemplate>> getBookingMailTemplate(int bookingId) {
+        return apiService.getBookingMailTemplate(bookingId);
     }
 
     public Call<ApiResponse<BookingItem>> getBooking(int bookingId) {

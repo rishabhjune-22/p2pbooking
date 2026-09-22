@@ -26,6 +26,7 @@ import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingEditHistoryItem;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.utils.ApiErrorUtils;
@@ -71,12 +72,14 @@ public class BookingDetailActivity extends AppCompatActivity {
 
     private AppCompatButton btnDeleteBooking;
     private AppCompatButton btnEditBooking;
+    private AppCompatButton btnGenerateMailTemplate;
     private SwipeRefreshLayout swipeRefreshBookingDetail;
 
     private BookingRepository bookingRepository;
     private BookingItem bookingItem;
     private Call<ApiResponse<BookingItem>> refreshBookingCall;
     private Call<ApiResponse<BookingActionData>> deleteBookingCall;
+    private Call<ApiResponse<BookingMailTemplate>> mailTemplateCall;
 
     private final ActivityResultLauncher<Intent> editBookingLauncher =
             registerForActivityResult(
@@ -153,6 +156,7 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         btnDeleteBooking = findViewById(R.id.btnDeleteBooking);
         btnEditBooking = findViewById(R.id.btnEditBooking);
+        btnGenerateMailTemplate = findViewById(R.id.btnGenerateMailTemplate);
         swipeRefreshBookingDetail = findViewById(R.id.swipeRefreshBookingDetail);
     }
 
@@ -162,6 +166,8 @@ public class BookingDetailActivity extends AppCompatActivity {
         btnDeleteBooking.setOnClickListener(v -> showDeleteDialog());
 
         btnEditBooking.setOnClickListener(v -> openEditBookingScreen());
+
+        btnGenerateMailTemplate.setOnClickListener(v -> generateMailTemplate());
 
         swipeRefreshBookingDetail.setColorSchemeResources(
                 R.color.primary,
@@ -612,7 +618,7 @@ public class BookingDetailActivity extends AppCompatActivity {
         }
 
         if (bookingItem.isAttenderDayShift()) {
-            shifts.add("Day Shift (3 PM - 11 PM)");
+            shifts.add("Evening Shift (3 PM - 11 PM)");
         }
 
         if (shifts.isEmpty()) {
@@ -633,11 +639,75 @@ public class BookingDetailActivity extends AppCompatActivity {
 
         btnEditBooking.setEnabled(true);
         btnEditBooking.setText("Edit Booking");
+
+        btnGenerateMailTemplate.setEnabled(mailTemplateCall == null);
+        btnGenerateMailTemplate.setText(
+                mailTemplateCall == null ? "Generate Mail Template" : "Generating..."
+        );
     }
 
     private void disableActionButtons() {
         btnDeleteBooking.setEnabled(false);
         btnEditBooking.setEnabled(false);
+        btnGenerateMailTemplate.setEnabled(false);
+    }
+
+    private void generateMailTemplate() {
+        if (bookingItem == null || mailTemplateCall != null) {
+            return;
+        }
+
+        setMailTemplateLoading(true);
+        Call<ApiResponse<BookingMailTemplate>> requestCall =
+                bookingRepository.getBookingMailTemplate(bookingItem.getId());
+        mailTemplateCall = requestCall;
+        requestCall.enqueue(new Callback<ApiResponse<BookingMailTemplate>>() {
+
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingMailTemplate>> call,
+                    @NonNull Response<ApiResponse<BookingMailTemplate>> response
+            ) {
+                if (call != mailTemplateCall || !canUpdateUi()) return;
+                mailTemplateCall = null;
+                resetMailTemplateButton();
+                InternetErrorBanner.hide(BookingDetailActivity.this);
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    showToast(ApiErrorUtils.messageFromResponse(
+                            response,
+                            "Mail template could not be generated."
+                    ));
+                    return;
+                }
+
+                ApiResponse<BookingMailTemplate> apiResponse = response.body();
+                BookingMailTemplate template = apiResponse.getData();
+                if (!apiResponse.isSuccess() || template == null || !template.hasContent()) {
+                    showToast(ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            "Mail template could not be generated."
+                    ));
+                    return;
+                }
+
+                BookingMailTemplateDialog.show(BookingDetailActivity.this, template);
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingMailTemplate>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != mailTemplateCall || !canUpdateUi()) return;
+                mailTemplateCall = null;
+                resetMailTemplateButton();
+                if (!call.isCanceled()) {
+                    InternetErrorBanner.show(BookingDetailActivity.this);
+                    showToast(ApiErrorUtils.networkMessage());
+                }
+            }
+        });
     }
 
     private void showDeleteDialog() {
@@ -760,6 +830,17 @@ public class BookingDetailActivity extends AppCompatActivity {
         setDeletingState(false);
     }
 
+    private void setMailTemplateLoading(boolean loading) {
+        btnGenerateMailTemplate.setEnabled(!loading);
+        btnGenerateMailTemplate.setText(
+                loading ? "Generating..." : "Generate Mail Template"
+        );
+    }
+
+    private void resetMailTemplateButton() {
+        setMailTemplateLoading(false);
+    }
+
     private void sendUpdatedResult() {
         if (bookingItem == null) {
             return;
@@ -805,6 +886,10 @@ public class BookingDetailActivity extends AppCompatActivity {
             deleteBookingCall.cancel();
         }
         deleteBookingCall = null;
+        if (mailTemplateCall != null && !mailTemplateCall.isCanceled()) {
+            mailTemplateCall.cancel();
+        }
+        mailTemplateCall = null;
         super.onDestroy();
     }
 

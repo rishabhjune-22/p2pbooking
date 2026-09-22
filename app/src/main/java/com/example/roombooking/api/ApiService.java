@@ -11,6 +11,7 @@ import com.example.roombooking.admin.AccountApprovalDecisionRequest;
 import com.example.roombooking.admin.AccountRequestItem;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
@@ -49,6 +50,16 @@ public interface ApiService {
     @POST("api/bookings/create/")
     Call<ApiResponse<BookingActionData>> createBooking(
             @Body BookingCreateRequest request
+    );
+
+    @POST("api/bookings/create-mail-template/")
+    Call<ApiResponse<BookingActionData>> createBookingMailTemplate(
+            @Body BookingCreateRequest request
+    );
+
+    @GET("api/bookings/{pk}/mail-template/")
+    Call<ApiResponse<BookingMailTemplate>> getBookingMailTemplate(
+            @Path("pk") int bookingId
     );
 
     @PATCH("api/bookings/{pk}/edit/")

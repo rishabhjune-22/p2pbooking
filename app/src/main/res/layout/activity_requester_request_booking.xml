@@ -124,7 +124,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Select Room"
+                    android:text="Select Room *"
                     android:textColor="@color/create_booking_label"
                     android:textSize="@dimen/text_12"
                     android:textStyle="bold" />
@@ -139,7 +139,7 @@
                     android:cursorVisible="false"
                     android:focusable="false"
                     android:gravity="center_vertical"
-                    android:hint="Select Room"
+                    android:hint="Select Room *"
                     android:importantForAutofill="no"
                     android:inputType="none"
                     android:longClickable="false"
@@ -188,7 +188,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Arrival"
+                    android:text="Arrival *"
                     android:textColor="@color/create_booking_label"
                     android:textSize="@dimen/text_12"
                     android:textStyle="bold" />
@@ -202,7 +202,7 @@
                     android:cursorVisible="false"
                     android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
-                    android:hint="Arrival Date &amp; Time"
+                    android:hint="Arrival Date &amp; Time *"
                     android:importantForAutofill="no"
                     android:inputType="none"
                     android:longClickable="false" />
@@ -211,7 +211,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_10"
-                    android:text="Departure"
+                    android:text="Departure *"
                     android:textColor="@color/create_booking_label"
                     android:textSize="@dimen/text_12"
                     android:textStyle="bold" />
@@ -225,7 +225,7 @@
                     android:cursorVisible="false"
                     android:drawableStart="@drawable/ic_calendar"
                     android:focusable="false"
-                    android:hint="Departure Date &amp; Time"
+                    android:hint="Departure Date &amp; Time *"
                     android:importantForAutofill="no"
                     android:inputType="none"
                     android:longClickable="false" />
@@ -279,7 +279,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
                     android:drawableStart="@drawable/ic_user"
-                    android:hint="Visitor Name"
+                    android:hint="Visitor Name *"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -288,7 +288,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_identification"
-                    android:hint="Designation"
+                    android:hint="Designation (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -297,7 +297,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_organization"
-                    android:hint="Organisation"
+                    android:hint="Organisation (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -305,7 +305,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Gender"
+                    android:text="Gender (Optional)"
                     android:textColor="@color/create_booking_label"
                     android:textSize="@dimen/text_12"
                     android:textStyle="bold" />
@@ -325,7 +325,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_phone"
-                    android:hint="Mobile Number"
+                    android:hint="Mobile Number (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="phone" />
 
@@ -334,7 +334,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_email"
-                    android:hint="Email Address"
+                    android:hint="Email Address (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textEmailAddress" />
 
@@ -345,7 +345,7 @@
                     android:layout_marginTop="@dimen/space_18"
                     android:drawableStart="@drawable/ic_documents"
                     android:gravity="top|start"
-                    android:hint="Purpose of Visit"
+                    android:hint="Purpose of Visit (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textMultiLine|textCapSentences"
                     android:maxLines="5"
@@ -370,7 +370,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_8"
-                        android:text="Visitor Category"
+                        android:text="Visitor Category (Optional)"
                         android:textColor="@color/create_booking_text_secondary"
                         android:textSize="@dimen/text_15"
                         android:textStyle="bold" />
@@ -447,7 +447,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_8"
-                        android:text="Budget Head"
+                        android:text="Budget Head (Optional)"
                         android:textColor="@color/create_booking_text_secondary"
                         android:textSize="@dimen/text_15"
                         android:textStyle="bold" />
@@ -480,7 +480,7 @@
                         style="@style/CreateBookingEditText"
                         android:layout_marginTop="@dimen/space_4"
                         android:drawableStart="@drawable/ic_documents"
-                        android:hint="Name"
+                        android:hint="Name (Optional)"
                         android:imeOptions="actionNext"
                         android:inputType="textCapWords"
                         android:visibility="gone" />
@@ -498,7 +498,7 @@
                         style="@style/CreateBookingEditText"
                         android:layout_marginTop="@dimen/space_4"
                         android:drawableStart="@drawable/ic_department"
-                        android:hint="Department Name"
+                        android:hint="Department Name (Optional)"
                         android:imeOptions="actionNext"
                         android:inputType="textCapWords"
                         android:visibility="gone" />
@@ -516,7 +516,7 @@
                         style="@style/CreateBookingEditText"
                         android:layout_marginTop="@dimen/space_4"
                         android:drawableStart="@drawable/ic_documents"
-                        android:hint="Project Code"
+                        android:hint="Project Code (Optional)"
                         android:imeOptions="actionNext"
                         android:inputType="textCapCharacters"
                         android:visibility="gone" />
@@ -557,7 +557,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="@dimen/space_8"
-                        android:text="Attender Requirement"
+                        android:text="Attender Requirement (Optional)"
                         android:textColor="@color/create_booking_text_secondary"
                         android:textSize="@dimen/text_15"
                         android:textStyle="bold" />
@@ -576,7 +576,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Attender Required"
+                    android:text="Attender Required (Optional)"
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <TextView
@@ -593,7 +593,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
                     android:alpha="0.45"
-                    android:text="Select Shift(s)"
+                    android:text="Select Shift(s) * (if attender required)"
                     android:textColor="@color/create_booking_label"
                     android:textStyle="bold" />
 
@@ -621,7 +621,7 @@
                     android:layout_height="wrap_content"
                     android:alpha="0.45"
                     android:enabled="false"
-                    android:text="Day Shift (3 PM - 11 PM)"
+                    android:text="Evening Shift (3 PM - 11 PM)"
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <LinearLayout
@@ -662,7 +662,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_12"
                     android:drawableStart="@drawable/ic_user"
-                    android:hint="Requester Name"
+                    android:hint="Requester Name (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -671,7 +671,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_identification"
-                    android:hint="Designation"
+                    android:hint="Designation (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -680,7 +680,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_department"
-                    android:hint="Department"
+                    android:hint="Department (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="textCapWords" />
 
@@ -689,7 +689,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_phone"
-                    android:hint="Mobile Number"
+                    android:hint="Mobile Number (Optional)"
                     android:imeOptions="actionNext"
                     android:inputType="phone" />
 
@@ -698,7 +698,7 @@
                     style="@style/CreateBookingEditText"
                     android:layout_marginTop="@dimen/space_10"
                     android:drawableStart="@drawable/ic_email"
-                    android:hint="Email Address"
+                    android:hint="Email Address (Optional)"
                     android:imeOptions="actionDone"
                     android:inputType="textEmailAddress" />
 
