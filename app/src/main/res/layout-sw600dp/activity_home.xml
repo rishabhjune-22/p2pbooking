@@ -82,6 +82,56 @@
             <ImageButton android:id="@+id/btnToggleCompact" style="@style/BookingListIconButton" android:contentDescription="Switch booking view" android:src="@drawable/ic_compact_view" />
             <TextView android:id="@+id/tvCompactToggleLabel" style="@style/BookingActionLabel" android:text="Compact\nView" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutBulkBookingActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_24"
+            android:orientation="vertical">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGenerateSelectedMailTemplate"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/space_56"
+                android:ellipsize="end"
+                android:enabled="false"
+                android:maxLines="2"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:text="Generate Email\nTemplate"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_12"
+                app:backgroundTint="@color/info_blue"
+                app:cornerRadius="@dimen/space_8"
+                app:icon="@drawable/ic_email"
+                app:iconGravity="textStart"
+                app:iconSize="@dimen/space_18"
+                app:iconTint="@color/white" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteSelectedBookings"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/space_56"
+                android:layout_marginTop="@dimen/space_8"
+                android:ellipsize="end"
+                android:enabled="false"
+                android:maxLines="2"
+                android:minHeight="0dp"
+                android:minWidth="0dp"
+                android:text="Delete Selected"
+                android:textAllCaps="false"
+                android:textColor="@color/white"
+                android:textSize="@dimen/text_12"
+                app:backgroundTint="@color/error_red"
+                app:cornerRadius="@dimen/space_8"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconGravity="textStart"
+                app:iconSize="@dimen/space_18"
+                app:iconTint="@color/white" />
+
+        </LinearLayout>
     </LinearLayout>
 
     <TextView

@@ -73,6 +73,14 @@ public class BookingRepository {
         return apiService.getBookingMailTemplate(bookingId);
     }
 
+    public Call<ApiResponse<BookingMailTemplate>> generateBulkBookingMailTemplate(
+            List<Integer> bookingIds
+    ) {
+        return apiService.generateBulkBookingMailTemplate(
+                new BookingBulkMailTemplateRequest(bookingIds)
+        );
+    }
+
     public Call<ApiResponse<BookingItem>> getBooking(int bookingId) {
         return apiService.getBooking(bookingId);
     }

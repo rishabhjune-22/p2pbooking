@@ -14,6 +14,7 @@ import com.example.roombooking.cache.CachePolicy;
 import com.example.roombooking.cache.CacheReadResult;
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.booking.BookingItem;
+import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
@@ -21,6 +22,7 @@ import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppDiagnostics;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.SyncStatusFormatter;
+import com.example.roombooking.utils.UiEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -44,6 +46,8 @@ public class HomeViewModel extends ViewModel {
             "Failed to load bookings.";
     private static final String MESSAGE_DELETE_FAILED =
             "Delete failed.";
+    private static final String MESSAGE_MAIL_TEMPLATE_FAILED =
+            "Could not generate mail template.";
     private static final String MESSAGE_NETWORK_ERROR =
             "Please check your internet connection.";
     private static final String MESSAGE_STALE_BOOKINGS =
@@ -77,14 +81,24 @@ public class HomeViewModel extends ViewModel {
     private final MutableLiveData<String> syncStatusLiveData =
             new MutableLiveData<>("");
 
+    private final MutableLiveData<UiEvent<BookingMailTemplate>> mailTemplateLiveData =
+            new MutableLiveData<>();
+
     private int currentPage = FIRST_PAGE;
 
     private boolean isLoading = false;
     private boolean isLastPage = false;
 
     private Call<ApiResponse<PaginatedData<BookingItem>>> bookingsCall;
+    private Call<ApiResponse<BookingMailTemplate>> bulkMailTemplateCall;
+    private Call<ApiResponse<BookingActionData>> bulkDeleteCall;
     private final Map<Integer, Call<ApiResponse<BookingActionData>>> deleteCalls =
             new HashMap<>();
+    private final List<Integer> pendingBulkDeleteIds = new ArrayList<>();
+    private int bulkDeleteTotal = 0;
+    private int bulkDeleteSuccessCount = 0;
+    private int bulkDeleteFailureCount = 0;
+    private String firstBulkDeleteFailureMessage = "";
     private Runnable pendingBookingsRetry;
     private int firstPageNetworkRetryCount = 0;
     private int cacheLoadGeneration = 0;
@@ -138,6 +152,10 @@ public class HomeViewModel extends ViewModel {
 
     public LiveData<String> getSyncStatusLiveData() {
         return syncStatusLiveData;
+    }
+
+    public LiveData<UiEvent<BookingMailTemplate>> getMailTemplateLiveData() {
+        return mailTemplateLiveData;
     }
 
     public boolean isLoading() {
@@ -263,6 +281,11 @@ public class HomeViewModel extends ViewModel {
     public void deleteBooking(BookingItem bookingItem) {
         if (bookingItem == null) return;
 
+        if (isBulkDeleteInProgress()) {
+            toastLiveData.setValue("Deletion is already in progress.");
+            return;
+        }
+
         int bookingId = bookingItem.getId();
         if (deleteCalls.containsKey(bookingId)) {
             toastLiveData.setValue("Deletion is already in progress.");
@@ -324,6 +347,92 @@ public class HomeViewModel extends ViewModel {
                             t
                     );
                     toastLiveData.setValue(ApiErrorUtils.networkMessage());
+                }
+            }
+        });
+    }
+
+    public void deleteBookings(List<Integer> bookingIds) {
+        List<Integer> sanitizedIds = sanitizeBookingIds(bookingIds);
+
+        if (sanitizedIds.isEmpty()) {
+            toastLiveData.setValue("Select at least one booking.");
+            return;
+        }
+
+        if (isBulkDeleteInProgress() || !deleteCalls.isEmpty()) {
+            toastLiveData.setValue("Deletion is already in progress.");
+            return;
+        }
+
+        pendingBulkDeleteIds.clear();
+        pendingBulkDeleteIds.addAll(sanitizedIds);
+        bulkDeleteTotal = sanitizedIds.size();
+        bulkDeleteSuccessCount = 0;
+        bulkDeleteFailureCount = 0;
+        firstBulkDeleteFailureMessage = "";
+
+        deleteNextBulkBooking();
+    }
+
+    public void generateBulkMailTemplate(List<Integer> bookingIds) {
+        List<Integer> sanitizedIds = sanitizeBookingIds(bookingIds);
+
+        if (sanitizedIds.isEmpty()) {
+            toastLiveData.setValue("Select at least one booking.");
+            return;
+        }
+
+        if (bulkMailTemplateCall != null) {
+            toastLiveData.setValue("Mail template is already being generated.");
+            return;
+        }
+
+        Call<ApiResponse<BookingMailTemplate>> request =
+                bookingRepository.generateBulkBookingMailTemplate(sanitizedIds);
+        bulkMailTemplateCall = request;
+        request.enqueue(new Callback<ApiResponse<BookingMailTemplate>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingMailTemplate>> call,
+                    @NonNull Response<ApiResponse<BookingMailTemplate>> response
+            ) {
+                if (call != bulkMailTemplateCall) return;
+                bulkMailTemplateCall = null;
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    toastLiveData.setValue(ApiErrorUtils.messageFromResponse(
+                            response,
+                            MESSAGE_MAIL_TEMPLATE_FAILED
+                    ));
+                    return;
+                }
+
+                ApiResponse<BookingMailTemplate> apiResponse = response.body();
+
+                if (!apiResponse.isSuccess()
+                        || apiResponse.getData() == null
+                        || !apiResponse.getData().hasContent()) {
+                    toastLiveData.setValue(ApiErrorUtils.messageFromApiResponse(
+                            apiResponse,
+                            MESSAGE_MAIL_TEMPLATE_FAILED
+                    ));
+                    return;
+                }
+
+                mailTemplateLiveData.setValue(new UiEvent<>(apiResponse.getData()));
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingMailTemplate>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != bulkMailTemplateCall) return;
+                bulkMailTemplateCall = null;
+
+                if (!call.isCanceled()) {
+                    toastLiveData.setValue(ApiErrorUtils.messageFromThrowable(t));
                 }
             }
         });
@@ -529,6 +638,136 @@ public class HomeViewModel extends ViewModel {
             Call<ApiResponse<BookingActionData>> call
     ) {
         return call == deleteCalls.get(bookingId);
+    }
+
+    private void deleteNextBulkBooking() {
+        if (pendingBulkDeleteIds.isEmpty()) {
+            finishBulkDelete();
+            return;
+        }
+
+        int bookingId = pendingBulkDeleteIds.remove(0);
+        Call<ApiResponse<BookingActionData>> request = bookingRepository.deleteBooking(bookingId);
+        bulkDeleteCall = request;
+        request.enqueue(new Callback<ApiResponse<BookingActionData>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingActionData>> call,
+                    @NonNull Response<ApiResponse<BookingActionData>> response
+            ) {
+                if (call != bulkDeleteCall) return;
+                bulkDeleteCall = null;
+
+                if (!response.isSuccessful() || response.body() == null) {
+                    recordBulkDeleteFailure(
+                            bookingId,
+                            ApiErrorUtils.messageFromResponse(response, MESSAGE_DELETE_FAILED)
+                    );
+                    deleteNextBulkBooking();
+                    return;
+                }
+
+                ApiResponse<BookingActionData> apiResponse = response.body();
+
+                if (!apiResponse.isSuccess() || apiResponse.getData() == null) {
+                    recordBulkDeleteFailure(
+                            bookingId,
+                            ApiErrorUtils.messageFromApiResponse(apiResponse, MESSAGE_DELETE_FAILED)
+                    );
+                    deleteNextBulkBooking();
+                    return;
+                }
+
+                bulkDeleteSuccessCount++;
+                removeBookingById(bookingId);
+                deleteNextBulkBooking();
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingActionData>> call,
+                    @NonNull Throwable t
+            ) {
+                if (call != bulkDeleteCall) return;
+                bulkDeleteCall = null;
+
+                if (!call.isCanceled()) {
+                    String message = ApiErrorUtils.messageFromThrowable(t);
+                    recordBulkDeleteFailure(bookingId, message);
+                    deleteNextBulkBooking();
+                }
+            }
+        });
+    }
+
+    private void finishBulkDelete() {
+        if (bulkDeleteSuccessCount > 0) {
+            bookingRepository.clearAvailabilityCachesForBookingMutation();
+            refreshBookingsAfterBookingChange();
+        }
+
+        if (bulkDeleteFailureCount == 0) {
+            toastLiveData.setValue(
+                    bulkDeleteTotal == 1
+                            ? "Booking deleted."
+                            : bulkDeleteTotal + " bookings deleted."
+            );
+        } else if (bulkDeleteSuccessCount == 0) {
+            toastLiveData.setValue(
+                    isBlank(firstBulkDeleteFailureMessage)
+                            ? MESSAGE_DELETE_FAILED
+                            : firstBulkDeleteFailureMessage
+            );
+        } else {
+            toastLiveData.setValue(
+                    bulkDeleteSuccessCount
+                            + " bookings deleted. "
+                            + bulkDeleteFailureCount
+                            + " failed."
+            );
+        }
+
+        resetBulkDeleteState();
+    }
+
+    private void recordBulkDeleteFailure(int bookingId, String message) {
+        bulkDeleteFailureCount++;
+        if (isBlank(firstBulkDeleteFailureMessage)) {
+            firstBulkDeleteFailureMessage = message;
+        }
+        AppDiagnostics.logBookingMutationFailure("delete", bookingId, message);
+    }
+
+    private boolean isBulkDeleteInProgress() {
+        return bulkDeleteCall != null || !pendingBulkDeleteIds.isEmpty();
+    }
+
+    private void resetBulkDeleteState() {
+        bulkDeleteCall = null;
+        pendingBulkDeleteIds.clear();
+        bulkDeleteTotal = 0;
+        bulkDeleteSuccessCount = 0;
+        bulkDeleteFailureCount = 0;
+        firstBulkDeleteFailureMessage = "";
+    }
+
+    private List<Integer> sanitizeBookingIds(List<Integer> bookingIds) {
+        List<Integer> sanitizedIds = new ArrayList<>();
+        Set<Integer> seenIds = new HashSet<>();
+
+        if (bookingIds == null) {
+            return sanitizedIds;
+        }
+
+        for (Integer bookingId : bookingIds) {
+            if (bookingId == null || bookingId <= 0 || seenIds.contains(bookingId)) {
+                continue;
+            }
+            seenIds.add(bookingId);
+            sanitizedIds.add(bookingId);
+        }
+
+        return sanitizedIds;
     }
 
     private void abortBookingsRequest() {
@@ -906,6 +1145,14 @@ public class HomeViewModel extends ViewModel {
     @Override
     protected void onCleared() {
         abortBookingsRequest();
+        if (bulkMailTemplateCall != null && !bulkMailTemplateCall.isCanceled()) {
+            bulkMailTemplateCall.cancel();
+        }
+        bulkMailTemplateCall = null;
+        if (bulkDeleteCall != null && !bulkDeleteCall.isCanceled()) {
+            bulkDeleteCall.cancel();
+        }
+        resetBulkDeleteState();
         Set<Call<ApiResponse<BookingActionData>>> calls =
                 new HashSet<>(deleteCalls.values());
         deleteCalls.clear();

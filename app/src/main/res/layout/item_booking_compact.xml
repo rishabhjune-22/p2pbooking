@@ -49,9 +49,22 @@
             android:text="27 Aug 10 AM → 29 Aug 10 PM"
             android:textColor="@color/palette_30303a"
             android:textSize="@dimen/text_12"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/cbSelectBooking"
             app:layout_constraintHorizontal_weight="3"
             app:layout_constraintStart_toEndOf="@id/tvVisitorName"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <CheckBox
+            android:id="@+id/cbSelectBooking"
+            android:layout_width="@dimen/space_40"
+            android:layout_height="@dimen/space_40"
+            android:buttonTint="@color/primary"
+            android:contentDescription="Select booking"
+            android:gravity="center"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
@@ -95,7 +108,7 @@
             android:textColor="@color/palette_3d3d47"
             android:textSize="@dimen/text_11"
             app:layout_constraintBaseline_toBaselineOf="@id/tvRoomName"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/cbSelectBooking"
             app:layout_constraintHorizontal_weight="3"
             app:layout_constraintStart_toEndOf="@id/tvRoomName" />
 

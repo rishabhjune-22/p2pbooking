@@ -2,6 +2,7 @@ package com.example.roombooking.api;
 
 import com.example.roombooking.booking.AvailableRoomsRangeResponse;
 import com.example.roombooking.booking.AvailableRoomsResponse;
+import com.example.roombooking.booking.BookingBulkMailTemplateRequest;
 import com.example.roombooking.booking.BookingCreateRequest;
 import com.example.roombooking.booking.BookingUpdateRequest;
 import com.example.roombooking.booking.RoomAvailabilityDetailsResponse;
@@ -60,6 +61,11 @@ public interface ApiService {
     @GET("api/bookings/{pk}/mail-template/")
     Call<ApiResponse<BookingMailTemplate>> getBookingMailTemplate(
             @Path("pk") int bookingId
+    );
+
+    @POST("api/bookings/mail-template/")
+    Call<ApiResponse<BookingMailTemplate>> generateBulkBookingMailTemplate(
+            @Body BookingBulkMailTemplateRequest request
     );
 
     @PATCH("api/bookings/{pk}/edit/")

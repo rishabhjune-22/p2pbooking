@@ -31,8 +31,10 @@ import com.example.roombooking.R;
 import com.example.roombooking.auth.AuthSessionGuard;
 import com.example.roombooking.booking.BookingAdapter;
 import com.example.roombooking.booking.BookingDetailActivity;
+import com.example.roombooking.booking.BookingMailTemplateDialog;
 import com.example.roombooking.booking.BookingRepository;
 import com.example.roombooking.booking.CreateBookingActivity;
+import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
 import com.example.roombooking.model.room.RoomPrefix;
@@ -40,6 +42,7 @@ import com.example.roombooking.utils.AppToolbarMenu;
 import com.example.roombooking.utils.DateTimeUtils;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
+import com.example.roombooking.utils.UiEvent;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.datepicker.MaterialDatePicker;
 
@@ -82,6 +85,9 @@ public class HomeActivity extends AppCompatActivity {
     private ImageButton btnToggleStatus;
     private ImageButton btnClearFilter;
     private ImageButton btnToggleCompact;
+    private View layoutBulkBookingActions;
+    private Button btnGenerateSelectedMailTemplate;
+    private Button btnDeleteSelectedBookings;
 
     private MaterialToolbar materialToolbar;
 
@@ -154,6 +160,9 @@ public class HomeActivity extends AppCompatActivity {
         btnToggleStatus = findViewById(R.id.btnToggleStatus);
         btnClearFilter = findViewById(R.id.btnClearFilter);
         btnToggleCompact = findViewById(R.id.btnToggleCompact);
+        layoutBulkBookingActions = findViewById(R.id.layoutBulkBookingActions);
+        btnGenerateSelectedMailTemplate = findViewById(R.id.btnGenerateSelectedMailTemplate);
+        btnDeleteSelectedBookings = findViewById(R.id.btnDeleteSelectedBookings);
 
         materialToolbar = findViewById(R.id.toolbar);
     }
@@ -230,6 +239,11 @@ public class HomeActivity extends AppCompatActivity {
             public void onBookingLongClick(BookingItem bookingItem, int position) {
                 showDeleteBookingDialog(bookingItem);
             }
+
+            @Override
+            public void onBookingSelectionChanged(int selectedCount) {
+                updateBulkActionUi();
+            }
         });
 
         layoutManager = new LinearLayoutManager(this);
@@ -305,7 +319,10 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupSwipeRefresh() {
-        swipeRefreshLayout.setOnRefreshListener(() -> viewModel.refreshBookings());
+        swipeRefreshLayout.setOnRefreshListener(() -> {
+            clearBookingSelection();
+            viewModel.refreshBookings();
+        });
     }
 
     private void setupActionButtons() {
@@ -323,6 +340,20 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         btnToggleCompact.setOnClickListener(v -> toggleBookingView());
+
+        if (btnGenerateSelectedMailTemplate != null) {
+            btnGenerateSelectedMailTemplate.setOnClickListener(v ->
+                    generateSelectedMailTemplate()
+            );
+        }
+
+        if (btnDeleteSelectedBookings != null) {
+            btnDeleteSelectedBookings.setOnClickListener(v ->
+                    showDeleteSelectedBookingsDialog()
+            );
+        }
+
+        updateBulkActionUi();
     }
 
     private void restoreCompactView(Bundle savedInstanceState) {
@@ -454,17 +485,13 @@ public class HomeActivity extends AppCompatActivity {
         updateStatusToggleUi();
         updateFilterTitle();
 
-        viewModel.applyFilter(
-                null,
-                null,
-                null,
-                BookingStatus.ACTIVE
-        );
+        applyCurrentFilter();
 
         showToast("Filters cleared");
     }
 
     private void applyCurrentFilter() {
+        clearBookingSelection();
         viewModel.applyFilter(
                 selectedPrefix,
                 selectedArrivalFrom,
@@ -643,6 +670,7 @@ public class HomeActivity extends AppCompatActivity {
     private void observeViewModel() {
         viewModel.getBookingsLiveData().observe(this, bookingItems -> {
             bookingAdapter.setItems(bookingItems);
+            updateBulkActionUi();
             requestCompactViewportFill();
         });
 
@@ -682,6 +710,19 @@ public class HomeActivity extends AppCompatActivity {
         });
 
         viewModel.getSyncStatusLiveData().observe(this, this::updateSyncStatus);
+
+        viewModel.getMailTemplateLiveData().observe(this, this::showMailTemplateIfNeeded);
+    }
+
+    private void showMailTemplateIfNeeded(UiEvent<BookingMailTemplate> event) {
+        if (event == null) {
+            return;
+        }
+
+        BookingMailTemplate template = event.getContentIfNotHandled();
+        if (template != null) {
+            BookingMailTemplateDialog.show(this, template);
+        }
     }
 
     private void updateSyncStatus(String message) {
@@ -722,6 +763,81 @@ public class HomeActivity extends AppCompatActivity {
                 )
                 .setNegativeButton("Close", null)
                 .show();
+    }
+
+    private void generateSelectedMailTemplate() {
+        List<Integer> selectedBookingIds = bookingAdapter.getSelectedBookingIds();
+
+        if (selectedBookingIds.isEmpty()) {
+            showToast("Select at least one booking.");
+            return;
+        }
+
+        viewModel.generateBulkMailTemplate(selectedBookingIds);
+    }
+
+    private void showDeleteSelectedBookingsDialog() {
+        List<Integer> selectedBookingIds = bookingAdapter.getSelectedBookingIds();
+
+        if (selectedBookingIds.isEmpty()) {
+            showToast("Select at least one booking.");
+            return;
+        }
+
+        String message = selectedBookingIds.size() == 1
+                ? "Delete selected booking permanently?"
+                : "Delete " + selectedBookingIds.size() + " selected bookings permanently?";
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Selected Bookings")
+                .setMessage(message)
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    bookingAdapter.clearSelection();
+                    updateBulkActionUi();
+                    viewModel.deleteBookings(selectedBookingIds);
+                })
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void clearBookingSelection() {
+        if (bookingAdapter == null) {
+            return;
+        }
+
+        bookingAdapter.clearSelection();
+        updateBulkActionUi();
+    }
+
+    private void updateBulkActionUi() {
+        if (bookingAdapter == null) {
+            return;
+        }
+
+        int selectedCount = bookingAdapter.getSelectedCount();
+        boolean hasSelection = selectedCount > 0;
+
+        if (layoutBulkBookingActions != null) {
+            layoutBulkBookingActions.setVisibility(View.VISIBLE);
+        }
+
+        if (btnGenerateSelectedMailTemplate != null) {
+            btnGenerateSelectedMailTemplate.setEnabled(hasSelection);
+            btnGenerateSelectedMailTemplate.setText(
+                    hasSelection
+                            ? "Generate Email\nTemplate (" + selectedCount + ")"
+                            : "Generate Email\nTemplate"
+            );
+        }
+
+        if (btnDeleteSelectedBookings != null) {
+            btnDeleteSelectedBookings.setEnabled(hasSelection);
+            btnDeleteSelectedBookings.setText(
+                    hasSelection
+                            ? "Delete Selected (" + selectedCount + ")"
+                            : "Delete Selected"
+            );
+        }
     }
 
     private String getBookingDisplayName(BookingItem bookingItem) {

@@ -38,6 +38,7 @@
         <TextView
             android:id="@+id/tvStatus"
             style="@style/BookingStatusChipDimensions"
+            android:layout_marginEnd="@dimen/space_4"
             android:gravity="center"
             android:singleLine="true"
             android:ellipsize="none"
@@ -46,6 +47,19 @@
             android:textSize="@dimen/text_12"
             android:textStyle="bold"
             android:background="@drawable/bg_status_active_soft"
+            app:layout_constraintEnd_toStartOf="@id/cbSelectBooking"
+            app:layout_constraintTop_toTopOf="@id/ivAvatar" />
+
+        <CheckBox
+            android:id="@+id/cbSelectBooking"
+            android:layout_width="@dimen/space_40"
+            android:layout_height="@dimen/space_40"
+            android:buttonTint="@color/primary"
+            android:contentDescription="Select booking"
+            android:gravity="center"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:padding="0dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/ivAvatar" />
 

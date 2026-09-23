@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -20,8 +21,10 @@ import com.example.roombooking.utils.DateTimeUtils;
 import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
@@ -29,6 +32,8 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         void onBookingClick(BookingItem bookingItem);
 
         void onBookingLongClick(BookingItem bookingItem, int position);
+
+        void onBookingSelectionChanged(int selectedCount);
     }
 
     private static final int VIEW_TYPE_DETAILED = 1;
@@ -40,6 +45,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
     private final Context context;
     private final List<BookingItem> items = new ArrayList<>();
+    private final Set<Integer> selectedBookingIds = new HashSet<>();
     private final OnBookingClickListener listener;
 
     private boolean showLoading = false;
@@ -60,8 +66,27 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         items.clear();
         items.addAll(updatedItems);
+        retainSelectionForVisibleItems(updatedItems);
 
         diffResult.dispatchUpdatesTo(this);
+    }
+
+    public List<Integer> getSelectedBookingIds() {
+        return new ArrayList<>(selectedBookingIds);
+    }
+
+    public int getSelectedCount() {
+        return selectedBookingIds.size();
+    }
+
+    public void clearSelection() {
+        if (selectedBookingIds.isEmpty()) {
+            return;
+        }
+
+        selectedBookingIds.clear();
+        notifyDataSetChanged();
+        notifySelectionChanged();
     }
 
     public void setCompactView(boolean compactView) {
@@ -235,6 +260,77 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         holder.cardView.setStrokeColor(
                 ContextCompat.getColor(context, strokeColorRes)
         );
+        holder.cardView.setStrokeWidth(defaultStrokeWidthPx());
+    }
+
+    private void bindSelection(BookingViewHolder holder, BookingItem item) {
+        boolean selected = selectedBookingIds.contains(item.getId());
+
+        if (holder.cbSelectBooking != null) {
+            holder.cbSelectBooking.setOnCheckedChangeListener(null);
+            holder.cbSelectBooking.setChecked(selected);
+            holder.cbSelectBooking.setContentDescription(
+                    selected ? "Deselect booking" : "Select booking"
+            );
+            holder.cbSelectBooking.setOnCheckedChangeListener((buttonView, isChecked) ->
+                    updateSelection(holder, item, isChecked)
+            );
+        }
+
+        if (selected) {
+            holder.cardView.setStrokeColor(ContextCompat.getColor(context, R.color.primary));
+            holder.cardView.setStrokeWidth(dpToPx(2));
+        }
+    }
+
+    private void updateSelection(
+            BookingViewHolder holder,
+            BookingItem item,
+            boolean selected
+    ) {
+        int bookingId = item.getId();
+
+        if (selected) {
+            selectedBookingIds.add(bookingId);
+        } else {
+            selectedBookingIds.remove(bookingId);
+        }
+
+        int position = holder.getBindingAdapterPosition();
+        if (position != RecyclerView.NO_POSITION) {
+            notifyItemChanged(position);
+        }
+        notifySelectionChanged();
+    }
+
+    private void retainSelectionForVisibleItems(List<BookingItem> visibleItems) {
+        if (selectedBookingIds.isEmpty()) {
+            return;
+        }
+
+        Set<Integer> visibleIds = new HashSet<>();
+        for (BookingItem item : visibleItems) {
+            visibleIds.add(item.getId());
+        }
+
+        boolean changed = selectedBookingIds.retainAll(visibleIds);
+        if (changed) {
+            notifySelectionChanged();
+        }
+    }
+
+    private void notifySelectionChanged() {
+        if (listener != null) {
+            listener.onBookingSelectionChanged(selectedBookingIds.size());
+        }
+    }
+
+    private int defaultStrokeWidthPx() {
+        return compactView ? dpToPx(1) : 0;
+    }
+
+    private int dpToPx(int value) {
+        return Math.round(value * context.getResources().getDisplayMetrics().density);
     }
 
     private void bindClickListeners(BookingViewHolder holder, BookingItem item) {
@@ -320,6 +416,7 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         private final TextView tvStatus;
         private final TextView tvDateRange;
         private final ImageView ivAvatar;
+        private final CheckBox cbSelectBooking;
 
         BookingViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -337,12 +434,14 @@ public class BookingAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             tvRequestedBy = itemView.findViewById(R.id.tvRequestedBy);
             tvCreatedBy = itemView.findViewById(R.id.tvCreatedBy);
             ivAvatar = itemView.findViewById(R.id.ivAvatar);
+            cbSelectBooking = itemView.findViewById(R.id.cbSelectBooking);
         }
 
         private void bind(BookingItem item) {
             bindBookingData(this, item);
             bindAvatar(this, item);
             bindStatus(this, item);
+            bindSelection(this, item);
             bindClickListeners(this, item);
         }
     }
