@@ -837,20 +837,15 @@ public class EditBookingActivity extends AppCompatActivity {
 
     private void setupChargeAmountListener(RadioGroup group, EditText amountField, int yesId) {
         group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
-            boolean enabled = checkedId == yesId;
-            amountField.setEnabled(enabled);
+            boolean enabled = updateChargeAmountField(group, amountField, yesId);
 
             if (enabled) {
                 if (formBound) {
                     focusAndShowKeyboard(amountField);
                 }
-            } else {
-                amountField.setText("");
-                amountField.setError(null);
-                amountField.clearFocus();
-                hideKeyboard(amountField);
             }
         });
+        updateChargeAmountField(group, amountField, yesId);
 
         View yesButton = group.findViewById(yesId);
         if (yesButton != null) {
@@ -862,6 +857,20 @@ public class EditBookingActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+    private boolean updateChargeAmountField(RadioGroup group, EditText amountField, int yesId) {
+        boolean enabled = group.getCheckedRadioButtonId() == yesId;
+        amountField.setEnabled(enabled);
+
+        if (!enabled) {
+            amountField.setText("");
+            amountField.setError(null);
+            amountField.clearFocus();
+            hideKeyboard(amountField);
+        }
+
+        return enabled;
     }
 
     private void setupClearRadioAction(int clearButtonId, RadioGroup group) {
