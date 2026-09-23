@@ -27,6 +27,10 @@ final class RoomSpinnerEntry {
         return new RoomSpinnerEntry(RoomInventory.displayRoomLabel(room), room, false);
     }
 
+    static RoomSpinnerEntry room(RoomItem room, String label) {
+        return new RoomSpinnerEntry(label, room, false);
+    }
+
     RoomItem getRoom() {
         return room;
     }

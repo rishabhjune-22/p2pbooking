@@ -37,7 +37,6 @@ import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
 import com.example.roombooking.requester.BookingRequestItem;
-import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.EdgeToEdgeUtils;
@@ -203,10 +202,11 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private void initDependencies() {
         bookingRepository = new BookingRepository(getApplicationContext());
-        RoomRepository roomRepository = new RoomRepository(getApplicationContext());
+        AvailabilityRepository availabilityRepository =
+                new AvailabilityRepository(getApplicationContext());
         CreateBookingViewModelFactory factory = new CreateBookingViewModelFactory(
                 bookingRepository,
-                roomRepository
+                availabilityRepository
         );
         viewModel = new ViewModelProvider(this, factory).get(CreateBookingViewModel.class);
     }
@@ -481,8 +481,8 @@ public class CreateBookingActivity extends AppCompatActivity {
         );
     }
 
-    private void bindRoomsToSpinner(List<RoomItem> rooms) {
-        List<RoomSpinnerEntry> entries = RoomSpinnerEntries.build(
+    private void bindRoomsToSpinner(List<AvailableRoomItem> rooms) {
+        List<RoomSpinnerEntry> entries = RoomSpinnerEntries.buildAvailable(
                 NullSafeCollections.copyWithoutNulls(rooms)
         );
         roomAdapter.clear();
@@ -615,7 +615,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     private Integer getSelectedRoomId() {
         if (currentFormState != null
                 && currentFormState.hasPreselectedRoom()
-                && currentFormState.getRoomId() != null) {
+                && currentFormState.getRoomId() != null
+                && !bookingRequestApprovalMode) {
             return currentFormState.getRoomId();
         }
 
@@ -962,10 +963,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         if (departure == null) {
             departure = CreateBookingFormMapper.calendarFromMillis(state.getDepartureAtMillis());
         }
-        CreateBookingFormMapper.ensureDepartureAfterArrival(arrival, departure);
-        CreateBookingFormMapper.applyDateTimes(state, arrival, departure, apiDateTimeFormat);
-        currentFormState = state;
-        refreshDateTimeFields(currentFormState);
+        viewModel.replaceDateTimes(arrival, departure);
     }
 
     private Calendar calendarFromApiDateTime(String value) {

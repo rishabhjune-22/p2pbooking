@@ -7,8 +7,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.roombooking.model.booking.BookingActionData;
 import com.example.roombooking.model.common.ApiResponse;
-import com.example.roombooking.model.room.RoomItem;
-import com.example.roombooking.room.RoomRepository;
+import com.example.roombooking.model.room.RoomPrefix;
 import com.example.roombooking.utils.ApiErrorUtils;
 import com.example.roombooking.utils.AppDiagnostics;
 import com.example.roombooking.utils.DateTimeUtils;
@@ -16,6 +15,7 @@ import com.example.roombooking.utils.InternetErrorBanner;
 import com.example.roombooking.utils.NullSafeCollections;
 import com.example.roombooking.utils.UiEvent;
 
+import java.util.ArrayList;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
@@ -31,13 +31,14 @@ public class CreateBookingViewModel extends ViewModel {
             "Rooms could not be loaded. Please try again.";
 
     private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
+    private final AvailabilityRepository availabilityRepository;
     private final SimpleDateFormat apiDateTimeFormat =
             DateTimeUtils.newApiDateTimeFormat();
 
     private final MutableLiveData<CreateBookingFormState> formStateLiveData =
             new MutableLiveData<>();
-    private final MutableLiveData<List<RoomItem>> roomsLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<AvailableRoomItem>> roomsLiveData =
+            new MutableLiveData<>();
     private final MutableLiveData<Boolean> creatingLiveData = new MutableLiveData<>(false);
     private final MutableLiveData<UiEvent<String>> errorLiveData = new MutableLiveData<>();
     private final MutableLiveData<UiEvent<Boolean>> networkBannerLiveData =
@@ -49,20 +50,23 @@ public class CreateBookingViewModel extends ViewModel {
 
     private boolean initialized = false;
     private Call<ApiResponse<BookingActionData>> createBookingCall;
+    private final List<Call<ApiResponse<AvailableRoomsRangeResponse>>> availableRoomsCalls =
+            new ArrayList<>();
+    private int availableRoomsLoadGeneration = 0;
 
     public CreateBookingViewModel(
             BookingRepository bookingRepository,
-            RoomRepository roomRepository
+            AvailabilityRepository availabilityRepository
     ) {
         this.bookingRepository = bookingRepository;
-        this.roomRepository = roomRepository;
+        this.availabilityRepository = availabilityRepository;
     }
 
     public LiveData<CreateBookingFormState> getFormStateLiveData() {
         return formStateLiveData;
     }
 
-    public LiveData<List<RoomItem>> getRoomsLiveData() {
+    public LiveData<List<AvailableRoomItem>> getRoomsLiveData() {
         return roomsLiveData;
     }
 
@@ -100,18 +104,25 @@ public class CreateBookingViewModel extends ViewModel {
     }
 
     public void loadRooms() {
-        roomRepository.getRooms(result -> {
-            if (result.isSuccess() && result.getRooms() != null) {
-                networkBannerLiveData.setValue(new UiEvent<>(false));
-                roomsLiveData.setValue(NullSafeCollections.copyWithoutNulls(result.getRooms()));
-                return;
-            }
+        CreateBookingFormState state = currentState();
+        String arrivalDate = dateOnly(state.getArrivalAt());
+        String departureDate = dateOnly(state.getDepartureAt());
 
-            if (InternetErrorBanner.isNetworkErrorMessage(result.getErrorMessage())) {
-                networkBannerLiveData.setValue(new UiEvent<>(true));
-            }
-            errorLiveData.setValue(new UiEvent<>(MESSAGE_LOAD_ROOMS_FAILED));
-        });
+        if (arrivalDate.isEmpty() || departureDate.isEmpty()) {
+            roomsLiveData.setValue(new ArrayList<>());
+            return;
+        }
+
+        cancelAvailableRoomsCalls();
+        int generation = ++availableRoomsLoadGeneration;
+        loadAvailableRoomsForPrefix(
+                generation,
+                RoomPrefix.displayOrder(),
+                0,
+                arrivalDate,
+                departureDate,
+                new ArrayList<>()
+        );
     }
 
     public Calendar getArrivalCalendar() {
@@ -146,6 +157,12 @@ public class CreateBookingViewModel extends ViewModel {
         CreateBookingFormMapper.ensureDepartureAfterArrival(arrival, departure);
         updateDateTimes(state, arrival, departure);
         return !adjusted;
+    }
+
+    public void replaceDateTimes(Calendar arrival, Calendar departure) {
+        CreateBookingFormState state = currentState();
+        CreateBookingFormMapper.ensureDepartureAfterArrival(arrival, departure);
+        updateDateTimes(state, arrival, departure);
     }
 
     public void create(CreateBookingFormState formState) {
@@ -261,6 +278,110 @@ public class CreateBookingViewModel extends ViewModel {
                 apiDateTimeFormat
         );
         formStateLiveData.setValue(state.copy());
+        loadRooms();
+    }
+
+    private void loadAvailableRoomsForPrefix(
+            int generation,
+            List<String> prefixes,
+            int prefixIndex,
+            String arrivalDate,
+            String departureDate,
+            List<AvailableRoomItem> accumulatedRooms
+    ) {
+        if (generation != availableRoomsLoadGeneration) {
+            return;
+        }
+
+        if (prefixIndex >= prefixes.size()) {
+            networkBannerLiveData.setValue(new UiEvent<>(false));
+            roomsLiveData.setValue(NullSafeCollections.copyWithoutNulls(accumulatedRooms));
+            return;
+        }
+
+        String prefix = prefixes.get(prefixIndex);
+        Call<ApiResponse<AvailableRoomsRangeResponse>> call =
+                availabilityRepository.getAvailableRoomsByDateRange(
+                        arrivalDate,
+                        departureDate,
+                        prefix
+                );
+        availableRoomsCalls.add(call);
+        call.enqueue(new Callback<ApiResponse<AvailableRoomsRangeResponse>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
+                    @NonNull Response<ApiResponse<AvailableRoomsRangeResponse>> response
+            ) {
+                availableRoomsCalls.remove(call);
+                if (generation != availableRoomsLoadGeneration) {
+                    return;
+                }
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()
+                        || response.body().getData() == null) {
+                    handleAvailableRoomsFailure(ApiErrorUtils.messageFromResponse(
+                            response,
+                            MESSAGE_LOAD_ROOMS_FAILED
+                    ));
+                    return;
+                }
+
+                AvailableRoomsRangeResponse data = response.body().getData();
+                accumulatedRooms.addAll(NullSafeCollections.copyWithoutNulls(data.getRooms()));
+                loadAvailableRoomsForPrefix(
+                        generation,
+                        prefixes,
+                        prefixIndex + 1,
+                        arrivalDate,
+                        departureDate,
+                        accumulatedRooms
+                );
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<AvailableRoomsRangeResponse>> call,
+                    @NonNull Throwable t
+            ) {
+                availableRoomsCalls.remove(call);
+                if (generation != availableRoomsLoadGeneration || call.isCanceled()) {
+                    return;
+                }
+
+                handleAvailableRoomsFailure(ApiErrorUtils.messageFromThrowable(t));
+            }
+        });
+    }
+
+    private void handleAvailableRoomsFailure(String message) {
+        cancelAvailableRoomsCalls();
+        roomsLiveData.setValue(new ArrayList<>());
+        if (InternetErrorBanner.isNetworkErrorMessage(message)) {
+            networkBannerLiveData.setValue(new UiEvent<>(true));
+        }
+        errorLiveData.setValue(new UiEvent<>(MESSAGE_LOAD_ROOMS_FAILED));
+    }
+
+    private void cancelAvailableRoomsCalls() {
+        availableRoomsLoadGeneration++;
+        List<Call<ApiResponse<AvailableRoomsRangeResponse>>> calls =
+                new ArrayList<>(availableRoomsCalls);
+        availableRoomsCalls.clear();
+        for (Call<?> call : calls) {
+            if (call != null && !call.isCanceled()) {
+                call.cancel();
+            }
+        }
+    }
+
+    private String dateOnly(String value) {
+        if (value == null || value.trim().length() < 10) {
+            return "";
+        }
+        return value.trim().substring(0, 10);
     }
 
     private CreateBookingFormState currentState() {
@@ -270,6 +391,7 @@ public class CreateBookingViewModel extends ViewModel {
 
     @Override
     protected void onCleared() {
+        cancelAvailableRoomsCalls();
         if (createBookingCall != null && !createBookingCall.isCanceled()) {
             createBookingCall.cancel();
         }
