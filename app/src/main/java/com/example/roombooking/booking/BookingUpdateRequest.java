@@ -46,14 +46,11 @@ public class BookingUpdateRequest {
     @SerializedName("attender_required")
     private final boolean attenderRequired;
 
-    @SerializedName("attender_general_shift")
-    private final boolean attenderGeneralShift;
-
     @SerializedName("attender_morning_shift")
     private final boolean attenderMorningShift;
 
-    @SerializedName("attender_day_shift")
-    private final boolean attenderDayShift;
+    @SerializedName("attender_evening_shift")
+    private final boolean attenderEveningShift;
 
     @SerializedName("room_charges_status")
     private final String roomChargesStatus;
@@ -120,9 +117,8 @@ public class BookingUpdateRequest {
             String visitorCategory,
 
             boolean attenderRequired,
-            boolean attenderGeneralShift,
             boolean attenderMorningShift,
-            boolean attenderDayShift,
+            boolean attenderEveningShift,
             String roomChargesStatus,
             String attenderChargesStatus,
             String roomChargesAmount,
@@ -159,9 +155,8 @@ public class BookingUpdateRequest {
         this.visitorCategory = visitorCategory;
 
         this.attenderRequired = attenderRequired;
-        this.attenderGeneralShift = attenderGeneralShift;
         this.attenderMorningShift = attenderMorningShift;
-        this.attenderDayShift = attenderDayShift;
+        this.attenderEveningShift = attenderEveningShift;
         this.roomChargesStatus = roomChargesStatus;
         this.attenderChargesStatus = attenderChargesStatus;
         this.roomChargesAmount = roomChargesAmount;

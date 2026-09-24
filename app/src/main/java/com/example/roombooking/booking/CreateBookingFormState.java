@@ -36,9 +36,8 @@ final class CreateBookingFormState {
     private String visitorCategory;
 
     private boolean attenderRequired;
-    private boolean attenderGeneralShift;
     private boolean attenderMorningShift;
-    private boolean attenderDayShift;
+    private boolean attenderEveningShift;
     private String roomChargesStatus;
     private String attenderChargesStatus;
     private String roomChargesAmount;
@@ -83,9 +82,8 @@ final class CreateBookingFormState {
         copy.remarks = remarks;
         copy.visitorCategory = visitorCategory;
         copy.attenderRequired = attenderRequired;
-        copy.attenderGeneralShift = attenderGeneralShift;
         copy.attenderMorningShift = attenderMorningShift;
-        copy.attenderDayShift = attenderDayShift;
+        copy.attenderEveningShift = attenderEveningShift;
         copy.roomChargesStatus = roomChargesStatus;
         copy.attenderChargesStatus = attenderChargesStatus;
         copy.roomChargesAmount = roomChargesAmount;
@@ -163,12 +161,10 @@ final class CreateBookingFormState {
     void setVisitorCategory(String visitorCategory) { this.visitorCategory = clean(visitorCategory); }
     boolean isAttenderRequired() { return attenderRequired; }
     void setAttenderRequired(boolean attenderRequired) { this.attenderRequired = attenderRequired; }
-    boolean isAttenderGeneralShift() { return attenderGeneralShift; }
-    void setAttenderGeneralShift(boolean attenderGeneralShift) { this.attenderGeneralShift = attenderGeneralShift; }
     boolean isAttenderMorningShift() { return attenderMorningShift; }
     void setAttenderMorningShift(boolean attenderMorningShift) { this.attenderMorningShift = attenderMorningShift; }
-    boolean isAttenderDayShift() { return attenderDayShift; }
-    void setAttenderDayShift(boolean attenderDayShift) { this.attenderDayShift = attenderDayShift; }
+    boolean isAttenderEveningShift() { return attenderEveningShift; }
+    void setAttenderEveningShift(boolean attenderEveningShift) { this.attenderEveningShift = attenderEveningShift; }
     String getRoomChargesStatus() { return roomChargesStatus; }
     void setRoomChargesStatus(String roomChargesStatus) { this.roomChargesStatus = clean(roomChargesStatus); }
     String getAttenderChargesStatus() { return attenderChargesStatus; }

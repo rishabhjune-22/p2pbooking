@@ -523,15 +523,6 @@
                     android:textStyle="bold" />
 
                 <CheckBox
-                    android:id="@+id/cbGeneralShift"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.45"
-                    android:enabled="false"
-                    android:text="General Shift"
-                    android:textColor="@color/detail_text_primary" />
-
-                <CheckBox
                     android:id="@+id/cbMorningShift"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -541,7 +532,7 @@
                     android:textColor="@color/detail_text_primary" />
 
                 <CheckBox
-                    android:id="@+id/cbDayShift"
+                    android:id="@+id/cbEveningShift"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:alpha="0.45"

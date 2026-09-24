@@ -80,9 +80,8 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etBudgetHeadProjectCode;
     private TextView tvSelectShiftLabel;
     private CheckBox cbAttenderRequired;
-    private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
-    private CheckBox cbDayShift;
+    private CheckBox cbEveningShift;
 
     private EditText etRequestorName;
     private EditText etRequestorDesignation;
@@ -186,9 +185,8 @@ public class EditBookingActivity extends AppCompatActivity {
         etBudgetHeadProjectCode = findViewById(R.id.etBudgetHeadProjectCode);
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
-        cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
-        cbDayShift = findViewById(R.id.cbDayShift);
+        cbEveningShift = findViewById(R.id.cbEveningShift);
 
         etRequestorName = findViewById(R.id.etRequestorName);
         etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
@@ -389,9 +387,8 @@ public class EditBookingActivity extends AppCompatActivity {
         selectVisitorCategory(state.getVisitorCategory());
 
         cbAttenderRequired.setChecked(state.isAttenderRequired());
-        cbGeneralShift.setChecked(state.isAttenderGeneralShift());
         cbMorningShift.setChecked(state.isAttenderMorningShift());
-        cbDayShift.setChecked(state.isAttenderDayShift());
+        cbEveningShift.setChecked(state.isAttenderEveningShift());
         selectChargeStatus(
                 rgRoomChargesStatus,
                 state.getRoomChargesStatus(),
@@ -576,9 +573,8 @@ public class EditBookingActivity extends AppCompatActivity {
     }
 
     private void setShiftControlsEnabled(boolean enabled) {
-        setViewEnabled(cbGeneralShift, enabled);
         setViewEnabled(cbMorningShift, enabled);
-        setViewEnabled(cbDayShift, enabled);
+        setViewEnabled(cbEveningShift, enabled);
         setViewEnabled(tvSelectShiftLabel, enabled);
     }
 
@@ -673,9 +669,8 @@ public class EditBookingActivity extends AppCompatActivity {
     }
 
     private void clearAttenderShifts() {
-        cbGeneralShift.setChecked(false);
         cbMorningShift.setChecked(false);
-        cbDayShift.setChecked(false);
+        cbEveningShift.setChecked(false);
     }
 
     private void saveBooking() {
@@ -724,9 +719,8 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setVisitorCategory(getSelectedVisitorCategory());
 
         data.setAttenderRequired(cbAttenderRequired.isChecked());
-        data.setAttenderGeneralShift(cbGeneralShift.isChecked());
         data.setAttenderMorningShift(cbMorningShift.isChecked());
-        data.setAttenderDayShift(cbDayShift.isChecked());
+        data.setAttenderEveningShift(cbEveningShift.isChecked());
         data.setRoomChargesStatus(getChargeStatus(
                 rgRoomChargesStatus,
                 R.id.rbRoomChargesYes,

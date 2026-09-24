@@ -75,9 +75,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_BUDGET_HEAD_DEPARTMENT_NAME = "budget_head_department_name";
     public static final String EXTRA_BUDGET_HEAD_PROJECT_CODE = "budget_head_project_code";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
-    public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
-    public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
+    public static final String EXTRA_ATTENDER_EVENING_SHIFT = "attender_evening_shift";
     public static final String EXTRA_REQUESTOR_NAME = "requestor_name";
     public static final String EXTRA_REQUESTOR_DESIGNATION = "requestor_designation";
     public static final String EXTRA_REQUESTOR_DEPARTMENT = "requestor_department";
@@ -118,9 +117,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private TextView btnClearBudgetHeadFocus;
     private CheckBox cbAttenderRequired;
     private TextView tvSelectShiftLabel;
-    private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
-    private CheckBox cbDayShift;
+    private CheckBox cbEveningShift;
     private EditText etRequestorName;
     private EditText etRequestorDesignation;
     private EditText etRequestorDepartment;
@@ -188,9 +186,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         btnClearBudgetHeadFocus = findViewById(R.id.btnClearBudgetHeadFocus);
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
-        cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
-        cbDayShift = findViewById(R.id.cbDayShift);
+        cbEveningShift = findViewById(R.id.cbEveningShift);
         etRequestorName = findViewById(R.id.etRequestorName);
         etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
         etRequestorDepartment = findViewById(R.id.etRequestorDepartment);
@@ -400,9 +397,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         boolean attenderRequired = getIntent().getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
         cbAttenderRequired.setChecked(attenderRequired);
         if (attenderRequired) {
-            cbGeneralShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_GENERAL_SHIFT, false));
             cbMorningShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
-            cbDayShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
+            cbEveningShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_EVENING_SHIFT, false));
             updateAttenderControlsState();
         }
     }
@@ -602,9 +598,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
         boolean attenderRequired = cbAttenderRequired.isChecked();
         if (attenderRequired
-                && !cbGeneralShift.isChecked()
                 && !cbMorningShift.isChecked()
-                && !cbDayShift.isChecked()) {
+                && !cbEveningShift.isChecked()) {
             showError("Please select at least one attender shift.");
             scrollToView(tvSelectShiftLabel);
             return;
@@ -707,9 +702,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 getBudgetHeadText(cbBudgetHeadDepartmentName, etBudgetHeadDepartmentName),
                 getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode),
                 attenderRequired,
-                attenderRequired && cbGeneralShift.isChecked(),
                 attenderRequired && cbMorningShift.isChecked(),
-                attenderRequired && cbDayShift.isChecked(),
+                attenderRequired && cbEveningShift.isChecked(),
                 text(etRequestorName),
                 text(etRequestorDesignation),
                 text(etRequestorDepartment),
@@ -795,9 +789,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private void updateAttenderControlsState() {
         boolean attenderRequired = cbAttenderRequired.isChecked();
         setViewEnabled(tvSelectShiftLabel, attenderRequired);
-        setViewEnabled(cbGeneralShift, attenderRequired);
         setViewEnabled(cbMorningShift, attenderRequired);
-        setViewEnabled(cbDayShift, attenderRequired);
+        setViewEnabled(cbEveningShift, attenderRequired);
         if (!attenderRequired) {
             clearAttenderShifts();
         }
@@ -809,9 +802,8 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     }
 
     private void clearAttenderShifts() {
-        cbGeneralShift.setChecked(false);
         cbMorningShift.setChecked(false);
-        cbDayShift.setChecked(false);
+        cbEveningShift.setChecked(false);
     }
 
     private String selectedPrefix() {

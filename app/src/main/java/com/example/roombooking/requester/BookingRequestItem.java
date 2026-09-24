@@ -100,14 +100,11 @@ public class BookingRequestItem {
     @SerializedName("attender_required")
     private boolean attenderRequired;
 
-    @SerializedName("attender_general_shift")
-    private boolean attenderGeneralShift;
-
     @SerializedName("attender_morning_shift")
     private boolean attenderMorningShift;
 
-    @SerializedName("attender_day_shift")
-    private boolean attenderDayShift;
+    @SerializedName("attender_evening_shift")
+    private boolean attenderEveningShift;
 
     @SerializedName("requestor_name")
     private String requestorName;
@@ -258,16 +255,12 @@ public class BookingRequestItem {
         return attenderRequired;
     }
 
-    public boolean isAttenderGeneralShift() {
-        return attenderGeneralShift;
-    }
-
     public boolean isAttenderMorningShift() {
         return attenderMorningShift;
     }
 
-    public boolean isAttenderDayShift() {
-        return attenderDayShift;
+    public boolean isAttenderEveningShift() {
+        return attenderEveningShift;
     }
 
     public String getRequestorName() {

@@ -443,9 +443,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_DEPARTMENT, item.getRequestorDepartment());
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_MOBILE, item.getRequestorMobile());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_REQUIRED, item.isAttenderRequired());
-        intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_GENERAL_SHIFT, item.isAttenderGeneralShift());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_MORNING_SHIFT, item.isAttenderMorningShift());
-        intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_DAY_SHIFT, item.isAttenderDayShift());
+        intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_EVENING_SHIFT, item.isAttenderEveningShift());
         refreshOnNextResume = true;
         startActivity(intent);
     }
@@ -957,9 +956,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private String attenderShiftText(BookingRequestItem item) {
         List<String> shifts = new ArrayList<>();
-        if (item.isAttenderGeneralShift()) shifts.add("General");
         if (item.isAttenderMorningShift()) shifts.add("Morning");
-        if (item.isAttenderDayShift()) shifts.add("Day");
+        if (item.isAttenderEveningShift()) shifts.add("Evening");
         if (shifts.isEmpty()) {
             return "";
         }

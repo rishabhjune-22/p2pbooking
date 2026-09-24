@@ -91,9 +91,8 @@ final class CreateBookingFormMapper {
                 data.getVisitorCategory(),
 
                 data.isAttenderRequired(),
-                data.isAttenderGeneralShift(),
                 data.isAttenderMorningShift(),
-                data.isAttenderDayShift(),
+                data.isAttenderEveningShift(),
                 data.getRoomChargesStatus(),
                 data.getAttenderChargesStatus(),
                 data.getRoomChargesAmount(),
@@ -149,9 +148,8 @@ final class CreateBookingFormMapper {
         }
 
         if (data.isAttenderRequired()
-                && !data.isAttenderGeneralShift()
                 && !data.isAttenderMorningShift()
-                && !data.isAttenderDayShift()) {
+                && !data.isAttenderEveningShift()) {
             return CreateBookingValidationResult.invalid(
                     "Please select at least one attender shift."
             );

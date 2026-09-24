@@ -685,15 +685,6 @@
                     android:textStyle="bold" />
 
                 <CheckBox
-                    android:id="@+id/cbGeneralShift"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.45"
-                    android:enabled="false"
-                    android:text="General Shift (9 AM - 5 PM)"
-                    android:textColor="@color/create_booking_text_secondary" />
-
-                <CheckBox
                     android:id="@+id/cbMorningShift"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -703,7 +694,7 @@
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <CheckBox
-                    android:id="@+id/cbDayShift"
+                    android:id="@+id/cbEveningShift"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:alpha="0.45"

@@ -39,9 +39,8 @@ final class EditBookingFormMapper {
         state.setRemarks(bookingItem.getRemarks());
         state.setVisitorCategory(bookingItem.getVisitorCategory());
         state.setAttenderRequired(bookingItem.isAttenderRequired());
-        state.setAttenderGeneralShift(bookingItem.isAttenderGeneralShift());
         state.setAttenderMorningShift(bookingItem.isAttenderMorningShift());
-        state.setAttenderDayShift(bookingItem.isAttenderDayShift());
+        state.setAttenderEveningShift(bookingItem.isAttenderEveningShift());
         state.setRoomChargesStatus(bookingItem.getRoomChargesStatus());
         state.setAttenderChargesStatus(bookingItem.getAttenderChargesStatus());
         state.setRoomChargesAmount(
@@ -158,9 +157,8 @@ final class EditBookingFormMapper {
 
                 data.getVisitorCategory(),
                 data.isAttenderRequired(),
-                data.isAttenderGeneralShift(),
                 data.isAttenderMorningShift(),
-                data.isAttenderDayShift(),
+                data.isAttenderEveningShift(),
                 data.getRoomChargesStatus(),
                 data.getAttenderChargesStatus(),
                 data.getRoomChargesAmount(),
@@ -214,9 +212,8 @@ final class EditBookingFormMapper {
         }
 
         if (data.isAttenderRequired()
-                && !data.isAttenderGeneralShift()
                 && !data.isAttenderMorningShift()
-                && !data.isAttenderDayShift()) {
+                && !data.isAttenderEveningShift()) {
             return EditBookingValidationResult.invalid(
                     "Please select at least one attender shift."
             );

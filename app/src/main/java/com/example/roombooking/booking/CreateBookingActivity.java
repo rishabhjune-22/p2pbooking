@@ -92,9 +92,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_REQUESTOR_DEPARTMENT = "requestor_department";
     public static final String EXTRA_REQUESTOR_MOBILE = "requestor_mobile";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
-    public static final String EXTRA_ATTENDER_GENERAL_SHIFT = "attender_general_shift";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
-    public static final String EXTRA_ATTENDER_DAY_SHIFT = "attender_day_shift";
+    public static final String EXTRA_ATTENDER_EVENING_SHIFT = "attender_evening_shift";
     public static final String EXTRA_REMARKS = "remarks";
 
     private EditText etVisitorName;
@@ -147,9 +146,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etBudgetHeadProjectCode;
     private CheckBox cbAttenderRequired;
     private TextView tvSelectShiftLabel;
-    private CheckBox cbGeneralShift;
     private CheckBox cbMorningShift;
-    private CheckBox cbDayShift;
+    private CheckBox cbEveningShift;
     private CheckBox cbFillFromPreviousBooking;
 
     private BookingRepository bookingRepository;
@@ -265,9 +263,8 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
-        cbGeneralShift = findViewById(R.id.cbGeneralShift);
         cbMorningShift = findViewById(R.id.cbMorningShift);
-        cbDayShift = findViewById(R.id.cbDayShift);
+        cbEveningShift = findViewById(R.id.cbEveningShift);
         cbFillFromPreviousBooking = findViewById(R.id.cbFillFromPreviousBooking);
     }
 
@@ -559,9 +556,8 @@ public class CreateBookingActivity extends AppCompatActivity {
         boolean attenderRequired = intent.getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
         cbAttenderRequired.setChecked(attenderRequired);
         if (attenderRequired) {
-            cbGeneralShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_GENERAL_SHIFT, false));
             cbMorningShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
-            cbDayShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_DAY_SHIFT, false));
+            cbEveningShift.setChecked(intent.getBooleanExtra(EXTRA_ATTENDER_EVENING_SHIFT, false));
             updateAttenderControlsState();
         }
         initializeLogisticsSameAsRequestorState();
@@ -762,9 +758,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void setShiftControlsEnabled(boolean enabled) {
-        setViewEnabled(cbGeneralShift, enabled);
         setViewEnabled(cbMorningShift, enabled);
-        setViewEnabled(cbDayShift, enabled);
+        setViewEnabled(cbEveningShift, enabled);
 
         if (tvSelectShiftLabel != null) {
             setViewEnabled(tvSelectShiftLabel, enabled);
@@ -1132,9 +1127,8 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private void clearAttenderShifts() {
-        cbGeneralShift.setChecked(false);
         cbMorningShift.setChecked(false);
-        cbDayShift.setChecked(false);
+        cbEveningShift.setChecked(false);
     }
 
     private void submitBooking() {
@@ -1213,9 +1207,8 @@ public class CreateBookingActivity extends AppCompatActivity {
         data.setVisitorCategory(getSelectedVisitorCategory());
 
         data.setAttenderRequired(cbAttenderRequired.isChecked());
-        data.setAttenderGeneralShift(cbGeneralShift.isChecked());
         data.setAttenderMorningShift(cbMorningShift.isChecked());
-        data.setAttenderDayShift(cbDayShift.isChecked());
+        data.setAttenderEveningShift(cbEveningShift.isChecked());
         data.setRoomChargesStatus(getChargeStatus(
                 rgRoomChargesStatus,
                 R.id.rbRoomChargesYes,
@@ -1294,9 +1287,8 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("booking_remarks", data.getRemarks());
         payload.put("visitor_category", data.getVisitorCategory());
         payload.put("attender_required", data.isAttenderRequired());
-        payload.put("attender_general_shift", data.isAttenderGeneralShift());
         payload.put("attender_morning_shift", data.isAttenderMorningShift());
-        payload.put("attender_day_shift", data.isAttenderDayShift());
+        payload.put("attender_evening_shift", data.isAttenderEveningShift());
         payload.put("room_charges_status", data.getRoomChargesStatus());
         payload.put("attender_charges_status", data.getAttenderChargesStatus());
         payload.put("room_charges_amount", data.getRoomChargesAmount());

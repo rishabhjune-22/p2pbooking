@@ -74,14 +74,11 @@ public class BookingItem implements Parcelable {
     @SerializedName("attender_required")
     private boolean attenderRequired;
 
-    @SerializedName("attender_general_shift")
-    private boolean attenderGeneralShift;
-
     @SerializedName("attender_morning_shift")
     private boolean attenderMorningShift;
 
-    @SerializedName("attender_day_shift")
-    private boolean attenderDayShift;
+    @SerializedName("attender_evening_shift")
+    private boolean attenderEveningShift;
 
     @SerializedName("room_charges_status")
     private String roomChargesStatus;
@@ -161,9 +158,8 @@ public class BookingItem implements Parcelable {
         visitorCategory = in.readString();
 
         attenderRequired = in.readByte() != 0;
-        attenderGeneralShift = in.readByte() != 0;
         attenderMorningShift = in.readByte() != 0;
-        attenderDayShift = in.readByte() != 0;
+        attenderEveningShift = in.readByte() != 0;
         roomChargesStatus = in.readString();
         attenderChargesStatus = in.readString();
         roomChargesAmount = in.readString();
@@ -205,9 +201,8 @@ public class BookingItem implements Parcelable {
         return id == other.id
                 && room == other.room
                 && attenderRequired == other.attenderRequired
-                && attenderGeneralShift == other.attenderGeneralShift
                 && attenderMorningShift == other.attenderMorningShift
-                && attenderDayShift == other.attenderDayShift
+                && attenderEveningShift == other.attenderEveningShift
                 && Objects.equals(roomName, other.roomName)
                 && Objects.equals(bookingReferenceNumber, other.bookingReferenceNumber)
                 && Objects.equals(arrivalAt, other.arrivalAt)
@@ -333,16 +328,12 @@ public class BookingItem implements Parcelable {
         return attenderRequired;
     }
 
-    public boolean isAttenderGeneralShift() {
-        return attenderGeneralShift;
-    }
-
     public boolean isAttenderMorningShift() {
         return attenderMorningShift;
     }
 
-    public boolean isAttenderDayShift() {
-        return attenderDayShift;
+    public boolean isAttenderEveningShift() {
+        return attenderEveningShift;
     }
 
     public String getRoomChargesStatus() {
@@ -454,9 +445,8 @@ public class BookingItem implements Parcelable {
         parcel.writeString(visitorCategory);
 
         parcel.writeByte((byte) (attenderRequired ? 1 : 0));
-        parcel.writeByte((byte) (attenderGeneralShift ? 1 : 0));
         parcel.writeByte((byte) (attenderMorningShift ? 1 : 0));
-        parcel.writeByte((byte) (attenderDayShift ? 1 : 0));
+        parcel.writeByte((byte) (attenderEveningShift ? 1 : 0));
         parcel.writeString(roomChargesStatus);
         parcel.writeString(attenderChargesStatus);
         parcel.writeString(roomChargesAmount);

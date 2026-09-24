@@ -620,15 +620,11 @@ public class BookingDetailActivity extends AppCompatActivity {
     private String getAttenderShiftText() {
         List<String> shifts = new ArrayList<>();
 
-        if (bookingItem.isAttenderGeneralShift()) {
-            shifts.add("General Shift (9 AM - 5 PM)");
-        }
-
         if (bookingItem.isAttenderMorningShift()) {
             shifts.add("Morning Shift (7 AM - 3 PM)");
         }
 
-        if (bookingItem.isAttenderDayShift()) {
+        if (bookingItem.isAttenderEveningShift()) {
             shifts.add("Evening Shift (3 PM - 11 PM)");
         }
 
