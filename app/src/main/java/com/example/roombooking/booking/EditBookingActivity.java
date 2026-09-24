@@ -45,6 +45,9 @@ import java.util.List;
 
 public class EditBookingActivity extends AppCompatActivity {
 
+    private static final int ATTENDER_CHARGE_PER_SHIFT = 850;
+    private static final long ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L;
+
     public static final String EXTRA_BOOKING_DATA = "booking_data";
 
     private static final String EXTRA_UPDATED_BOOKING_ID = "updated_booking_id";
@@ -81,6 +84,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private TextView tvSelectShiftLabel;
     private CheckBox cbAttenderRequired;
     private CheckBox cbMorningShift;
+    private RadioGroup rgMorningShiftChargeability;
     private CheckBox cbEveningShift;
 
     private EditText etRequestorName;
@@ -186,6 +190,7 @@ public class EditBookingActivity extends AppCompatActivity {
 
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         cbMorningShift = findViewById(R.id.cbMorningShift);
+        rgMorningShiftChargeability = findViewById(R.id.rgMorningShiftChargeability);
         cbEveningShift = findViewById(R.id.cbEveningShift);
 
         etRequestorName = findViewById(R.id.etRequestorName);
@@ -297,6 +302,7 @@ public class EditBookingActivity extends AppCompatActivity {
             }
 
             refreshDateTimeFields(currentFormState);
+            syncCalculatedAttenderCharges(false);
         });
 
         viewModel.getRoomsLiveData().observe(this, rooms -> {
@@ -388,6 +394,11 @@ public class EditBookingActivity extends AppCompatActivity {
 
         cbAttenderRequired.setChecked(state.isAttenderRequired());
         cbMorningShift.setChecked(state.isAttenderMorningShift());
+        rgMorningShiftChargeability.check(
+                state.isAttenderMorningChargeable()
+                        ? R.id.rbMorningShiftChargeable
+                        : R.id.rbMorningShiftNonChargeable
+        );
         cbEveningShift.setChecked(state.isAttenderEveningShift());
         selectChargeStatus(
                 rgRoomChargesStatus,
@@ -413,6 +424,7 @@ public class EditBookingActivity extends AppCompatActivity {
                         ? safe(state.getAttenderChargesAmount())
                         : ""
         );
+        syncCalculatedAttenderCharges(false);
         setBudgetHeadOptionFromValue(
                 cbBudgetHeadName,
                 etBudgetHeadName,
@@ -559,9 +571,17 @@ public class EditBookingActivity extends AppCompatActivity {
             }
 
             updateAttenderControlsState();
+            syncCalculatedAttenderCharges(true);
         });
+        cbMorningShift.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            updateAttenderControlsState();
+            syncCalculatedAttenderCharges(true);
+        });
+        cbEveningShift.setOnCheckedChangeListener((buttonView, isChecked) -> syncCalculatedAttenderCharges(true));
+        rgMorningShiftChargeability.setOnCheckedChangeListener((group, checkedId) -> syncCalculatedAttenderCharges(true));
 
         updateAttenderControlsState();
+        syncCalculatedAttenderCharges(true);
     }
 
     private void updateAttenderControlsState() {
@@ -575,7 +595,15 @@ public class EditBookingActivity extends AppCompatActivity {
     private void setShiftControlsEnabled(boolean enabled) {
         setViewEnabled(cbMorningShift, enabled);
         setViewEnabled(cbEveningShift, enabled);
+        setMorningChargeabilityEnabled(enabled && cbMorningShift.isChecked());
         setViewEnabled(tvSelectShiftLabel, enabled);
+    }
+
+    private void setMorningChargeabilityEnabled(boolean enabled) {
+        setViewEnabled(rgMorningShiftChargeability, enabled);
+        for (int index = 0; index < rgMorningShiftChargeability.getChildCount(); index++) {
+            setViewEnabled(rgMorningShiftChargeability.getChildAt(index), enabled);
+        }
     }
 
     private void setViewEnabled(View view, boolean enabled) {
@@ -668,8 +696,61 @@ public class EditBookingActivity extends AppCompatActivity {
         setViewEnabled(etLogisticsMobile, enabled);
     }
 
+    private boolean isMorningShiftChargeable() {
+        return rgMorningShiftChargeability.getCheckedRadioButtonId() != R.id.rbMorningShiftNonChargeable;
+    }
+
+    private int calculatedAttenderChargesAmount() {
+        if (!cbAttenderRequired.isChecked()) {
+            return 0;
+        }
+        int chargeableShiftCount = 0;
+        if (cbMorningShift.isChecked() && isMorningShiftChargeable()) {
+            chargeableShiftCount += 1;
+        }
+        if (cbEveningShift.isChecked()) {
+            chargeableShiftCount += 1;
+        }
+        return chargeableShiftCount * ATTENDER_CHARGE_PER_SHIFT * inclusiveStayDays();
+    }
+
+    private int inclusiveStayDays() {
+        if (currentFormState == null) {
+            return 1;
+        }
+        Calendar arrival = EditBookingFormMapper.calendarFromMillis(currentFormState.getArrivalAtMillis());
+        Calendar departure = EditBookingFormMapper.calendarFromMillis(currentFormState.getDepartureAtMillis());
+        clearTimeOfDay(arrival);
+        clearTimeOfDay(departure);
+        long nights = Math.max(0L, (departure.getTimeInMillis() - arrival.getTimeInMillis()) / ONE_DAY_MILLIS);
+        return (int) Math.max(nights + 1L, 1L);
+    }
+
+    private void clearTimeOfDay(Calendar calendar) {
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+    }
+
+    private void syncCalculatedAttenderCharges(boolean autoStatus) {
+        int amount = calculatedAttenderChargesAmount();
+        if (autoStatus) {
+            if (amount > 0) {
+                rgAttenderChargesStatus.check(R.id.rbAttenderChargesYes);
+            } else if (rgAttenderChargesStatus.getCheckedRadioButtonId() == R.id.rbAttenderChargesYes) {
+                rgAttenderChargesStatus.check(R.id.rbAttenderChargesNo);
+            }
+        }
+        updateChargeAmountField(rgAttenderChargesStatus, etAttenderChargesAmount, R.id.rbAttenderChargesYes);
+        if (rgAttenderChargesStatus.getCheckedRadioButtonId() == R.id.rbAttenderChargesYes) {
+            etAttenderChargesAmount.setText(amount > 0 ? String.valueOf(amount) : "");
+        }
+    }
+
     private void clearAttenderShifts() {
         cbMorningShift.setChecked(false);
+        rgMorningShiftChargeability.check(R.id.rbMorningShiftChargeable);
         cbEveningShift.setChecked(false);
     }
 
@@ -720,6 +801,7 @@ public class EditBookingActivity extends AppCompatActivity {
 
         data.setAttenderRequired(cbAttenderRequired.isChecked());
         data.setAttenderMorningShift(cbMorningShift.isChecked());
+        data.setAttenderMorningChargeable(cbMorningShift.isChecked() && isMorningShiftChargeable());
         data.setAttenderEveningShift(cbEveningShift.isChecked());
         data.setRoomChargesStatus(getChargeStatus(
                 rgRoomChargesStatus,
@@ -735,7 +817,7 @@ public class EditBookingActivity extends AppCompatActivity {
                 ? getText(etRoomChargesAmount)
                 : "0");
         data.setAttenderChargesAmount("yes".equals(data.getAttenderChargesStatus())
-                ? getText(etAttenderChargesAmount)
+                ? String.valueOf(calculatedAttenderChargesAmount())
                 : "0");
 
         data.setBudgetHeadName(getBudgetHeadText(cbBudgetHeadName, etBudgetHeadName));
@@ -857,7 +939,12 @@ public class EditBookingActivity extends AppCompatActivity {
 
     private void setupChargeAmountListener(RadioGroup group, EditText amountField, int yesId) {
         group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
-            boolean enabled = updateChargeAmountField(group, amountField, yesId);
+            if (group == rgAttenderChargesStatus) {
+                syncCalculatedAttenderCharges(false);
+            } else {
+                updateChargeAmountField(group, amountField, yesId);
+            }
+            boolean enabled = group.getCheckedRadioButtonId() == yesId;
 
             if (enabled) {
                 if (formBound) {

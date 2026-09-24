@@ -621,7 +621,11 @@ public class BookingDetailActivity extends AppCompatActivity {
         List<String> shifts = new ArrayList<>();
 
         if (bookingItem.isAttenderMorningShift()) {
-            shifts.add("Morning Shift (7 AM - 3 PM)");
+            shifts.add(
+                    "Morning Shift (7 AM - 3 PM, "
+                            + (bookingItem.isAttenderMorningChargeable() ? "Chargeable" : "Non-chargeable")
+                            + ")"
+            );
         }
 
         if (bookingItem.isAttenderEveningShift()) {

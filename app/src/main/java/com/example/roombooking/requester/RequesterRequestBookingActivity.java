@@ -76,6 +76,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_BUDGET_HEAD_PROJECT_CODE = "budget_head_project_code";
     public static final String EXTRA_ATTENDER_REQUIRED = "attender_required";
     public static final String EXTRA_ATTENDER_MORNING_SHIFT = "attender_morning_shift";
+    public static final String EXTRA_ATTENDER_MORNING_CHARGEABLE = "attender_morning_chargeable";
     public static final String EXTRA_ATTENDER_EVENING_SHIFT = "attender_evening_shift";
     public static final String EXTRA_REQUESTOR_NAME = "requestor_name";
     public static final String EXTRA_REQUESTOR_DESIGNATION = "requestor_designation";
@@ -118,6 +119,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private CheckBox cbAttenderRequired;
     private TextView tvSelectShiftLabel;
     private CheckBox cbMorningShift;
+    private RadioGroup rgMorningShiftChargeability;
     private CheckBox cbEveningShift;
     private EditText etRequestorName;
     private EditText etRequestorDesignation;
@@ -187,6 +189,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         cbAttenderRequired = findViewById(R.id.cbAttenderRequired);
         tvSelectShiftLabel = findViewById(R.id.tvSelectShiftLabel);
         cbMorningShift = findViewById(R.id.cbMorningShift);
+        rgMorningShiftChargeability = findViewById(R.id.rgMorningShiftChargeability);
         cbEveningShift = findViewById(R.id.cbEveningShift);
         etRequestorName = findViewById(R.id.etRequestorName);
         etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
@@ -301,6 +304,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
             }
             updateAttenderControlsState();
         });
+        cbMorningShift.setOnCheckedChangeListener((buttonView, isChecked) -> updateAttenderControlsState());
 
         etRequestorEmail.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
@@ -398,6 +402,11 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         cbAttenderRequired.setChecked(attenderRequired);
         if (attenderRequired) {
             cbMorningShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_MORNING_SHIFT, false));
+            rgMorningShiftChargeability.check(
+                    getIntent().getBooleanExtra(EXTRA_ATTENDER_MORNING_CHARGEABLE, true)
+                            ? R.id.rbMorningShiftChargeable
+                            : R.id.rbMorningShiftNonChargeable
+            );
             cbEveningShift.setChecked(getIntent().getBooleanExtra(EXTRA_ATTENDER_EVENING_SHIFT, false));
             updateAttenderControlsState();
         }
@@ -703,6 +712,9 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 getBudgetHeadText(cbBudgetHeadProjectCode, etBudgetHeadProjectCode),
                 attenderRequired,
                 attenderRequired && cbMorningShift.isChecked(),
+                attenderRequired
+                        && cbMorningShift.isChecked()
+                        && rgMorningShiftChargeability.getCheckedRadioButtonId() != R.id.rbMorningShiftNonChargeable,
                 attenderRequired && cbEveningShift.isChecked(),
                 text(etRequestorName),
                 text(etRequestorDesignation),
@@ -791,8 +803,16 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         setViewEnabled(tvSelectShiftLabel, attenderRequired);
         setViewEnabled(cbMorningShift, attenderRequired);
         setViewEnabled(cbEveningShift, attenderRequired);
+        setMorningChargeabilityEnabled(attenderRequired && cbMorningShift.isChecked());
         if (!attenderRequired) {
             clearAttenderShifts();
+        }
+    }
+
+    private void setMorningChargeabilityEnabled(boolean enabled) {
+        setViewEnabled(rgMorningShiftChargeability, enabled);
+        for (int index = 0; index < rgMorningShiftChargeability.getChildCount(); index++) {
+            setViewEnabled(rgMorningShiftChargeability.getChildAt(index), enabled);
         }
     }
 
@@ -803,6 +823,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
     private void clearAttenderShifts() {
         cbMorningShift.setChecked(false);
+        rgMorningShiftChargeability.check(R.id.rbMorningShiftChargeable);
         cbEveningShift.setChecked(false);
     }
 

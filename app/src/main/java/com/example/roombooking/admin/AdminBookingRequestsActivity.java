@@ -444,6 +444,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_REQUESTOR_MOBILE, item.getRequestorMobile());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_REQUIRED, item.isAttenderRequired());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_MORNING_SHIFT, item.isAttenderMorningShift());
+        intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_MORNING_CHARGEABLE, item.isAttenderMorningChargeable());
         intent.putExtra(CreateBookingActivity.EXTRA_ATTENDER_EVENING_SHIFT, item.isAttenderEveningShift());
         refreshOnNextResume = true;
         startActivity(intent);
@@ -956,8 +957,12 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private String attenderShiftText(BookingRequestItem item) {
         List<String> shifts = new ArrayList<>();
-        if (item.isAttenderMorningShift()) shifts.add("Morning");
-        if (item.isAttenderEveningShift()) shifts.add("Evening");
+        if (item.isAttenderMorningShift()) {
+            shifts.add(item.isAttenderMorningChargeable()
+                    ? "Morning Shift (7 AM - 3 PM, Chargeable)"
+                    : "Morning Shift (7 AM - 3 PM, Non-chargeable)");
+        }
+        if (item.isAttenderEveningShift()) shifts.add("Evening Shift (3 PM - 11 PM)");
         if (shifts.isEmpty()) {
             return "";
         }

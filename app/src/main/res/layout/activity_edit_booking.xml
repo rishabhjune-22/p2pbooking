@@ -508,7 +508,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_2"
-                    android:text="(attender charges will be applicable on a per shift basis(8 Hrs) as per govt. applicable rates )"
+                    android:text="(attender charges will be applicable on a per shift per day basis (8 Hrs) as per govt. applicable rates)"
                     android:textColor="@color/detail_text_secondary"
                     android:textSize="@dimen/text_12" />
 
@@ -518,7 +518,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
                     android:alpha="0.45"
-                    android:text="Select Shift(s) * (if attender required)"
+                    android:text="Select Shift(s) * (if attender required) - Attender charges Rs 850 per chargeable shift per day"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -530,6 +530,31 @@
                     android:enabled="false"
                     android:text="Morning Shift (7 AM - 3 PM)"
                     android:textColor="@color/detail_text_primary" />
+
+                <RadioGroup
+                    android:id="@+id/rgMorningShiftChargeability"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.45"
+                    android:enabled="false"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbMorningShiftChargeable"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:checked="true"
+                        android:text="Chargeable"
+                        android:textColor="@color/detail_text_primary" />
+
+                    <RadioButton
+                        android:id="@+id/rbMorningShiftNonChargeable"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Non-chargeable"
+                        android:textColor="@color/detail_text_primary" />
+
+                </RadioGroup>
 
                 <CheckBox
                     android:id="@+id/cbEveningShift"
@@ -544,7 +569,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Attender Charges Received (Optional)"
+                    android:text="Attender Charges Received - Rs 850 per chargeable shift per day (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -583,7 +608,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:enabled="false"
-                    android:hint="Attender Charges Amount * (if Yes)"
+                    android:hint="Attender Charges Amount * (auto-filled)"
                     android:inputType="numberDecimal" />
 
             </LinearLayout>

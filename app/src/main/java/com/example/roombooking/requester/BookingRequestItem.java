@@ -103,6 +103,9 @@ public class BookingRequestItem {
     @SerializedName("attender_morning_shift")
     private boolean attenderMorningShift;
 
+    @SerializedName("attender_morning_chargeable")
+    private boolean attenderMorningChargeable;
+
     @SerializedName("attender_evening_shift")
     private boolean attenderEveningShift;
 
@@ -257,6 +260,10 @@ public class BookingRequestItem {
 
     public boolean isAttenderMorningShift() {
         return attenderMorningShift;
+    }
+
+    public boolean isAttenderMorningChargeable() {
+        return attenderMorningChargeable;
     }
 
     public boolean isAttenderEveningShift() {

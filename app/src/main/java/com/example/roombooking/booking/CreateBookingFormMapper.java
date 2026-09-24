@@ -92,6 +92,7 @@ final class CreateBookingFormMapper {
 
                 data.isAttenderRequired(),
                 data.isAttenderMorningShift(),
+                data.isAttenderMorningChargeable(),
                 data.isAttenderEveningShift(),
                 data.getRoomChargesStatus(),
                 data.getAttenderChargesStatus(),

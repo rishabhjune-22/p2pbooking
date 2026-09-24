@@ -509,6 +509,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_BUDGET_HEAD_PROJECT_CODE, item.getBudgetHeadProjectCode());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_REQUIRED, item.isAttenderRequired());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_MORNING_SHIFT, item.isAttenderMorningShift());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_MORNING_CHARGEABLE, item.isAttenderMorningChargeable());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_ATTENDER_EVENING_SHIFT, item.isAttenderEveningShift());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_REQUESTOR_NAME, item.getRequestorName());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_REQUESTOR_DESIGNATION, item.getRequestorDesignation());

@@ -37,6 +37,7 @@ final class CreateBookingFormState {
 
     private boolean attenderRequired;
     private boolean attenderMorningShift;
+    private boolean attenderMorningChargeable = true;
     private boolean attenderEveningShift;
     private String roomChargesStatus;
     private String attenderChargesStatus;
@@ -83,6 +84,7 @@ final class CreateBookingFormState {
         copy.visitorCategory = visitorCategory;
         copy.attenderRequired = attenderRequired;
         copy.attenderMorningShift = attenderMorningShift;
+        copy.attenderMorningChargeable = attenderMorningChargeable;
         copy.attenderEveningShift = attenderEveningShift;
         copy.roomChargesStatus = roomChargesStatus;
         copy.attenderChargesStatus = attenderChargesStatus;
@@ -163,6 +165,8 @@ final class CreateBookingFormState {
     void setAttenderRequired(boolean attenderRequired) { this.attenderRequired = attenderRequired; }
     boolean isAttenderMorningShift() { return attenderMorningShift; }
     void setAttenderMorningShift(boolean attenderMorningShift) { this.attenderMorningShift = attenderMorningShift; }
+    boolean isAttenderMorningChargeable() { return attenderMorningChargeable; }
+    void setAttenderMorningChargeable(boolean attenderMorningChargeable) { this.attenderMorningChargeable = attenderMorningChargeable; }
     boolean isAttenderEveningShift() { return attenderEveningShift; }
     void setAttenderEveningShift(boolean attenderEveningShift) { this.attenderEveningShift = attenderEveningShift; }
     String getRoomChargesStatus() { return roomChargesStatus; }

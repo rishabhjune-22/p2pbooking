@@ -67,6 +67,9 @@ public class BookingRequestCreateRequest {
     @SerializedName("attender_morning_shift")
     private final boolean attenderMorningShift;
 
+    @SerializedName("attender_morning_chargeable")
+    private final boolean attenderMorningChargeable;
+
     @SerializedName("attender_evening_shift")
     private final boolean attenderEveningShift;
 
@@ -107,6 +110,7 @@ public class BookingRequestCreateRequest {
             String budgetHeadProjectCode,
             boolean attenderRequired,
             boolean attenderMorningShift,
+            boolean attenderMorningChargeable,
             boolean attenderEveningShift,
             String requestorName,
             String requestorDesignation,
@@ -135,6 +139,7 @@ public class BookingRequestCreateRequest {
         this.budgetHeadProjectCode = budgetHeadProjectCode;
         this.attenderRequired = attenderRequired;
         this.attenderMorningShift = attenderMorningShift;
+        this.attenderMorningChargeable = attenderMorningChargeable;
         this.attenderEveningShift = attenderEveningShift;
         this.requestorName = requestorName;
         this.requestorDesignation = requestorDesignation;

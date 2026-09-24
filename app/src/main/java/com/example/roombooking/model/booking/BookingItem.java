@@ -77,6 +77,9 @@ public class BookingItem implements Parcelable {
     @SerializedName("attender_morning_shift")
     private boolean attenderMorningShift;
 
+    @SerializedName("attender_morning_chargeable")
+    private boolean attenderMorningChargeable;
+
     @SerializedName("attender_evening_shift")
     private boolean attenderEveningShift;
 
@@ -159,6 +162,7 @@ public class BookingItem implements Parcelable {
 
         attenderRequired = in.readByte() != 0;
         attenderMorningShift = in.readByte() != 0;
+        attenderMorningChargeable = in.readByte() != 0;
         attenderEveningShift = in.readByte() != 0;
         roomChargesStatus = in.readString();
         attenderChargesStatus = in.readString();
@@ -202,6 +206,7 @@ public class BookingItem implements Parcelable {
                 && room == other.room
                 && attenderRequired == other.attenderRequired
                 && attenderMorningShift == other.attenderMorningShift
+                && attenderMorningChargeable == other.attenderMorningChargeable
                 && attenderEveningShift == other.attenderEveningShift
                 && Objects.equals(roomName, other.roomName)
                 && Objects.equals(bookingReferenceNumber, other.bookingReferenceNumber)
@@ -332,6 +337,10 @@ public class BookingItem implements Parcelable {
         return attenderMorningShift;
     }
 
+    public boolean isAttenderMorningChargeable() {
+        return attenderMorningChargeable;
+    }
+
     public boolean isAttenderEveningShift() {
         return attenderEveningShift;
     }
@@ -446,6 +455,7 @@ public class BookingItem implements Parcelable {
 
         parcel.writeByte((byte) (attenderRequired ? 1 : 0));
         parcel.writeByte((byte) (attenderMorningShift ? 1 : 0));
+        parcel.writeByte((byte) (attenderMorningChargeable ? 1 : 0));
         parcel.writeByte((byte) (attenderEveningShift ? 1 : 0));
         parcel.writeString(roomChargesStatus);
         parcel.writeString(attenderChargesStatus);

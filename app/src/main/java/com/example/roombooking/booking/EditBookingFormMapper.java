@@ -40,6 +40,7 @@ final class EditBookingFormMapper {
         state.setVisitorCategory(bookingItem.getVisitorCategory());
         state.setAttenderRequired(bookingItem.isAttenderRequired());
         state.setAttenderMorningShift(bookingItem.isAttenderMorningShift());
+        state.setAttenderMorningChargeable(bookingItem.isAttenderMorningChargeable());
         state.setAttenderEveningShift(bookingItem.isAttenderEveningShift());
         state.setRoomChargesStatus(bookingItem.getRoomChargesStatus());
         state.setAttenderChargesStatus(bookingItem.getAttenderChargesStatus());
@@ -158,6 +159,7 @@ final class EditBookingFormMapper {
                 data.getVisitorCategory(),
                 data.isAttenderRequired(),
                 data.isAttenderMorningShift(),
+                data.isAttenderMorningChargeable(),
                 data.isAttenderEveningShift(),
                 data.getRoomChargesStatus(),
                 data.getAttenderChargesStatus(),
