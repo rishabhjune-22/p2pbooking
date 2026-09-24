@@ -320,6 +320,55 @@
                     android:paddingEnd="@dimen/space_12"
                     android:spinnerMode="dropdown" />
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:text="Guest Nationality (Optional)"
+                    android:textColor="@color/create_booking_label"
+                    android:textSize="@dimen/text_12"
+                    android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/rgVisitorNationality"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rbVisitorIndian"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Indian"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                    <RadioButton
+                        android:id="@+id/rbVisitorForeigner"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Foreigner"
+                        android:textColor="@color/create_booking_text_secondary" />
+
+                </RadioGroup>
+
+                <TextView
+                    android:id="@+id/btnClearVisitorNationality"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:minHeight="@dimen/space_36"
+                    android:paddingTop="@dimen/space_6"
+                    android:paddingBottom="@dimen/space_6"
+                    android:text="Clear Selection"
+                    android:textColor="@color/create_booking_outline_text"
+                    android:textSize="@dimen/text_13"
+                    android:textStyle="bold" />
+
                 <EditText
                     android:id="@+id/etVisitorMobile"
                     style="@style/CreateBookingEditText"

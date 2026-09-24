@@ -428,6 +428,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_DESIGNATION, item.getVisitorDesignation());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_ORGANISATION, item.getVisitorOrganisation());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_GENDER, item.getVisitorGender());
+        intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_NATIONALITY, item.getVisitorNationality());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_MOBILE, item.getVisitorMobile());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
@@ -471,6 +472,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Designation", item.getVisitorDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Organisation", item.getVisitorOrganisation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Gender", item.getVisitorGender()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Guest Nationality", nationalityLabel(item.getVisitorNationality())));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Mobile", item.getVisitorMobile()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Visitor Category", item.getVisitorCategory()));
@@ -901,6 +903,16 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         view.setTextSize(14);
         view.setPadding(0, dp(2), 0, dp(2));
         return view;
+    }
+
+    private String nationalityLabel(String value) {
+        if ("foreigner".equalsIgnoreCase(value)) {
+            return "Foreigner";
+        }
+        if ("indian".equalsIgnoreCase(value)) {
+            return "Indian";
+        }
+        return "";
     }
 
     private String preferenceText(BookingRequestItem item) {

@@ -67,6 +67,9 @@ public class BookingRequestItem {
     @SerializedName("visitor_gender")
     private String visitorGender;
 
+    @SerializedName("visitor_nationality")
+    private String visitorNationality;
+
     @SerializedName("visitor_mobile")
     private String visitorMobile;
 
@@ -203,6 +206,16 @@ public class BookingRequestItem {
 
     public String getVisitorGender() {
         return safe(visitorGender);
+    }
+
+    public String getVisitorNationality() {
+        if ("foreigner".equalsIgnoreCase(visitorNationality)) {
+            return "foreigner";
+        }
+        if ("indian".equalsIgnoreCase(visitorNationality)) {
+            return "indian";
+        }
+        return "";
     }
 
     public String getVisitorMobile() {

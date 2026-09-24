@@ -67,6 +67,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private EditText etDepartureAt;
 
     private RadioGroup rgVisitorCategory;
+    private RadioGroup rgVisitorNationality;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
     private CheckBox cbBudgetHeadName;
@@ -172,6 +173,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etDepartureAt = findViewById(R.id.etDepartureAt);
 
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
+        rgVisitorNationality = findViewById(R.id.rgVisitorNationality);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
         cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
@@ -278,6 +280,7 @@ public class EditBookingActivity extends AppCompatActivity {
                 R.id.rbAttenderChargesYes
         );
         setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
+        setupClearRadioAction(R.id.btnClearVisitorNationality, rgVisitorNationality);
         setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
         setupLogisticsSameAsRequestorControls();
@@ -382,6 +385,7 @@ public class EditBookingActivity extends AppCompatActivity {
         etRemarks.setText(safe(state.getRemarks()));
 
         selectGender(state.getVisitorGender());
+        selectVisitorNationality(state.getVisitorNationality());
         selectVisitorCategory(state.getVisitorCategory());
 
         cbAttenderRequired.setChecked(state.isAttenderRequired());
@@ -538,6 +542,16 @@ public class EditBookingActivity extends AppCompatActivity {
 
         if ("other_guest".equalsIgnoreCase(category)) {
             rgVisitorCategory.check(R.id.rbOtherGuest);
+        }
+    }
+
+    private void selectVisitorNationality(String nationality) {
+        if ("foreigner".equalsIgnoreCase(nationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorForeigner);
+        } else if ("indian".equalsIgnoreCase(nationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorIndian);
+        } else {
+            rgVisitorNationality.clearCheck();
         }
     }
 
@@ -701,6 +715,7 @@ public class EditBookingActivity extends AppCompatActivity {
         data.setVisitorDesignation(getText(etVisitorDesignation));
         data.setVisitorOrganisation(getText(etVisitorOrganisation));
         data.setVisitorGender(getSelectedGender());
+        data.setVisitorNationality(getSelectedVisitorNationality());
         data.setVisitorMobile(getText(etVisitorMobile));
         data.setVisitorEmail(getText(etVisitorEmail));
         data.setPurpose(getText(etPurpose));
@@ -788,6 +803,17 @@ public class EditBookingActivity extends AppCompatActivity {
             return "other_guest";
         }
 
+        return "";
+    }
+
+    private String getSelectedVisitorNationality() {
+        int checkedId = rgVisitorNationality.getCheckedRadioButtonId();
+        if (checkedId == R.id.rbVisitorForeigner) {
+            return EditBookingFormState.VISITOR_NATIONALITY_FOREIGNER;
+        }
+        if (checkedId == R.id.rbVisitorIndian) {
+            return EditBookingFormState.VISITOR_NATIONALITY_INDIAN;
+        }
         return "";
     }
 

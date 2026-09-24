@@ -53,6 +53,9 @@ public class BookingItem implements Parcelable {
     @SerializedName("visitor_gender")
     private String visitorGender;
 
+    @SerializedName("visitor_nationality")
+    private String visitorNationality;
+
     @SerializedName("visitor_mobile")
     private String visitorMobile;
 
@@ -150,6 +153,7 @@ public class BookingItem implements Parcelable {
         visitorDesignation = in.readString();
         visitorOrganisation = in.readString();
         visitorGender = in.readString();
+        visitorNationality = in.readString();
         visitorMobile = in.readString();
         visitorEmail = in.readString();
         purposeOfVisit = in.readString();
@@ -215,6 +219,7 @@ public class BookingItem implements Parcelable {
                 && Objects.equals(visitorDesignation, other.visitorDesignation)
                 && Objects.equals(visitorOrganisation, other.visitorOrganisation)
                 && Objects.equals(visitorGender, other.visitorGender)
+                && Objects.equals(visitorNationality, other.visitorNationality)
                 && Objects.equals(visitorMobile, other.visitorMobile)
                 && Objects.equals(visitorEmail, other.visitorEmail)
                 && Objects.equals(purposeOfVisit, other.purposeOfVisit)
@@ -292,6 +297,16 @@ public class BookingItem implements Parcelable {
 
     public String getVisitorGender() {
         return visitorGender;
+    }
+
+    public String getVisitorNationality() {
+        if ("foreigner".equalsIgnoreCase(visitorNationality)) {
+            return "foreigner";
+        }
+        if ("indian".equalsIgnoreCase(visitorNationality)) {
+            return "indian";
+        }
+        return "";
     }
 
     public String getVisitorMobile() {
@@ -431,6 +446,7 @@ public class BookingItem implements Parcelable {
         parcel.writeString(visitorDesignation);
         parcel.writeString(visitorOrganisation);
         parcel.writeString(visitorGender);
+        parcel.writeString(visitorNationality);
         parcel.writeString(visitorMobile);
         parcel.writeString(visitorEmail);
         parcel.writeString(purposeOfVisit);

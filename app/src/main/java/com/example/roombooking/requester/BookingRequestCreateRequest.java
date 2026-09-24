@@ -31,6 +31,9 @@ public class BookingRequestCreateRequest {
     @SerializedName("visitor_gender")
     private final String visitorGender;
 
+    @SerializedName("visitor_nationality")
+    private final String visitorNationality;
+
     @SerializedName("visitor_mobile")
     private final String visitorMobile;
 
@@ -95,6 +98,7 @@ public class BookingRequestCreateRequest {
             String visitorDesignation,
             String visitorOrganisation,
             String visitorGender,
+            String visitorNationality,
             String visitorMobile,
             String visitorEmail,
             String visitorCategory,
@@ -123,6 +127,7 @@ public class BookingRequestCreateRequest {
         this.visitorDesignation = visitorDesignation;
         this.visitorOrganisation = visitorOrganisation;
         this.visitorGender = visitorGender;
+        this.visitorNationality = visitorNationality;
         this.visitorMobile = visitorMobile;
         this.visitorEmail = visitorEmail;
         this.visitorCategory = visitorCategory;

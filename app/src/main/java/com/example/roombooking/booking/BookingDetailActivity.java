@@ -486,6 +486,7 @@ public class BookingDetailActivity extends AppCompatActivity {
                 + "Designation: " + safe(bookingItem.getVisitorDesignation()) + "\n"
                 + "Organisation: " + safe(bookingItem.getVisitorOrganisation()) + "\n"
                 + "Gender: " + safe(bookingItem.getVisitorGender()) + "\n"
+                + "Guest Nationality: " + getVisitorNationalityText(bookingItem.getVisitorNationality()) + "\n"
                 + "Mobile: " + safe(bookingItem.getVisitorMobile()) + "\n"
                 + "Email: " + safe(bookingItem.getVisitorEmail()) + "\n"
                 + "Purpose: " + safe(bookingItem.getPurposeOfVisit()) + "\n"
@@ -604,6 +605,16 @@ public class BookingDetailActivity extends AppCompatActivity {
             default:
                 return safe(category);
         }
+    }
+
+    private String getVisitorNationalityText(String nationality) {
+        if ("foreigner".equalsIgnoreCase(nationality)) {
+            return "Foreigner";
+        }
+        if ("indian".equalsIgnoreCase(nationality)) {
+            return "Indian";
+        }
+        return "";
     }
 
     private String getAttenderShiftText() {

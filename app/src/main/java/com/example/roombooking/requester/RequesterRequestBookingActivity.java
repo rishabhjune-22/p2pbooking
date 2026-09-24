@@ -64,6 +64,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_DESIGNATION = "visitor_designation";
     public static final String EXTRA_VISITOR_ORGANISATION = "visitor_organisation";
     public static final String EXTRA_VISITOR_GENDER = "visitor_gender";
+    public static final String EXTRA_VISITOR_NATIONALITY = "visitor_nationality";
     public static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
@@ -101,10 +102,12 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
     private EditText etVisitorDesignation;
     private EditText etVisitorOrganisation;
     private Spinner spinnerGender;
+    private RadioGroup rgVisitorNationality;
     private EditText etVisitorMobile;
     private EditText etVisitorEmail;
     private RadioGroup rgVisitorCategory;
     private TextView btnClearVisitorCategory;
+    private TextView btnClearVisitorNationality;
     private EditText etPurpose;
     private CheckBox cbBudgetHeadName;
     private CheckBox cbBudgetHeadDepartmentName;
@@ -169,10 +172,12 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etVisitorDesignation = findViewById(R.id.etVisitorDesignation);
         etVisitorOrganisation = findViewById(R.id.etVisitorOrganisation);
         spinnerGender = findViewById(R.id.spinnerGender);
+        rgVisitorNationality = findViewById(R.id.rgVisitorNationality);
         etVisitorMobile = findViewById(R.id.etVisitorMobile);
         etVisitorEmail = findViewById(R.id.etVisitorEmail);
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
         btnClearVisitorCategory = findViewById(R.id.btnClearVisitorCategory);
+        btnClearVisitorNationality = findViewById(R.id.btnClearVisitorNationality);
         etPurpose = findViewById(R.id.etPurpose);
         cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
         cbBudgetHeadDepartmentName = findViewById(R.id.cbBudgetHeadDepartmentName);
@@ -291,6 +296,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnClearVisitorCategory.setOnClickListener(v -> rgVisitorCategory.clearCheck());
+        btnClearVisitorNationality.setOnClickListener(v -> rgVisitorNationality.clearCheck());
 
         cbAttenderRequired.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!isChecked) {
@@ -388,6 +394,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         etRequestorEmail.setText(getIntent().getStringExtra(EXTRA_REQUESTOR_EMAIL));
 
         setGenderSelection(getIntent().getStringExtra(EXTRA_VISITOR_GENDER));
+        setVisitorNationalitySelection(getIntent().getStringExtra(EXTRA_VISITOR_NATIONALITY));
         setVisitorCategorySelection(getIntent().getStringExtra(EXTRA_VISITOR_CATEGORY));
 
         boolean attenderRequired = getIntent().getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
@@ -488,6 +495,16 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
             rgVisitorCategory.check(R.id.rbConferenceGuest);
         } else if ("other_guest".equalsIgnoreCase(visitorCategory)) {
             rgVisitorCategory.check(R.id.rbOtherGuest);
+        }
+    }
+
+    private void setVisitorNationalitySelection(String visitorNationality) {
+        if ("foreigner".equalsIgnoreCase(visitorNationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorForeigner);
+        } else if ("indian".equalsIgnoreCase(visitorNationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorIndian);
+        } else {
+            rgVisitorNationality.clearCheck();
         }
     }
 
@@ -679,6 +696,7 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
                 text(etVisitorDesignation),
                 text(etVisitorOrganisation),
                 selectedGender(),
+                selectedVisitorNationality(),
                 text(etVisitorMobile),
                 visitorEmail,
                 selectedVisitorCategory(),
@@ -823,6 +841,17 @@ public class RequesterRequestBookingActivity extends AppCompatActivity {
         }
         if (checkedId == R.id.rbOtherGuest) {
             return "other_guest";
+        }
+        return "";
+    }
+
+    private String selectedVisitorNationality() {
+        int checkedId = rgVisitorNationality.getCheckedRadioButtonId();
+        if (checkedId == R.id.rbVisitorForeigner) {
+            return "foreigner";
+        }
+        if (checkedId == R.id.rbVisitorIndian) {
+            return "indian";
         }
         return "";
     }

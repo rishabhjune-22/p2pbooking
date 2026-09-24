@@ -8,6 +8,8 @@ final class EditBookingFormState {
     static final String BUDGET_HEAD_INDIVIDUAL = "individual";
     static final String BUDGET_HEAD_INSTITUTE = "institute_head";
     static final String BUDGET_HEAD_PROJECT = "project_head";
+    static final String VISITOR_NATIONALITY_INDIAN = "indian";
+    static final String VISITOR_NATIONALITY_FOREIGNER = "foreigner";
 
     private Integer roomId;
     private String arrivalAt;
@@ -19,6 +21,7 @@ final class EditBookingFormState {
     private String visitorDesignation;
     private String visitorOrganisation;
     private String visitorGender;
+    private String visitorNationality = "";
     private String visitorMobile;
     private String visitorEmail;
     private String purpose;
@@ -60,6 +63,7 @@ final class EditBookingFormState {
         copy.visitorDesignation = visitorDesignation;
         copy.visitorOrganisation = visitorOrganisation;
         copy.visitorGender = visitorGender;
+        copy.visitorNationality = visitorNationality;
         copy.visitorMobile = visitorMobile;
         copy.visitorEmail = visitorEmail;
         copy.purpose = purpose;
@@ -106,6 +110,22 @@ final class EditBookingFormState {
     void setVisitorOrganisation(String visitorOrganisation) { this.visitorOrganisation = clean(visitorOrganisation); }
     String getVisitorGender() { return visitorGender; }
     void setVisitorGender(String visitorGender) { this.visitorGender = clean(visitorGender); }
+    String getVisitorNationality() {
+        if (VISITOR_NATIONALITY_FOREIGNER.equals(visitorNationality)) {
+            return VISITOR_NATIONALITY_FOREIGNER;
+        }
+        if (VISITOR_NATIONALITY_INDIAN.equals(visitorNationality)) {
+            return VISITOR_NATIONALITY_INDIAN;
+        }
+        return "";
+    }
+    void setVisitorNationality(String visitorNationality) {
+        String cleaned = clean(visitorNationality);
+        this.visitorNationality = VISITOR_NATIONALITY_FOREIGNER.equals(cleaned)
+                || VISITOR_NATIONALITY_INDIAN.equals(cleaned)
+                ? cleaned
+                : "";
+    }
     String getVisitorMobile() { return visitorMobile; }
     void setVisitorMobile(String visitorMobile) { this.visitorMobile = clean(visitorMobile); }
     String getVisitorEmail() { return visitorEmail; }

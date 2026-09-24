@@ -425,6 +425,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.detailRow(this, "Name", item.getVisitorName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Designation", item.getVisitorDesignation()));
         content.addView(ListScreenUiHelper.detailRow(this, "Organisation", item.getVisitorOrganisation()));
+        content.addView(ListScreenUiHelper.detailRow(this, "Guest Nationality", nationalityLabel(item.getVisitorNationality())));
         content.addView(ListScreenUiHelper.detailRow(this, "Mobile", item.getVisitorMobile()));
         content.addView(ListScreenUiHelper.detailRow(this, "Email", item.getVisitorEmail()));
         content.addView(ListScreenUiHelper.detailRow(this, "Purpose", item.getPurposeOfVisit()));
@@ -496,6 +497,7 @@ public class RequesterRequestsActivity extends AppCompatActivity {
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_DESIGNATION, item.getVisitorDesignation());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_ORGANISATION, item.getVisitorOrganisation());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_GENDER, item.getVisitorGender());
+        intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_NATIONALITY, item.getVisitorNationality());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_MOBILE, item.getVisitorMobile());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(RequesterRequestBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
@@ -520,6 +522,16 @@ public class RequesterRequestsActivity extends AppCompatActivity {
 
     private int dp(int value) {
         return Math.round(value * getResources().getDisplayMetrics().density);
+    }
+
+    private String nationalityLabel(String value) {
+        if ("foreigner".equalsIgnoreCase(value)) {
+            return "Foreigner";
+        }
+        if ("indian".equalsIgnoreCase(value)) {
+            return "Indian";
+        }
+        return "";
     }
 
     private TextView textLine(String value) {

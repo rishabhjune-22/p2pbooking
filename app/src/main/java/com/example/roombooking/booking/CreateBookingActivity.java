@@ -77,6 +77,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_DESIGNATION = "visitor_designation";
     public static final String EXTRA_VISITOR_ORGANISATION = "visitor_organisation";
     public static final String EXTRA_VISITOR_GENDER = "visitor_gender";
+    public static final String EXTRA_VISITOR_NATIONALITY = "visitor_nationality";
     public static final String EXTRA_VISITOR_MOBILE = "visitor_mobile";
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
@@ -133,6 +134,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private ImageButton btnBack;
 
     private RadioGroup rgVisitorCategory;
+    private RadioGroup rgVisitorNationality;
     private RadioGroup rgRoomChargesStatus;
     private RadioGroup rgAttenderChargesStatus;
     private CheckBox cbBudgetHeadName;
@@ -249,6 +251,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
 
         rgVisitorCategory = findViewById(R.id.rgVisitorCategory);
+        rgVisitorNationality = findViewById(R.id.rgVisitorNationality);
         rgRoomChargesStatus = findViewById(R.id.rgRoomChargesStatus);
         rgAttenderChargesStatus = findViewById(R.id.rgAttenderChargesStatus);
         cbBudgetHeadName = findViewById(R.id.cbBudgetHeadName);
@@ -368,6 +371,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         );
 
         setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
+        setupClearRadioAction(R.id.btnClearVisitorNationality, rgVisitorNationality);
         setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
         setupLogisticsSameAsRequestorControls();
@@ -549,6 +553,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etRequestorMobile.setText(intent.getStringExtra(EXTRA_REQUESTOR_MOBILE));
 
         setGenderSelection(intent.getStringExtra(EXTRA_VISITOR_GENDER));
+        setVisitorNationalitySelection(intent.getStringExtra(EXTRA_VISITOR_NATIONALITY));
         setVisitorCategorySelection(intent.getStringExtra(EXTRA_VISITOR_CATEGORY));
 
         boolean attenderRequired = intent.getBooleanExtra(EXTRA_ATTENDER_REQUIRED, false);
@@ -612,6 +617,16 @@ public class CreateBookingActivity extends AppCompatActivity {
         }
     }
 
+    private void setVisitorNationalitySelection(String visitorNationality) {
+        if ("foreigner".equalsIgnoreCase(visitorNationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorForeigner);
+        } else if ("indian".equalsIgnoreCase(visitorNationality)) {
+            rgVisitorNationality.check(R.id.rbVisitorIndian);
+        } else {
+            rgVisitorNationality.clearCheck();
+        }
+    }
+
     private Integer getSelectedRoomId() {
         if (currentFormState != null
                 && currentFormState.hasPreselectedRoom()
@@ -654,6 +669,17 @@ public class CreateBookingActivity extends AppCompatActivity {
             return "other_guest";
         }
 
+        return "";
+    }
+
+    private String getSelectedVisitorNationality() {
+        int checkedId = rgVisitorNationality.getCheckedRadioButtonId();
+        if (checkedId == R.id.rbVisitorForeigner) {
+            return CreateBookingFormState.VISITOR_NATIONALITY_FOREIGNER;
+        }
+        if (checkedId == R.id.rbVisitorIndian) {
+            return CreateBookingFormState.VISITOR_NATIONALITY_INDIAN;
+        }
         return "";
     }
 
@@ -923,6 +949,7 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         applyPreviousBookingDateTimes(booking);
         etPurpose.setText(safeString(booking.getPurposeOfVisit()));
+        setVisitorNationalitySelection(booking.getVisitorNationality());
         setVisitorCategorySelection(booking.getVisitorCategory());
         applyPreviousBookingBudgetHead(booking);
         applyPreviousBookingRequestorAndLogistics(booking);
@@ -1166,6 +1193,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         data.setVisitorDesignation(getText(etVisitorDesignation));
         data.setVisitorOrganisation(getText(etVisitorOrganisation));
         data.setVisitorGender(getSelectedGender());
+        data.setVisitorNationality(getSelectedVisitorNationality());
         data.setVisitorMobile(getText(etVisitorMobile));
         data.setVisitorEmail(getText(etVisitorEmail));
 
@@ -1259,6 +1287,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         payload.put("visitor_designation", data.getVisitorDesignation());
         payload.put("visitor_organisation", data.getVisitorOrganisation());
         payload.put("visitor_gender", data.getVisitorGender());
+        payload.put("visitor_nationality", data.getVisitorNationality());
         payload.put("visitor_mobile", data.getVisitorMobile());
         payload.put("visitor_email", data.getVisitorEmail());
         payload.put("purpose_of_visit", data.getPurpose());
