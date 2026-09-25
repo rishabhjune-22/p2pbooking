@@ -608,7 +608,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:enabled="false"
-                    android:hint="Attender Charges Amount * (auto-filled)"
+                    android:hint="Attender Charges Amount * (auto-filled, editable)"
                     android:inputType="numberDecimal" />
 
             </LinearLayout>
@@ -634,7 +634,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_16"
-                    android:text="Room Charges Received (Optional)"
+                    android:text="Room Charges Received - Beta/Gamma auto per day; Delta manual (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -673,7 +673,7 @@
                     style="@style/EditBookingInput"
                     android:layout_marginTop="@dimen/space_12"
                     android:enabled="false"
-                    android:hint="Room Charges Amount * (if Yes)"
+                    android:hint="Room Charges Amount * (auto-filled, editable)"
                     android:inputType="numberDecimal" />
 
             </LinearLayout>

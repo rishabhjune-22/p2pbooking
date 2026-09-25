@@ -18,6 +18,9 @@ public class AvailableRoomItem {
     @SerializedName("prefix")
     private String prefix;
 
+    @SerializedName("has_attached_bath")
+    private boolean hasAttachedBath = true;
+
     @SerializedName("availability_status")
     private String availabilityStatus;
 
@@ -44,6 +47,10 @@ public class AvailableRoomItem {
 
     public String getPrefix() {
         return prefix;
+    }
+
+    public boolean hasAttachedBath() {
+        return hasAttachedBath;
     }
 
     public String getAvailabilityStatus() {

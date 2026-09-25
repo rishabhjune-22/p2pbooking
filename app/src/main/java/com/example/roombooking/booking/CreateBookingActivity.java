@@ -10,6 +10,7 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -64,6 +65,10 @@ public class CreateBookingActivity extends AppCompatActivity {
 
     private static final int ATTENDER_CHARGE_PER_SHIFT = 850;
     private static final long ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L;
+    private static final int GAMMA_ATTACHED_ROOM_RATE = 1500;
+    private static final int GAMMA_NON_ATTACHED_ROOM_RATE = 1300;
+    private static final int BETA_ATTACHED_ROOM_RATE = 1000;
+    private static final int BETA_NON_ATTACHED_ROOM_RATE = 800;
 
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
     private static final String EXTRA_CREATED_STATUS = "created_status";
@@ -338,6 +343,18 @@ public class CreateBookingActivity extends AppCompatActivity {
             );
         });
 
+        spinnerRoom.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                syncCalculatedRoomCharges(true);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                syncCalculatedRoomCharges(false);
+            }
+        });
+
         btnCreateBooking.setOnClickListener(v -> submitBooking());
         btnCreateBookingAndMail.setOnClickListener(v -> submitBookingAndGenerateMailTemplate());
         if (bookingRequestApprovalMode) {
@@ -386,6 +403,7 @@ public class CreateBookingActivity extends AppCompatActivity {
 
             currentFormState = state.copy();
             refreshDateTimeFields(currentFormState);
+            syncCalculatedRoomCharges(false);
             syncCalculatedAttenderCharges(false);
             showPartialRoomInfoIfNeeded(currentFormState);
             updateRoomSelectionState();
@@ -636,11 +654,23 @@ public class CreateBookingActivity extends AppCompatActivity {
     }
 
     private Integer getSelectedRoomId() {
+        RoomItem selectedRoom = getSelectedRoomItem();
+        return selectedRoom != null ? selectedRoom.getId() : null;
+    }
+
+    private RoomItem getSelectedRoomItem() {
         if (currentFormState != null
                 && currentFormState.hasPreselectedRoom()
                 && currentFormState.getRoomId() != null
                 && !bookingRequestApprovalMode) {
-            return currentFormState.getRoomId();
+            for (int i = 0; i < roomAdapter.getCount(); i++) {
+                RoomSpinnerEntry entry = roomAdapter.getItem(i);
+                RoomItem roomItem = entry != null ? entry.getRoom() : null;
+                if (roomItem != null && roomItem.getId() == currentFormState.getRoomId()) {
+                    return roomItem;
+                }
+            }
+            return null;
         }
 
         int position = spinnerRoom.getSelectedItemPosition();
@@ -649,7 +679,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         if (entry == null || entry.getRoom() == null) {
             return null;
         }
-        return entry.getRoom().getId();
+        return entry.getRoom();
     }
 
     private String getSelectedGender() {
@@ -1132,6 +1162,8 @@ public class CreateBookingActivity extends AppCompatActivity {
             amountField.setText(safeString(amount));
             if (group == rgAttenderChargesStatus) {
                 syncCalculatedAttenderCharges(false);
+            } else if (group == rgRoomChargesStatus) {
+                syncCalculatedRoomCharges(false);
             }
         } else if ("waived_off".equals(status)) {
             group.check(waivedId);
@@ -1192,6 +1224,52 @@ public class CreateBookingActivity extends AppCompatActivity {
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
+    }
+
+    private Integer roomChargeRate(RoomItem room) {
+        if (room == null) {
+            return null;
+        }
+        String prefix = room.getSafePrefix();
+        if ("Gamma".equalsIgnoreCase(prefix)) {
+            return room.hasAttachedBath() ? GAMMA_ATTACHED_ROOM_RATE : GAMMA_NON_ATTACHED_ROOM_RATE;
+        }
+        if ("Beta".equalsIgnoreCase(prefix)) {
+            return room.hasAttachedBath() ? BETA_ATTACHED_ROOM_RATE : BETA_NON_ATTACHED_ROOM_RATE;
+        }
+        return null;
+    }
+
+    private Integer calculatedRoomChargesAmount() {
+        Integer rate = roomChargeRate(getSelectedRoomItem());
+        return rate == null ? null : rate * inclusiveStayDays();
+    }
+
+    private void syncCalculatedRoomCharges(boolean autoStatus) {
+        Integer amount = calculatedRoomChargesAmount();
+        if (autoStatus && amount != null) {
+            rgRoomChargesStatus.check(R.id.rbRoomChargesYes);
+        }
+
+        boolean chargesReceived = rgRoomChargesStatus.getCheckedRadioButtonId() == R.id.rbRoomChargesYes;
+        if (!chargesReceived) {
+            updateChargeAmountField(rgRoomChargesStatus, etRoomChargesAmount, R.id.rbRoomChargesYes);
+            setRoomChargesAmountEditable(true);
+            return;
+        }
+
+        etRoomChargesAmount.setEnabled(true);
+        setRoomChargesAmountEditable(true);
+        if (amount != null) {
+            etRoomChargesAmount.setText(String.valueOf(amount));
+            etRoomChargesAmount.setError(null);
+        }
+    }
+
+    private void setRoomChargesAmountEditable(boolean editable) {
+        etRoomChargesAmount.setFocusable(editable);
+        etRoomChargesAmount.setFocusableInTouchMode(editable);
+        etRoomChargesAmount.setCursorVisible(editable);
     }
 
     private void syncCalculatedAttenderCharges(boolean autoStatus) {
@@ -1304,11 +1382,13 @@ public class CreateBookingActivity extends AppCompatActivity {
                 R.id.rbAttenderChargesYes,
                 R.id.rbAttenderChargesWaived
         ));
-        data.setRoomChargesAmount("yes".equals(data.getRoomChargesStatus())
-                ? getText(etRoomChargesAmount)
-                : "0");
+        String roomChargesAmount = "0";
+        if ("yes".equals(data.getRoomChargesStatus())) {
+            roomChargesAmount = getText(etRoomChargesAmount);
+        }
+        data.setRoomChargesAmount(roomChargesAmount);
         data.setAttenderChargesAmount("yes".equals(data.getAttenderChargesStatus())
-                ? String.valueOf(calculatedAttenderChargesAmount())
+                ? getText(etAttenderChargesAmount)
                 : "0");
 
         data.setBudgetHeadType("");
@@ -1684,21 +1764,27 @@ public class CreateBookingActivity extends AppCompatActivity {
         group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
             if (group == rgAttenderChargesStatus) {
                 syncCalculatedAttenderCharges(false);
+            } else if (group == rgRoomChargesStatus) {
+                syncCalculatedRoomCharges(false);
             } else {
                 updateChargeAmountField(group, amountField, yesId);
             }
             boolean enabled = group.getCheckedRadioButtonId() == yesId;
 
-            if (enabled) {
+            if (enabled && amountField.isFocusable()) {
                 focusAndShowKeyboard(amountField);
             }
         });
-        updateChargeAmountField(group, amountField, yesId);
+        if (group == rgRoomChargesStatus) {
+            syncCalculatedRoomCharges(false);
+        } else {
+            updateChargeAmountField(group, amountField, yesId);
+        }
 
         View yesButton = group.findViewById(yesId);
         if (yesButton != null) {
             yesButton.setOnClickListener(v -> {
-                if (group.getCheckedRadioButtonId() == yesId && amountField.isEnabled()) {
+                if (group.getCheckedRadioButtonId() == yesId && amountField.isEnabled() && amountField.isFocusable()) {
                     focusAndShowKeyboard(amountField);
                 }
             });

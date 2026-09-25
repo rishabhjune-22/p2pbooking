@@ -100,6 +100,7 @@ final class RoomSpinnerEntries {
         room.setNumber(availableRoom.getSafeSelectionLabel());
         room.setRoomName(availableRoom.getSafeRoomName());
         room.setSelectionLabel(availableRoom.getSafeSelectionLabel());
+        room.setHasAttachedBath(availableRoom.hasAttachedBath());
         room.setDisplayOrder(displayOrder);
         return room;
     }
