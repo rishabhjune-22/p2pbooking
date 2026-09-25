@@ -69,6 +69,10 @@ public class CreateBookingActivity extends AppCompatActivity {
     private static final int GAMMA_NON_ATTACHED_ROOM_RATE = 1300;
     private static final int BETA_ATTACHED_ROOM_RATE = 1000;
     private static final int BETA_NON_ATTACHED_ROOM_RATE = 800;
+    private static final int FOREIGN_GAMMA_ATTACHED_ROOM_RATE = 2000;
+    private static final int FOREIGN_GAMMA_NON_ATTACHED_ROOM_RATE = 1800;
+    private static final int FOREIGN_BETA_ATTACHED_ROOM_RATE = 1500;
+    private static final int FOREIGN_BETA_NON_ATTACHED_ROOM_RATE = 1300;
 
     private static final String EXTRA_BOOKING_CREATED = "booking_created";
     private static final String EXTRA_CREATED_STATUS = "created_status";
@@ -392,6 +396,9 @@ public class CreateBookingActivity extends AppCompatActivity {
 
         setupClearRadioAction(R.id.btnClearVisitorCategory, rgVisitorCategory);
         setupClearRadioAction(R.id.btnClearVisitorNationality, rgVisitorNationality);
+        rgVisitorNationality.setOnCheckedChangeListener(
+                (group, checkedId) -> syncCalculatedRoomCharges(false)
+        );
         setupBudgetHeadFocusControls();
         setupAttenderRequirementControls();
         setupLogisticsSameAsRequestorControls();
@@ -674,6 +681,12 @@ public class CreateBookingActivity extends AppCompatActivity {
         }
 
         int position = spinnerRoom.getSelectedItemPosition();
+
+        // The charge listeners are initialized before the asynchronous room list arrives.
+        // During that window Spinner reports INVALID_POSITION (-1) and the adapter is empty.
+        if (roomAdapter == null || position < 0 || position >= roomAdapter.getCount()) {
+            return null;
+        }
 
         RoomSpinnerEntry entry = roomAdapter.getItem(position);
         if (entry == null || entry.getRoom() == null) {
@@ -1231,11 +1244,28 @@ public class CreateBookingActivity extends AppCompatActivity {
             return null;
         }
         String prefix = room.getSafePrefix();
+        boolean foreignVisitor = CreateBookingFormState.VISITOR_NATIONALITY_FOREIGNER.equals(
+                getSelectedVisitorNationality()
+        );
         if ("Gamma".equalsIgnoreCase(prefix)) {
-            return room.hasAttachedBath() ? GAMMA_ATTACHED_ROOM_RATE : GAMMA_NON_ATTACHED_ROOM_RATE;
+            if (foreignVisitor) {
+                return room.hasAttachedBath()
+                        ? FOREIGN_GAMMA_ATTACHED_ROOM_RATE
+                        : FOREIGN_GAMMA_NON_ATTACHED_ROOM_RATE;
+            }
+            return room.hasAttachedBath()
+                    ? GAMMA_ATTACHED_ROOM_RATE
+                    : GAMMA_NON_ATTACHED_ROOM_RATE;
         }
         if ("Beta".equalsIgnoreCase(prefix)) {
-            return room.hasAttachedBath() ? BETA_ATTACHED_ROOM_RATE : BETA_NON_ATTACHED_ROOM_RATE;
+            if (foreignVisitor) {
+                return room.hasAttachedBath()
+                        ? FOREIGN_BETA_ATTACHED_ROOM_RATE
+                        : FOREIGN_BETA_NON_ATTACHED_ROOM_RATE;
+            }
+            return room.hasAttachedBath()
+                    ? BETA_ATTACHED_ROOM_RATE
+                    : BETA_NON_ATTACHED_ROOM_RATE;
         }
         return null;
     }
@@ -1768,11 +1798,6 @@ public class CreateBookingActivity extends AppCompatActivity {
                 syncCalculatedRoomCharges(false);
             } else {
                 updateChargeAmountField(group, amountField, yesId);
-            }
-            boolean enabled = group.getCheckedRadioButtonId() == yesId;
-
-            if (enabled && amountField.isFocusable()) {
-                focusAndShowKeyboard(amountField);
             }
         });
         if (group == rgRoomChargesStatus) {
