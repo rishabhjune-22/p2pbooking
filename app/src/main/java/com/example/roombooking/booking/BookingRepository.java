@@ -50,12 +50,24 @@ public class BookingRepository {
             String departureTo,
             String status
     ) {
+        return getBookings(page, prefix, arrivalFrom, departureTo, status, null);
+    }
+
+    public Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(
+            int page,
+            String prefix,
+            String arrivalFrom,
+            String departureTo,
+            String status,
+            String search
+    ) {
         return apiService.getBookings(
                 page,
                 prefix,
                 arrivalFrom,
                 departureTo,
-                status
+                status,
+                search
         );
     }
 
@@ -143,15 +155,29 @@ public class BookingRepository {
             String departureTo,
             String status
     ) {
-        return BOOKING_PAGE_ONE_CACHE_PREFIX
+        return firstPageCacheKey(prefix, arrivalFrom, departureTo, status, null);
+    }
+
+    public static String firstPageCacheKey(
+            String prefix,
+            String arrivalFrom,
+            String departureTo,
+            String status,
+            String search
+    ) {
+        String baseKey = BOOKING_PAGE_ONE_CACHE_PREFIX
                 + safe(prefix)
                 + ":"
                 + safe(arrivalFrom)
                 + ":"
                 + safe(departureTo)
                 + ":"
-                + safe(status)
-                + PAGE_ONE_SUFFIX;
+                + safe(status);
+        String normalizedSearch = safe(search);
+        if (normalizedSearch.isEmpty()) {
+            return baseKey + PAGE_ONE_SUFFIX;
+        }
+        return baseKey + ":search:" + normalizedSearch + PAGE_ONE_SUFFIX;
     }
 
     private static String safe(String value) {

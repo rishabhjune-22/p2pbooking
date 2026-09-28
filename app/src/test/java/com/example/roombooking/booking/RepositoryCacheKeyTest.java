@@ -24,6 +24,19 @@ public class RepositoryCacheKeyTest {
 
         assertEquals("bookings:Beta:2026-06-01:2026-06-30:active:page1", activeKey);
         assertNotEquals(activeKey, expiredKey);
+
+        String searchKey = BookingRepository.firstPageCacheKey(
+                "Beta",
+                "2026-06-01",
+                "2026-06-30",
+                "active",
+                "anurag"
+        );
+        assertEquals(
+                "bookings:Beta:2026-06-01:2026-06-30:active:search:anurag:page1",
+                searchKey
+        );
+        assertNotEquals(activeKey, searchKey);
     }
 
     @Test

@@ -187,7 +187,7 @@ public class LightBackgroundSyncWorker extends Worker {
 
         try {
             Response<ApiResponse<PaginatedData<BookingItem>>> response =
-                    apiService.getBookings(FIRST_PAGE, null, null, null, status).execute();
+                    apiService.getBookings(FIRST_PAGE, null, null, null, status, null).execute();
             AppDiagnostics.logNetworkResponse(
                     operation,
                     cacheKey,

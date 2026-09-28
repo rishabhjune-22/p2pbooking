@@ -40,7 +40,8 @@ public interface ApiService {
             @Query("prefix") String prefix,
             @Query("arrival_from") String arrivalFrom,
             @Query("departure_to") String departureTo,
-            @Query("status") String status
+            @Query("status") String status,
+            @Query("search") String search
     );
 
     @GET("api/bookings/{pk}/")

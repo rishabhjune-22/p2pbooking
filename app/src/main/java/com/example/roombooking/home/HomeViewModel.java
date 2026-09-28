@@ -111,6 +111,7 @@ public class HomeViewModel extends ViewModel {
     private String filterArrivalFrom = null;
     private String filterDepartureTo = null;
     private String filterStatus = BookingStatus.ACTIVE;
+    private String filterSearch = null;
 
     public HomeViewModel(BookingRepository bookingRepository) {
         this.bookingRepository = bookingRepository;
@@ -275,6 +276,15 @@ public class HomeViewModel extends ViewModel {
         filterDepartureTo = departureTo;
         filterStatus = status != null ? status : BookingStatus.ACTIVE;
 
+        loadInitialBookings();
+    }
+
+    public void applySearch(String search) {
+        String normalizedSearch = isBlank(search) ? null : search.trim();
+        if (safeFilterValue(filterSearch).equals(safeFilterValue(normalizedSearch))) {
+            return;
+        }
+        filterSearch = normalizedSearch;
         loadInitialBookings();
     }
 
@@ -528,7 +538,8 @@ public class HomeViewModel extends ViewModel {
                 filterPrefix,
                 filterArrivalFrom,
                 filterDepartureTo,
-                filterStatus
+                filterStatus,
+                filterSearch
         );
         bookingsCall = request;
         request.enqueue(new Callback<ApiResponse<PaginatedData<BookingItem>>>() {
@@ -1059,7 +1070,9 @@ public class HomeViewModel extends ViewModel {
                 + "|"
                 + safeFilterValue(filterDepartureTo)
                 + "|"
-                + safeFilterValue(filterStatus);
+                + safeFilterValue(filterStatus)
+                + "|"
+                + safeFilterValue(filterSearch);
     }
 
     private String firstPageCacheKey() {
@@ -1067,7 +1080,8 @@ public class HomeViewModel extends ViewModel {
                 filterPrefix,
                 filterArrivalFrom,
                 filterDepartureTo,
-                filterStatus
+                filterStatus,
+                filterSearch
         );
     }
 

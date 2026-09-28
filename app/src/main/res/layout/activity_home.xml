@@ -189,6 +189,44 @@
 
     </LinearLayout>
 
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutBookingSearch"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_16"
+        android:layout_marginTop="@dimen/space_4"
+        android:layout_marginEnd="@dimen/space_16"
+        android:hint="Search bookings"
+        app:boxBackgroundColor="@color/white"
+        app:boxCornerRadiusBottomEnd="@dimen/space_14"
+        app:boxCornerRadiusBottomStart="@dimen/space_14"
+        app:boxCornerRadiusTopEnd="@dimen/space_14"
+        app:boxCornerRadiusTopStart="@dimen/space_14"
+        app:boxStrokeColor="@color/primary"
+        app:boxStrokeWidth="1dp"
+        app:boxStrokeWidthFocused="2dp"
+        app:endIconMode="clear_text"
+        app:hintTextColor="@color/text_secondary"
+        app:startIconDrawable="@drawable/ic_search"
+        app:startIconTint="@color/primary"
+        app:layout_constraintTop_toBottomOf="@id/layoutBulkBookingActions"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etBookingSearch"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/space_52"
+            android:imeOptions="actionDone"
+            android:inputType="text"
+            android:maxLines="1"
+            android:paddingTop="0dp"
+            android:paddingBottom="0dp"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_15" />
+    </com.google.android.material.textfield.TextInputLayout>
+
     <TextView
         android:id="@+id/tvMessage"
         android:layout_width="wrap_content"
@@ -213,7 +251,7 @@
         android:textColor="@color/text_secondary"
         android:textSize="@dimen/text_12"
         android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@id/layoutBulkBookingActions"
+        app:layout_constraintTop_toBottomOf="@id/layoutBookingSearch"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

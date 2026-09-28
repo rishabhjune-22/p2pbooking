@@ -2,10 +2,15 @@ package com.example.roombooking.home;
 
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
@@ -20,9 +25,8 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.util.Pair;
-import androidx.core.view.WindowCompat;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
@@ -44,13 +48,14 @@ import com.example.roombooking.utils.EdgeToEdgeUtils;
 import com.example.roombooking.utils.InternetErrorBanner;
 import com.example.roombooking.utils.UiEvent;
 import com.google.android.material.appbar.MaterialToolbar;
-import com.google.android.material.datepicker.MaterialDatePicker;
+import com.google.android.material.textfield.TextInputEditText;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -67,6 +72,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private static final int PAGINATION_THRESHOLD = 2;
     private static final long PAGINATION_DEBOUNCE_MS = 500L;
+    private static final long SEARCH_REQUEST_DELAY_MS = 350L;
     private static final long SYNC_STATUS_REFRESH_INTERVAL_MS = 30L * 1000L;
 
     private RecyclerView recyclerView;
@@ -76,6 +82,7 @@ public class HomeActivity extends AppCompatActivity {
     private TextView tvStatusToggleLabel;
     private TextView tvCompactToggleLabel;
     private TextView tvSyncStatus;
+    private TextInputEditText etBookingSearch;
     private SwipeRefreshLayout swipeRefreshLayout;
 
     private ImageButton btnCreateBooking;
@@ -99,6 +106,7 @@ public class HomeActivity extends AppCompatActivity {
     private String selectedArrivalFrom = null;
     private String selectedDepartureTo = null;
     private String selectedStatus = BookingStatus.ACTIVE;
+    private String bookingSearchQuery = "";
 
     private TextView activeDateRangeTextView;
 
@@ -108,10 +116,12 @@ public class HomeActivity extends AppCompatActivity {
     private final SimpleDateFormat displayDateFormat =
             DateTimeUtils.newDisplayDateFormat();
 
-    private MaterialDatePicker<Pair<Long, Long>> dateRangePicker;
     private long lastPaginationTriggerAtMillis = 0L;
     private boolean hasHandledInitialResume = false;
     private final Handler syncStatusHandler = new Handler(Looper.getMainLooper());
+    private final Handler searchRequestHandler = new Handler(Looper.getMainLooper());
+    private final Runnable searchRequestRunnable = () ->
+            viewModel.applySearch(bookingSearchQuery);
     private final Runnable syncStatusRefreshRunnable = new Runnable() {
         @Override
         public void run() {
@@ -132,7 +142,6 @@ public class HomeActivity extends AppCompatActivity {
 
         initViews();
         initViewModel();
-        initDateRangePicker();
         setupRecyclerView();
         restoreCompactView(savedInstanceState);
         setupListeners();
@@ -151,6 +160,7 @@ public class HomeActivity extends AppCompatActivity {
         tvStatusToggleLabel = findViewById(R.id.tvStatusToggleLabel);
         tvCompactToggleLabel = findViewById(R.id.tvCompactToggleLabel);
         tvSyncStatus = findViewById(R.id.tvSyncStatus);
+        etBookingSearch = findViewById(R.id.etBookingSearch);
         swipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
 
         btnCreateBooking = findViewById(R.id.btnCreateBooking);
@@ -171,39 +181,6 @@ public class HomeActivity extends AppCompatActivity {
         HomeViewModelFactory factory = new HomeViewModelFactory(bookingRepository);
 
         viewModel = new ViewModelProvider(this, factory).get(HomeViewModel.class);
-    }
-
-    private void initDateRangePicker() {
-        dateRangePicker = MaterialDatePicker.Builder.dateRangePicker()
-                .setTitleText("Select booking date range")
-                .build();
-
-        dateRangePicker.addOnPositiveButtonClickListener(selection -> {
-            if (selection == null || selection.first == null || selection.second == null) {
-                return;
-            }
-
-            applySelectedDateRange(selection.first, selection.second);
-        });
-    }
-
-    private void configureDatePickerWindow() {
-        if (dateRangePicker.getDialog() == null) {
-            return;
-        }
-
-        Window window = dateRangePicker.getDialog().getWindow();
-        if (window == null) {
-            return;
-        }
-
-        WindowCompat.setDecorFitsSystemWindows(window, true);
-        window.setStatusBarColor(Color.WHITE);
-        window.setNavigationBarColor(Color.WHITE);
-        WindowCompat.getInsetsController(window, window.getDecorView())
-                .setAppearanceLightStatusBars(true);
-        WindowCompat.getInsetsController(window, window.getDecorView())
-                .setAppearanceLightNavigationBars(true);
     }
 
     private void applySelectedDateRange(long startMillis, long endMillis) {
@@ -310,6 +287,31 @@ public class HomeActivity extends AppCompatActivity {
         setupToolbarMenu();
         setupSwipeRefresh();
         setupActionButtons();
+        setupBookingSearch();
+    }
+
+    private void setupBookingSearch() {
+        etBookingSearch.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence text, int start, int count, int after) {
+                // No-op.
+            }
+
+            @Override
+            public void onTextChanged(CharSequence text, int start, int before, int count) {
+                bookingSearchQuery = text != null ? text.toString().trim() : "";
+                searchRequestHandler.removeCallbacks(searchRequestRunnable);
+                searchRequestHandler.postDelayed(
+                        searchRequestRunnable,
+                        SEARCH_REQUEST_DELAY_MS
+                );
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+                // No-op.
+            }
+        });
     }
 
     private void setupToolbarMenu() {
@@ -507,6 +509,8 @@ public class HomeActivity extends AppCompatActivity {
         Button btnThreeMonths = view.findViewById(R.id.btnThreeMonths);
         Button btnSixMonths = view.findViewById(R.id.btnSixMonths);
         Button btnApply = view.findViewById(R.id.btnApplyFilter);
+        Button btnReset = view.findViewById(R.id.btnResetFilters);
+        ImageButton btnClose = view.findViewById(R.id.btnCloseFilter);
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(view)
@@ -521,6 +525,18 @@ public class HomeActivity extends AppCompatActivity {
                 btnThreeMonths,
                 btnSixMonths
         );
+        updateQuickRangeButtonStates(btnCustomRange, btnThreeMonths, btnSixMonths);
+
+        btnClose.setOnClickListener(v -> dialog.dismiss());
+        btnReset.setOnClickListener(v -> {
+            selectedPrefix = null;
+            selectedArrivalFrom = null;
+            selectedDepartureTo = null;
+            selectedQuickRange = QUICK_RANGE_CUSTOM;
+            actBuilding.setText(RoomPrefix.ALL_BUILDINGS, false);
+            tvDateRange.setText("Select date range");
+            updateQuickRangeButtonStates(btnCustomRange, btnThreeMonths, btnSixMonths);
+        });
 
         setupFilterDialogListeners(
                 dialog,
@@ -530,6 +546,13 @@ public class HomeActivity extends AppCompatActivity {
         );
 
         dialog.show();
+        Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            int horizontalMargin = (int) (getResources().getDisplayMetrics().density * 24);
+            int dialogWidth = getResources().getDisplayMetrics().widthPixels - horizontalMargin;
+            window.setLayout(dialogWidth, ViewGroup.LayoutParams.WRAP_CONTENT);
+        }
     }
 
     private void bindBuildingDropdown(AutoCompleteTextView actBuilding) {
@@ -582,19 +605,32 @@ public class HomeActivity extends AppCompatActivity {
     ) {
         btnCustomRange.setOnClickListener(v -> {
             selectedQuickRange = QUICK_RANGE_CUSTOM;
+            updateQuickRangeButtonStates(btnCustomRange, btnThreeMonths, btnSixMonths);
             activeDateRangeTextView = tvDateRange;
             showDateRangePickerIfNeeded();
         });
 
         btnThreeMonths.setOnClickListener(v -> {
             selectedQuickRange = QUICK_RANGE_3_MONTHS;
+            updateQuickRangeButtonStates(btnCustomRange, btnThreeMonths, btnSixMonths);
             applyQuickMonthRange(3, tvDateRange);
         });
 
         btnSixMonths.setOnClickListener(v -> {
             selectedQuickRange = QUICK_RANGE_6_MONTHS;
+            updateQuickRangeButtonStates(btnCustomRange, btnThreeMonths, btnSixMonths);
             applyQuickMonthRange(6, tvDateRange);
         });
+    }
+
+    private void updateQuickRangeButtonStates(
+            Button btnCustomRange,
+            Button btnThreeMonths,
+            Button btnSixMonths
+    ) {
+        btnCustomRange.setSelected(QUICK_RANGE_CUSTOM.equals(selectedQuickRange));
+        btnThreeMonths.setSelected(QUICK_RANGE_3_MONTHS.equals(selectedQuickRange));
+        btnSixMonths.setSelected(QUICK_RANGE_6_MONTHS.equals(selectedQuickRange));
     }
 
     private void applyQuickMonthRange(int months, TextView tvDateRange) {
@@ -655,13 +691,129 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void showDateRangePickerIfNeeded() {
-        if (!dateRangePicker.isAdded()) {
-            dateRangePicker.show(
-                    getSupportFragmentManager(),
-                    "BOOKING_DATE_RANGE_PICKER"
+        View pickerView = LayoutInflater.from(this)
+                .inflate(R.layout.dialog_compact_date_range, null, false);
+        TextView tvSelection = pickerView.findViewById(R.id.tvRangeSelection);
+        TextView tvMonth = pickerView.findViewById(R.id.tvCalendarMonth);
+        ImageButton btnPreviousMonth = pickerView.findViewById(R.id.btnPreviousCalendarMonth);
+        ImageButton btnNextMonth = pickerView.findViewById(R.id.btnNextCalendarMonth);
+        RecyclerView rvCalendar = pickerView.findViewById(R.id.rvCompactCalendar);
+
+        Calendar[] selectedDates = {
+                calendarFromFilterDate(selectedArrivalFrom),
+                calendarFromFilterDate(selectedDepartureTo)
+        };
+        Calendar displayedMonth = selectedDates[0] != null
+                ? (Calendar) selectedDates[0].clone()
+                : DateTimeUtils.newBookingCalendar();
+        displayedMonth.set(Calendar.DAY_OF_MONTH, 1);
+
+        Button[] applyButton = new Button[1];
+        CompactDateRangeAdapter[] adapterHolder = new CompactDateRangeAdapter[1];
+        adapterHolder[0] = new CompactDateRangeAdapter(date -> {
+            if (selectedDates[0] == null || selectedDates[1] != null) {
+                selectedDates[0] = date;
+                selectedDates[1] = null;
+            } else if (date.before(selectedDates[0])) {
+                selectedDates[1] = selectedDates[0];
+                selectedDates[0] = date;
+            } else {
+                selectedDates[1] = date;
+            }
+
+            adapterSelectionChanged(
+                    adapterHolder[0],
+                    tvSelection,
+                    applyButton[0],
+                    selectedDates
             );
-            getSupportFragmentManager().executePendingTransactions();
-            configureDatePickerWindow();
+        });
+        CompactDateRangeAdapter adapter = adapterHolder[0];
+        rvCalendar.setLayoutManager(new GridLayoutManager(this, 7));
+        rvCalendar.setAdapter(adapter);
+
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
+        Runnable renderMonth = () -> {
+            tvMonth.setText(monthFormat.format(displayedMonth.getTime()));
+            adapter.showMonth(displayedMonth);
+        };
+        btnPreviousMonth.setOnClickListener(v -> {
+            displayedMonth.add(Calendar.MONTH, -1);
+            renderMonth.run();
+        });
+        btnNextMonth.setOnClickListener(v -> {
+            displayedMonth.add(Calendar.MONTH, 1);
+            renderMonth.run();
+        });
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle("Select booking date range")
+                .setView(pickerView)
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Apply", null)
+                .create();
+        dialog.setOnShowListener(ignored -> {
+            applyButton[0] = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            applyButton[0].setOnClickListener(v -> {
+                if (selectedDates[0] == null || selectedDates[1] == null) {
+                    return;
+                }
+                applySelectedDateRange(
+                        selectedDates[0].getTimeInMillis(),
+                        selectedDates[1].getTimeInMillis()
+                );
+                dialog.dismiss();
+            });
+            adapterSelectionChanged(adapter, tvSelection, applyButton[0], selectedDates);
+        });
+
+        renderMonth.run();
+        dialog.show();
+    }
+
+    private Calendar calendarFromFilterDate(String filterDate) {
+        if (filterDate == null || filterDate.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            Date parsedDate = apiDateFormat.parse(filterDate);
+            if (parsedDate != null) {
+                Calendar calendar = DateTimeUtils.newBookingCalendar();
+                calendar.setTime(parsedDate);
+                return calendar;
+            }
+        } catch (java.text.ParseException ignored) {
+            // Treat a malformed saved filter value as no selection.
+        }
+        return null;
+    }
+
+    private void adapterSelectionChanged(
+            CompactDateRangeAdapter adapter,
+            TextView selectionView,
+            Button applyButton,
+            Calendar[] selectedDates
+    ) {
+        adapter.setSelectedRange(selectedDates[0], selectedDates[1]);
+
+        if (selectedDates[0] == null) {
+            selectionView.setText("Tap an arrival date");
+        } else if (selectedDates[1] == null) {
+            selectionView.setText(
+                    displayDateFormat.format(selectedDates[0].getTime())
+                            + " → Tap departure"
+            );
+        } else {
+            selectionView.setText(
+                    displayDateFormat.format(selectedDates[0].getTime())
+                            + " → "
+                            + displayDateFormat.format(selectedDates[1].getTime())
+            );
+        }
+
+        if (applyButton != null) {
+            applyButton.setEnabled(selectedDates[0] != null && selectedDates[1] != null);
         }
     }
 
@@ -901,6 +1053,12 @@ public class HomeActivity extends AppCompatActivity {
     protected void onPause() {
         stopSyncStatusTimer();
         super.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        searchRequestHandler.removeCallbacks(searchRequestRunnable);
+        super.onDestroy();
     }
 
     private void startSyncStatusTimer() {
