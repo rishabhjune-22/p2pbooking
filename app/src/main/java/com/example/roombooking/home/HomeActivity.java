@@ -33,7 +33,7 @@ import com.example.roombooking.booking.BookingAdapter;
 import com.example.roombooking.booking.BookingDetailActivity;
 import com.example.roombooking.booking.BookingMailTemplateDialog;
 import com.example.roombooking.booking.BookingRepository;
-import com.example.roombooking.booking.CreateBookingActivity;
+import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.booking.BookingStatus;
 import com.example.roombooking.model.booking.BookingItem;
@@ -58,8 +58,6 @@ public class HomeActivity extends AppCompatActivity {
     private static final String EXTRA_UPDATED_STATUS = "updated_status";
     private static final String EXTRA_ARRIVAL_AT = "arrival_at";
     private static final String EXTRA_DEPARTURE_AT = "departure_at";
-    private static final String EXTRA_BOOKING_CREATED = "booking_created";
-    private static final String EXTRA_CREATED_STATUS = "created_status";
     private static final String EXTRA_BOOKING_DELETED = "booking_deleted";
     private static final String STATE_COMPACT_VIEW = "compact_view";
 
@@ -326,7 +324,7 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void setupActionButtons() {
-        btnCreateBooking.setOnClickListener(v -> openCreateBookingScreen());
+        btnCreateBooking.setOnClickListener(v -> openAvailabilityCalendar());
 
         btnFilter.setOnClickListener(v -> showFilterBottomSheet());
 
@@ -423,9 +421,9 @@ public class HomeActivity extends AppCompatActivity {
         bookingDetailLauncher.launch(intent);
     }
 
-    private void openCreateBookingScreen() {
-        Intent intent = new Intent(HomeActivity.this, CreateBookingActivity.class);
-        createBookingLauncher.launch(intent);
+    private void openAvailabilityCalendar() {
+        Intent intent = new Intent(HomeActivity.this, LandingActivity.class);
+        startActivity(intent);
     }
 
     private void cycleBookingStatus() {
@@ -822,7 +820,8 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (btnGenerateSelectedMailTemplate != null) {
-            btnGenerateSelectedMailTemplate.setEnabled(hasSelection);
+            // Keep this action clickable so an empty selection can explain what is required.
+            btnGenerateSelectedMailTemplate.setEnabled(true);
             btnGenerateSelectedMailTemplate.setText(
                     hasSelection
                             ? "Generate Email\nTemplate (" + selectedCount + ")"
@@ -831,7 +830,8 @@ public class HomeActivity extends AppCompatActivity {
         }
 
         if (btnDeleteSelectedBookings != null) {
-            btnDeleteSelectedBookings.setEnabled(hasSelection);
+            // Keep this action clickable so an empty selection can explain what is required.
+            btnDeleteSelectedBookings.setEnabled(true);
             btnDeleteSelectedBookings.setText(
                     hasSelection
                             ? "Delete Selected (" + selectedCount + ")"
@@ -872,23 +872,6 @@ public class HomeActivity extends AppCompatActivity {
                 arrivalAt,
                 departureAt
         );
-    }
-
-    private void handleCreateBookingResult(Intent data) {
-        boolean bookingCreated = data.getBooleanExtra(EXTRA_BOOKING_CREATED, false);
-
-        if (bookingCreated) {
-            String createdStatus = data.getStringExtra(EXTRA_CREATED_STATUS);
-            viewModel.invalidateBookingPageOneCacheForMutation();
-            if (!isBlank(createdStatus)) {
-                selectedStatus = BookingStatus.normalizeForList(createdStatus);
-                updateStatusToggleUi();
-                updateFilterTitle();
-                applyCurrentFilter();
-                return;
-            }
-            viewModel.refreshBookings();
-        }
     }
 
     private boolean isBlank(String value) {
@@ -939,13 +922,4 @@ public class HomeActivity extends AppCompatActivity {
                     }
             );
 
-    private final ActivityResultLauncher<Intent> createBookingLauncher =
-            registerForActivityResult(
-                    new ActivityResultContracts.StartActivityForResult(),
-                    result -> {
-                        if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                            handleCreateBookingResult(result.getData());
-                        }
-                    }
-            );
 }
