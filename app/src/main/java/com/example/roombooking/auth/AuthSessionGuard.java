@@ -4,24 +4,31 @@ import android.app.Activity;
 import android.content.Intent;
 
 import com.example.roombooking.booking.LandingActivity;
-import com.example.roombooking.requester.RequesterLandingActivity;
 
 public final class AuthSessionGuard {
 
     public static final String EXTRA_SESSION_MESSAGE = "session_message";
     public static final String SESSION_EXPIRED_MESSAGE =
             "Session expired. Please login again.";
+    public static final String REQUESTER_WEB_ONLY_MESSAGE =
+            "Requester access is available from the web portal only.";
 
     private AuthSessionGuard() {
     }
 
     public static boolean ensureAuthenticated(Activity activity) {
         AuthSessionManager sessionManager = new AuthSessionManager(activity);
-        if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
+        if (sessionManager.isAdminLike() && sessionManager.isApproved()) {
             return true;
         }
 
-        String message = sessionManager.isSessionExpired() ? SESSION_EXPIRED_MESSAGE : "";
+        boolean requesterSession = sessionManager.isRequester();
+        String message = requesterSession
+                ? REQUESTER_WEB_ONLY_MESSAGE
+                : sessionManager.isSessionExpired() ? SESSION_EXPIRED_MESSAGE : "";
+        if (requesterSession) {
+            sessionManager.clearSession();
+        }
         openLogin(activity, message);
         return false;
     }
@@ -38,33 +45,26 @@ public final class AuthSessionGuard {
             return true;
         }
 
-        openRequesterLanding(activity);
+        sessionManager.clearSession();
+        openLogin(activity, REQUESTER_WEB_ONLY_MESSAGE);
         return false;
     }
 
     public static boolean ensureRequester(Activity activity) {
         AuthSessionManager sessionManager = new AuthSessionManager(activity);
-        if (!sessionManager.isLoggedIn() || !sessionManager.isApproved()) {
-            String message = sessionManager.isSessionExpired() ? SESSION_EXPIRED_MESSAGE : "";
-            openLogin(activity, message);
-            return false;
-        }
-
-        if (sessionManager.isRequester()) {
-            return true;
-        }
-
-        openAdminLanding(activity);
+        sessionManager.clearSession();
+        openLogin(activity, REQUESTER_WEB_ONLY_MESSAGE);
         return false;
     }
 
     public static void openLandingForSession(Activity activity) {
         AuthSessionManager sessionManager = new AuthSessionManager(activity);
-        if (sessionManager.isRequester() && sessionManager.isApproved()) {
-            openRequesterLanding(activity);
-        } else {
+        if (sessionManager.isAdminLike() && sessionManager.isApproved()) {
             openAdminLanding(activity);
+            return;
         }
+        sessionManager.clearSession();
+        openLogin(activity, REQUESTER_WEB_ONLY_MESSAGE);
     }
 
     public static void openLogin(Activity activity, String message) {
@@ -84,10 +84,4 @@ public final class AuthSessionGuard {
         activity.finish();
     }
 
-    private static void openRequesterLanding(Activity activity) {
-        Intent intent = new Intent(activity, RequesterLandingActivity.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        activity.startActivity(intent);
-        activity.finish();
-    }
 }

@@ -76,6 +76,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
     private Call<ApiResponse<List<BookingRequestItem>>> requestCall;
     private Call<ApiResponse<PaginatedData<RoomItem>>> roomsCall;
+    private Call<ApiResponse<BookingRequestItem>> detailCall;
     private Call<ApiResponse<BookingRequestItem>> decisionCall;
     private Call<ApiResponse<BookingRequestItem>> deleteCall;
     private long lastSuccessfulRefreshAt = 0L;
@@ -398,9 +399,9 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
 
         card.addView(content);
         card.setClickable(true);
-        card.setOnClickListener(v -> openCreateBookingForRequest(item));
+        card.setOnClickListener(v -> loadRequestDetails(item, true));
         card.setOnLongClickListener(v -> {
-            showBookingRequestDetails(item);
+            loadRequestDetails(item, false);
             return true;
         });
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
@@ -410,6 +411,66 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         params.setMargins(0, 0, 0, dp(12));
         card.setLayoutParams(params);
         return card;
+    }
+
+    private void loadRequestDetails(BookingRequestItem item, boolean openBookingForm) {
+        if (item == null || detailCall != null) {
+            return;
+        }
+
+        tvStatus.setText("Opening request...");
+        detailCall = RetrofitClient.getApiService(getApplicationContext())
+                .getAdminBookingRequest(item.getId());
+        detailCall.enqueue(new Callback<ApiResponse<BookingRequestItem>>() {
+            @Override
+            public void onResponse(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Response<ApiResponse<BookingRequestItem>> response
+            ) {
+                if (call != detailCall) return;
+                detailCall = null;
+                tvStatus.setText("");
+
+                if (!response.isSuccessful()
+                        || response.body() == null
+                        || !response.body().isSuccess()
+                        || response.body().getData() == null) {
+                    Toast.makeText(
+                            AdminBookingRequestsActivity.this,
+                            ApiErrorUtils.messageFromResponse(
+                                    response,
+                                    "Booking request could not be opened."
+                            ),
+                            Toast.LENGTH_LONG
+                    ).show();
+                    return;
+                }
+
+                BookingRequestItem detail = response.body().getData();
+                if (openBookingForm) {
+                    openCreateBookingForRequest(detail);
+                } else {
+                    showBookingRequestDetails(detail);
+                }
+            }
+
+            @Override
+            public void onFailure(
+                    @NonNull Call<ApiResponse<BookingRequestItem>> call,
+                    @NonNull Throwable throwable
+            ) {
+                if (call != detailCall) return;
+                detailCall = null;
+                tvStatus.setText("");
+                if (!call.isCanceled()) {
+                    Toast.makeText(
+                            AdminBookingRequestsActivity.this,
+                            ApiErrorUtils.messageFromThrowable(throwable),
+                            Toast.LENGTH_LONG
+                    ).show();
+                }
+            }
+        });
     }
 
     private void openCreateBookingForRequest(BookingRequestItem item) {
@@ -433,6 +494,7 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_EMAIL, item.getVisitorEmail());
         intent.putExtra(CreateBookingActivity.EXTRA_VISITOR_CATEGORY, item.getVisitorCategory());
         intent.putExtra(CreateBookingActivity.EXTRA_PURPOSE_OF_VISIT, item.getPurposeOfVisit());
+        intent.putExtra(CreateBookingActivity.EXTRA_ROOM_PREFERENCE_NOTE, item.getRoomPreferenceNote());
         intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_TYPE, item.getBudgetHeadType());
         intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_VALUE, item.getBudgetHeadValue());
         intent.putExtra(CreateBookingActivity.EXTRA_BUDGET_HEAD_NAME, item.getBudgetHeadName());
@@ -486,7 +548,8 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
         content.addView(ListScreenUiHelper.sectionHeader(this, "Schedule & Room"));
         content.addView(ListScreenUiHelper.detailRow(this, "Arrival", DateTimeUtils.formatUtcToLocal(item.getArrivalAt())));
         content.addView(ListScreenUiHelper.detailRow(this, "Departure", DateTimeUtils.formatUtcToLocal(item.getDepartureAt())));
-        content.addView(ListScreenUiHelper.detailRow(this, "Room Preference", preferenceText(item)));
+        content.addView(ListScreenUiHelper.detailRow(this, "Preferred Room", preferenceText(item)));
+        content.addView(ListScreenUiHelper.detailRow(this, "Room Preference Note", item.getRoomPreferenceNote()));
         content.addView(ListScreenUiHelper.detailRow(this, "Assigned Room", item.getAssignedRoomName()));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Required", item.isAttenderRequired() ? "Yes" : "No"));
         content.addView(ListScreenUiHelper.detailRow(this, "Attender Shift", attenderShiftText(item)));
@@ -924,10 +987,6 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
             if (builder.length() > 0) builder.append(" / ");
             builder.append(item.getPreferredRoomName());
         }
-        if (!isBlank(item.getRoomPreferenceNote())) {
-            if (builder.length() > 0) builder.append(" - ");
-            builder.append(item.getRoomPreferenceNote());
-        }
         return builder.toString();
     }
 
@@ -1036,10 +1095,12 @@ public class AdminBookingRequestsActivity extends AppCompatActivity {
     protected void onDestroy() {
         cancel(requestCall);
         cancel(roomsCall);
+        cancel(detailCall);
         cancel(decisionCall);
         cancel(deleteCall);
         requestCall = null;
         roomsCall = null;
+        detailCall = null;
         decisionCall = null;
         deleteCall = null;
         super.onDestroy();

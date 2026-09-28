@@ -12,7 +12,6 @@ import com.example.roombooking.R;
 import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.auth.LoginActivity;
 import com.example.roombooking.booking.LandingActivity;
-import com.example.roombooking.requester.RequesterLandingActivity;
 import com.example.roombooking.room.RoomRepository;
 import com.example.roombooking.utils.InternetErrorBanner;
 
@@ -93,6 +92,12 @@ public class SplashActivity extends AppCompatActivity {
 
         if (!canMoveAhead) return;
 
+        if (authSessionManager.isRequester()) {
+            authSessionManager.clearSession();
+            navigateToLogin();
+            return;
+        }
+
         if (!authSessionManager.isLoggedIn() || !authSessionManager.isApproved()) {
             navigateToLogin();
             return;
@@ -106,10 +111,7 @@ public class SplashActivity extends AppCompatActivity {
 
         navigationDone = true;
 
-        Class<?> destination = authSessionManager.isRequester()
-                ? RequesterLandingActivity.class
-                : LandingActivity.class;
-        Intent intent = new Intent(SplashActivity.this, destination);
+        Intent intent = new Intent(SplashActivity.this, LandingActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
 
         startActivity(intent);

@@ -32,11 +32,6 @@ import retrofit2.Response;
 
 public class LoginActivity extends AppCompatActivity {
 
-    public static final String EXTRA_SELECTED_ROLE = "selected_role";
-
-    private TextView tabAdmin;
-    private TextView tabRequester;
-    private TextView tvRoleContext;
     private EditText etEmail;
     private EditText etPassword;
     private AppCompatButton btnLogin;
@@ -47,13 +42,14 @@ public class LoginActivity extends AppCompatActivity {
 
     private AuthSessionManager sessionManager;
     private Call<ApiResponse<AuthResponse>> loginCall;
-    private String selectedRole = AuthSessionManager.ROLE_ADMIN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sessionManager = new AuthSessionManager(getApplicationContext());
-        if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
+        if (sessionManager.isRequester()) {
+            sessionManager.clearSession();
+        } else if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
             AuthSessionGuard.openLandingForSession(this);
             return;
         }
@@ -63,16 +59,12 @@ public class LoginActivity extends AppCompatActivity {
 
         bindViews();
         RequiredMarkStyler.applyTo(rootView);
-        selectRole(getIntent().getStringExtra(EXTRA_SELECTED_ROLE));
         setupListeners();
         showSessionMessageIfNeeded();
     }
 
     private void bindViews() {
         rootView = findViewById(R.id.rootView);
-        tabAdmin = findViewById(R.id.tabAdmin);
-        tabRequester = findViewById(R.id.tabRequester);
-        tvRoleContext = findViewById(R.id.tvRoleContext);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         btnLogin = findViewById(R.id.btnLogin);
@@ -83,13 +75,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnLogin.setOnClickListener(v -> login());
-        tabAdmin.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_ADMIN));
-        tabRequester.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_REQUESTER));
-        tvSignup.setOnClickListener(v -> {
-            Intent intent = new Intent(this, SignupActivity.class);
-            intent.putExtra(EXTRA_SELECTED_ROLE, selectedRole);
-            startActivity(intent);
-        });
+        tvSignup.setOnClickListener(v ->
+                startActivity(new Intent(this, SignupActivity.class))
+        );
         setupKeyboardNavigation();
         setupFocusScroll();
         PasswordVisibilityToggle.attach(etPassword);
@@ -123,26 +111,6 @@ public class LoginActivity extends AppCompatActivity {
         etPassword.setOnFocusChangeListener(listener);
     }
 
-    private void selectRole(String role) {
-        selectedRole = AuthSessionManager.ROLE_REQUESTER.equals(role)
-                ? AuthSessionManager.ROLE_REQUESTER
-                : AuthSessionManager.ROLE_ADMIN;
-
-        boolean isAdmin = AuthSessionManager.ROLE_ADMIN.equals(selectedRole);
-        tabAdmin.setBackgroundResource(isAdmin
-                ? R.drawable.bg_create_booking_primary_button
-                : R.drawable.bg_create_booking_info);
-        tabRequester.setBackgroundResource(isAdmin
-                ? R.drawable.bg_create_booking_info
-                : R.drawable.bg_create_booking_primary_button);
-        tabAdmin.setTextColor(getColor(isAdmin ? R.color.white : R.color.detail_text_secondary));
-        tabRequester.setTextColor(getColor(isAdmin ? R.color.detail_text_secondary : R.color.white));
-        tvRoleContext.setText(isAdmin
-                ? R.string.logging_in_as_admin
-                : R.string.logging_in_as_requester);
-        hideError();
-    }
-
     private void showSessionMessageIfNeeded() {
         String message = getIntent().getStringExtra(AuthSessionGuard.EXTRA_SESSION_MESSAGE);
         if (!TextUtils.isEmpty(message)) {
@@ -163,10 +131,13 @@ public class LoginActivity extends AppCompatActivity {
         }
 
         setLoading(true);
-        LoginRequest request = new LoginRequest(email, password, selectedRole);
-        loginCall = AuthSessionManager.ROLE_REQUESTER.equals(selectedRole)
-                ? RetrofitClient.getAuthApiService(getApplicationContext()).requesterLogin(request)
-                : RetrofitClient.getAuthApiService(getApplicationContext()).adminLogin(request);
+        LoginRequest request = new LoginRequest(
+                email,
+                password,
+                AuthSessionManager.ROLE_ADMIN
+        );
+        loginCall = RetrofitClient.getAuthApiService(getApplicationContext())
+                .adminLogin(request);
         loginCall.enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
             public void onResponse(

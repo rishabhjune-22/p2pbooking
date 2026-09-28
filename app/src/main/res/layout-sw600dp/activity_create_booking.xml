@@ -146,6 +146,18 @@
                     android:textColor="@color/create_booking_text_secondary" />
 
                 <TextView
+                    android:id="@+id/tvRoomPreferenceNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@drawable/bg_room_preference_note"
+                    android:padding="@dimen/space_12"
+                    android:textColor="#5D4700"
+                    android:textSize="@dimen/text_14"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"

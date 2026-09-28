@@ -8,7 +8,6 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -32,18 +31,11 @@ import retrofit2.Response;
 
 public class SignupActivity extends AppCompatActivity {
 
-    private TextView tabAdmin;
-    private TextView tabRequester;
-    private TextView tvRoleContext;
     private EditText etName;
     private EditText etEmail;
     private EditText etPassword;
     private EditText etConfirmPassword;
     private EditText etAdminCode;
-    private EditText etDesignation;
-    private EditText etDepartment;
-    private EditText etMobile;
-    private LinearLayout layoutRequesterProfile;
     private AppCompatButton btnSignup;
     private TextView tvLogin;
     private TextView tvError;
@@ -52,13 +44,14 @@ public class SignupActivity extends AppCompatActivity {
 
     private AuthSessionManager sessionManager;
     private Call<ApiResponse<AuthResponse>> signupCall;
-    private String selectedRole = AuthSessionManager.ROLE_ADMIN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sessionManager = new AuthSessionManager(getApplicationContext());
-        if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
+        if (sessionManager.isRequester()) {
+            sessionManager.clearSession();
+        } else if (sessionManager.isLoggedIn() && sessionManager.isApproved()) {
             AuthSessionGuard.openLandingForSession(this);
             return;
         }
@@ -68,24 +61,16 @@ public class SignupActivity extends AppCompatActivity {
 
         bindViews();
         RequiredMarkStyler.applyTo(rootView);
-        selectRole(getIntent().getStringExtra(LoginActivity.EXTRA_SELECTED_ROLE));
         setupListeners();
     }
 
     private void bindViews() {
         rootView = findViewById(R.id.rootView);
-        tabAdmin = findViewById(R.id.tabAdmin);
-        tabRequester = findViewById(R.id.tabRequester);
-        tvRoleContext = findViewById(R.id.tvRoleContext);
         etName = findViewById(R.id.etName);
         etEmail = findViewById(R.id.etEmail);
         etPassword = findViewById(R.id.etPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
         etAdminCode = findViewById(R.id.etAdminCode);
-        etDesignation = findViewById(R.id.etDesignation);
-        etDepartment = findViewById(R.id.etDepartment);
-        etMobile = findViewById(R.id.etMobile);
-        layoutRequesterProfile = findViewById(R.id.layoutRequesterProfile);
         btnSignup = findViewById(R.id.btnSignup);
         tvLogin = findViewById(R.id.tvLogin);
         tvError = findViewById(R.id.tvError);
@@ -94,8 +79,6 @@ public class SignupActivity extends AppCompatActivity {
 
     private void setupListeners() {
         btnSignup.setOnClickListener(v -> signup());
-        tabAdmin.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_ADMIN));
-        tabRequester.setOnClickListener(v -> selectRole(AuthSessionManager.ROLE_REQUESTER));
         tvLogin.setOnClickListener(v -> finish());
         setupKeyboardNavigation();
         setupFocusScroll();
@@ -128,36 +111,12 @@ public class SignupActivity extends AppCompatActivity {
         });
         etConfirmPassword.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                focusAndScroll(AuthSessionManager.ROLE_ADMIN.equals(selectedRole)
-                        ? etAdminCode
-                        : etDesignation);
-                return true;
-            }
-            return false;
-        });
-        etDesignation.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                focusAndScroll(etDepartment);
-                return true;
-            }
-            return false;
-        });
-        etDepartment.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_NEXT) {
-                focusAndScroll(etMobile);
+                focusAndScroll(etAdminCode);
                 return true;
             }
             return false;
         });
         etAdminCode.setOnEditorActionListener((v, actionId, event) -> {
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                hideKeyboard();
-                signup();
-                return true;
-            }
-            return false;
-        });
-        etMobile.setOnEditorActionListener((v, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_DONE) {
                 hideKeyboard();
                 signup();
@@ -178,32 +137,6 @@ public class SignupActivity extends AppCompatActivity {
         etPassword.setOnFocusChangeListener(listener);
         etConfirmPassword.setOnFocusChangeListener(listener);
         etAdminCode.setOnFocusChangeListener(listener);
-        etDesignation.setOnFocusChangeListener(listener);
-        etDepartment.setOnFocusChangeListener(listener);
-        etMobile.setOnFocusChangeListener(listener);
-    }
-
-    private void selectRole(String role) {
-        selectedRole = AuthSessionManager.ROLE_REQUESTER.equals(role)
-                ? AuthSessionManager.ROLE_REQUESTER
-                : AuthSessionManager.ROLE_ADMIN;
-
-        boolean isAdmin = AuthSessionManager.ROLE_ADMIN.equals(selectedRole);
-        tabAdmin.setBackgroundResource(isAdmin
-                ? R.drawable.bg_create_booking_primary_button
-                : R.drawable.bg_create_booking_info);
-        tabRequester.setBackgroundResource(isAdmin
-                ? R.drawable.bg_create_booking_info
-                : R.drawable.bg_create_booking_primary_button);
-        tabAdmin.setTextColor(getColor(isAdmin ? R.color.white : R.color.detail_text_secondary));
-        tabRequester.setTextColor(getColor(isAdmin ? R.color.detail_text_secondary : R.color.white));
-        tvRoleContext.setText(isAdmin
-                ? R.string.creating_admin_account
-                : R.string.creating_requester_account);
-        etAdminCode.setVisibility(isAdmin ? View.VISIBLE : View.GONE);
-        layoutRequesterProfile.setVisibility(isAdmin ? View.GONE : View.VISIBLE);
-        rootView.post(() -> rootView.smoothScrollTo(0, 0));
-        hideError();
     }
 
     private void signup() {
@@ -216,9 +149,6 @@ public class SignupActivity extends AppCompatActivity {
         String password = text(etPassword);
         String confirmPassword = text(etConfirmPassword);
         String adminCode = text(etAdminCode);
-        String designation = text(etDesignation);
-        String department = text(etDepartment);
-        String mobile = text(etMobile);
         if (!validate(name, email, password, confirmPassword, adminCode)) {
             return;
         }
@@ -230,13 +160,12 @@ public class SignupActivity extends AppCompatActivity {
                 password,
                 confirmPassword,
                 adminCode,
-                designation,
-                department,
-                mobile
+                "",
+                "",
+                ""
         );
-        signupCall = AuthSessionManager.ROLE_REQUESTER.equals(selectedRole)
-                ? RetrofitClient.getAuthApiService(getApplicationContext()).requesterSignup(request)
-                : RetrofitClient.getAuthApiService(getApplicationContext()).adminSignup(request);
+        signupCall = RetrofitClient.getAuthApiService(getApplicationContext())
+                .adminSignup(request);
         signupCall.enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
             public void onResponse(
@@ -261,9 +190,7 @@ public class SignupActivity extends AppCompatActivity {
                 AuthResponse authResponse = response.body().getData();
                 String message = response.body().getMessage();
                 if (TextUtils.isEmpty(message)) {
-                    message = AuthSessionManager.ROLE_ADMIN.equals(selectedRole)
-                            ? getString(R.string.message_admin_signup_pending)
-                            : getString(R.string.message_requester_signup_pending);
+                    message = getString(R.string.message_admin_signup_pending);
                 }
 
                 if (!authResponse.hasTokens()) {
@@ -340,7 +267,7 @@ public class SignupActivity extends AppCompatActivity {
             return false;
         }
 
-        if (AuthSessionManager.ROLE_ADMIN.equals(selectedRole) && adminCode.isEmpty()) {
+        if (adminCode.isEmpty()) {
             showError(getString(R.string.error_admin_code_required));
             focusAndScroll(etAdminCode);
             return false;
@@ -359,11 +286,6 @@ public class SignupActivity extends AppCompatActivity {
         etPassword.setEnabled(!loading);
         etConfirmPassword.setEnabled(!loading);
         etAdminCode.setEnabled(!loading);
-        etDesignation.setEnabled(!loading);
-        etDepartment.setEnabled(!loading);
-        etMobile.setEnabled(!loading);
-        tabAdmin.setEnabled(!loading);
-        tabRequester.setEnabled(!loading);
         btnSignup.setText(loading ? R.string.action_creating_account : R.string.action_create_account);
     }
 

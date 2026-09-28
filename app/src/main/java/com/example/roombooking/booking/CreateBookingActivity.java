@@ -94,6 +94,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     public static final String EXTRA_VISITOR_EMAIL = "visitor_email";
     public static final String EXTRA_VISITOR_CATEGORY = "visitor_category";
     public static final String EXTRA_PURPOSE_OF_VISIT = "purpose_of_visit";
+    public static final String EXTRA_ROOM_PREFERENCE_NOTE = "room_preference_note";
     public static final String EXTRA_BUDGET_HEAD_TYPE = "budget_head_type";
     public static final String EXTRA_BUDGET_HEAD_VALUE = "budget_head_value";
     public static final String EXTRA_BUDGET_HEAD_NAME = "budget_head_name";
@@ -120,6 +121,7 @@ public class CreateBookingActivity extends AppCompatActivity {
     private EditText etDepartureDT;
     private EditText etPurpose;
     private EditText etRemarks;
+    private TextView tvRoomPreferenceNote;
 
     private EditText etRequestorName;
     private EditText etRequestorDesignation;
@@ -237,6 +239,7 @@ public class CreateBookingActivity extends AppCompatActivity {
         etDepartureDT = findViewById(R.id.etDepartureDT);
         etPurpose = findViewById(R.id.etPurpose);
         etRemarks = findViewById(R.id.etRemarks);
+        tvRoomPreferenceNote = findViewById(R.id.tvRoomPreferenceNote);
 
         etRequestorName = findViewById(R.id.etRequestorName);
         etRequestorDesignation = findViewById(R.id.etRequestorDesignation);
@@ -574,6 +577,13 @@ public class CreateBookingActivity extends AppCompatActivity {
         etVisitorEmail.setText(intent.getStringExtra(EXTRA_VISITOR_EMAIL));
         etPurpose.setText(intent.getStringExtra(EXTRA_PURPOSE_OF_VISIT));
         etRemarks.setText(intent.getStringExtra(EXTRA_REMARKS));
+        String roomPreferenceNote = safeString(intent.getStringExtra(EXTRA_ROOM_PREFERENCE_NOTE));
+        if (isBlank(roomPreferenceNote)) {
+            tvRoomPreferenceNote.setText("Requester Room Preference\nNo preference provided");
+        } else {
+            tvRoomPreferenceNote.setText("Requester Room Preference\n" + roomPreferenceNote);
+        }
+        tvRoomPreferenceNote.setVisibility(View.VISIBLE);
         prefillBudgetHeadFromIntent(intent);
 
         etRequestorName.setText(intent.getStringExtra(EXTRA_REQUESTOR_NAME));

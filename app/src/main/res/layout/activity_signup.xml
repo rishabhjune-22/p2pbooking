@@ -54,45 +54,11 @@
                 android:textColor="@color/detail_text_secondary"
                 android:textSize="@dimen/text_14" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_20"
-                android:background="@drawable/bg_create_booking_info"
-                android:orientation="horizontal"
-                android:padding="@dimen/space_4">
-
-                <TextView
-                    android:id="@+id/tabAdmin"
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/space_42"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_create_booking_primary_button"
-                    android:gravity="center"
-                    android:text="@string/role_admin"
-                    android:textColor="@color/white"
-                    android:textSize="@dimen/text_14"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/tabRequester"
-                    android:layout_width="0dp"
-                    android:layout_height="@dimen/space_42"
-                    android:layout_marginStart="@dimen/space_4"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:text="@string/role_requester"
-                    android:textColor="@color/detail_text_secondary"
-                    android:textSize="@dimen/text_14"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
             <TextView
                 android:id="@+id/tvRoleContext"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_12"
+                android:layout_marginTop="@dimen/space_16"
                 android:gravity="center"
                 android:text="@string/creating_admin_account"
                 android:textColor="@color/detail_text_secondary"
@@ -151,42 +117,6 @@
                 android:imeOptions="actionDone"
                 android:inputType="textPassword"
                 android:singleLine="true" />
-
-            <LinearLayout
-                android:id="@+id/layoutRequesterProfile"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <EditText
-                    android:id="@+id/etDesignation"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:hint="@string/designation_optional"
-                    android:imeOptions="actionNext"
-                    android:inputType="textCapWords"
-                    android:singleLine="true" />
-
-                <EditText
-                    android:id="@+id/etDepartment"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:hint="@string/department_optional"
-                    android:imeOptions="actionNext"
-                    android:inputType="textCapWords"
-                    android:singleLine="true" />
-
-                <EditText
-                    android:id="@+id/etMobile"
-                    style="@style/CreateBookingEditText"
-                    android:layout_marginTop="@dimen/space_12"
-                    android:hint="@string/mobile_optional"
-                    android:imeOptions="actionDone"
-                    android:inputType="phone"
-                    android:singleLine="true" />
-
-            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvError"
