@@ -9,7 +9,6 @@ import android.widget.PopupMenu;
 
 import com.example.roombooking.R;
 import com.example.roombooking.admin.AdminBookingRequestsActivity;
-import com.example.roombooking.admin.AdminRequesterAccountsActivity;
 import com.example.roombooking.admin.SuperadminUserProfilesActivity;
 import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.auth.AuthSessionManager;
@@ -128,10 +127,6 @@ public final class AppToolbarMenu {
             return R.id.menuBookingRequests;
         }
 
-        if (activity instanceof AdminRequesterAccountsActivity) {
-            return R.id.menuRequesterAccounts;
-        }
-
         if (activity instanceof SuperadminUserProfilesActivity) {
             return R.id.menuUserProfiles;
         }
@@ -174,11 +169,6 @@ public final class AppToolbarMenu {
 
         if (itemId == R.id.menuBookingRequests) {
             open(activity, AdminBookingRequestsActivity.class);
-            return true;
-        }
-
-        if (itemId == R.id.menuRequesterAccounts) {
-            open(activity, AdminRequesterAccountsActivity.class);
             return true;
         }
 

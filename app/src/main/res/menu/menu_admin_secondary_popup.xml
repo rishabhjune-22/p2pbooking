@@ -14,10 +14,6 @@
         android:title="Booking Requests" />
 
     <item
-        android:id="@+id/menuRequesterAccounts"
-        android:title="Manage Requesters" />
-
-    <item
         android:id="@+id/menuLogout"
         android:title="@string/logout" />
 
