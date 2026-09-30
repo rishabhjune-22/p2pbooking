@@ -476,6 +476,17 @@ public class CreateBookingActivity extends AppCompatActivity {
                 ? intent.getIntExtra(EXTRA_BOOKING_REQUEST_ID, -1)
                 : -1;
         bookingRequestApprovalMode = bookingRequestId > 0;
+        if (bookingRequestApprovalMode) {
+            setScheduleFieldEnabled(etArrivalDT, false);
+            setScheduleFieldEnabled(etDepartureDT, false);
+        }
+    }
+
+    private void setScheduleFieldEnabled(EditText field, boolean enabled) {
+        field.setEnabled(enabled);
+        field.setClickable(enabled);
+        field.setFocusable(enabled);
+        field.setAlpha(enabled ? 1.0f : 0.7f);
     }
 
     private CreateBookingInitialData readInitialDataFromIntent() {
