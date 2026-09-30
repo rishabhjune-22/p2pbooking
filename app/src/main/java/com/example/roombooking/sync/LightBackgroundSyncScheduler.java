@@ -41,7 +41,7 @@ public final class LightBackgroundSyncScheduler {
             return;
         }
 
-        if (!sessionManager.isAdminLike() && !sessionManager.isRequester()) {
+        if (!sessionManager.isAdminLike()) {
             WorkManager.getInstance(appContext).cancelUniqueWork(UNIQUE_WORK_NAME);
             AppDiagnostics.logEvent("background_sync_skipped_unsupported_role");
             return;

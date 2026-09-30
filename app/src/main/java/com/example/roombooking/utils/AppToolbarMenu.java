@@ -7,6 +7,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.PopupMenu;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.example.roombooking.R;
 import com.example.roombooking.admin.AdminBookingRequestsActivity;
 import com.example.roombooking.admin.SuperadminUserProfilesActivity;
@@ -14,8 +16,7 @@ import com.example.roombooking.auth.AuthLogoutManager;
 import com.example.roombooking.auth.AuthSessionManager;
 import com.example.roombooking.booking.LandingActivity;
 import com.example.roombooking.home.HomeActivity;
-import com.example.roombooking.requester.RequesterLandingActivity;
-import com.example.roombooking.requester.RequesterRequestsActivity;
+import com.example.roombooking.notification.WorkflowNotificationPoller;
 import com.google.android.material.appbar.MaterialToolbar;
 
 public final class AppToolbarMenu {
@@ -31,30 +32,12 @@ public final class AppToolbarMenu {
         setup(activity, toolbar, R.menu.menu_landing_popup, currentAdminMenuItem(activity));
     }
 
-    public static void setupRequester(Activity activity, MaterialToolbar toolbar) {
-        setup(
-                activity,
-                toolbar,
-                R.menu.menu_requester_secondary_popup,
-                currentRequesterMenuItem(activity)
-        );
-    }
-
     public static void setupAdminSecondary(Activity activity, MaterialToolbar toolbar) {
         setupAdmin(activity, toolbar);
     }
 
-    public static void setupRequesterSecondary(Activity activity, MaterialToolbar toolbar) {
-        setupRequester(activity, toolbar);
-    }
-
     public static void setupForCurrentRoleSecondary(Activity activity, MaterialToolbar toolbar) {
-        AuthSessionManager sessionManager = new AuthSessionManager(activity);
-        if (sessionManager.isRequester()) {
-            setupRequester(activity, toolbar);
-        } else {
-            setupAdmin(activity, toolbar);
-        }
+        setupAdmin(activity, toolbar);
     }
 
     private static void setup(
@@ -64,6 +47,7 @@ public final class AppToolbarMenu {
             int currentMenuItemId
     ) {
         ensureToolbarMenu(toolbar);
+        setupNotificationPolling(activity, toolbar);
         toolbar.post(() -> tintMenuIcon(activity, toolbar));
         toolbar.setOnMenuItemClickListener(item -> {
             if (item.getItemId() != R.id.actionBreadcrumb) {
@@ -75,10 +59,30 @@ public final class AppToolbarMenu {
                     activity,
                     menuView != null ? menuView : toolbar,
                     popupMenuRes,
-                    currentMenuItemId
+                    currentMenuItemId,
+                    notificationPoller(toolbar)
             );
             return true;
         });
+    }
+
+    private static void setupNotificationPolling(Activity activity, MaterialToolbar toolbar) {
+        if (!(activity instanceof AppCompatActivity)
+                || toolbar.getTag() instanceof WorkflowNotificationPoller) {
+            return;
+        }
+        WorkflowNotificationPoller poller = new WorkflowNotificationPoller(
+                (AppCompatActivity) activity,
+                toolbar
+        );
+        toolbar.setTag(poller);
+
+        if (activity instanceof AdminBookingRequestsActivity) {
+            poller.markCategoryRead("booking_requests");
+        } else if (activity instanceof SuperadminUserProfilesActivity) {
+            poller.markCategoryRead("requester_accounts");
+            poller.markCategoryRead("admin_accounts");
+        }
     }
 
     private static void ensureToolbarMenu(MaterialToolbar toolbar) {
@@ -99,10 +103,19 @@ public final class AppToolbarMenu {
             Activity activity,
             View anchor,
             int popupMenuRes,
-            int currentMenuItemId
+            int currentMenuItemId,
+            WorkflowNotificationPoller notificationPoller
     ) {
         PopupMenu popupMenu = new PopupMenu(activity, anchor, Gravity.END);
         popupMenu.getMenuInflater().inflate(popupMenuRes, popupMenu.getMenu());
+        MenuItem bookingRequestsItem = popupMenu.getMenu().findItem(R.id.menuBookingRequests);
+        if (bookingRequestsItem != null && notificationPoller != null) {
+            int count = notificationPoller.getBookingRequestsCount();
+            bookingRequestsItem.setTitle(
+                    count > 0 ? "Booking Requests (" + (count > 99 ? "99+" : count) + ")"
+                            : "Booking Requests"
+            );
+        }
         AuthSessionManager sessionManager = new AuthSessionManager(activity);
         if (!sessionManager.isSuperadmin()) {
             popupMenu.getMenu().removeItem(R.id.menuUserProfiles);
@@ -112,6 +125,13 @@ public final class AppToolbarMenu {
         }
         popupMenu.setOnMenuItemClickListener(item -> handleItem(activity, item.getItemId()));
         popupMenu.show();
+    }
+
+    private static WorkflowNotificationPoller notificationPoller(MaterialToolbar toolbar) {
+        Object tag = toolbar.getTag();
+        return tag instanceof WorkflowNotificationPoller
+                ? (WorkflowNotificationPoller) tag
+                : null;
     }
 
     private static int currentAdminMenuItem(Activity activity) {
@@ -134,29 +154,7 @@ public final class AppToolbarMenu {
         return 0;
     }
 
-    private static int currentRequesterMenuItem(Activity activity) {
-        if (activity instanceof RequesterLandingActivity) {
-            return R.id.menuRequesterHome;
-        }
-
-        if (activity instanceof RequesterRequestsActivity) {
-            return R.id.menuMyRequests;
-        }
-
-        return 0;
-    }
-
     private static boolean handleItem(Activity activity, int itemId) {
-        if (itemId == R.id.menuRequesterHome) {
-            open(activity, RequesterLandingActivity.class);
-            return true;
-        }
-
-        if (itemId == R.id.menuMyRequests) {
-            open(activity, RequesterRequestsActivity.class);
-            return true;
-        }
-
         if (itemId == R.id.menuAvailability) {
             open(activity, LandingActivity.class);
             return true;

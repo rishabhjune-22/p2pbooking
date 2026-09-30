@@ -51,10 +51,8 @@ public final class AuthInterceptor implements Interceptor {
     private boolean isAuthEndpoint(Request request) {
         String path = request.url().encodedPath();
         return path.startsWith("/api/auth/admin/login/")
-                || path.startsWith("/api/auth/requester/login/")
                 || path.startsWith("/api/auth/login/")
                 || path.startsWith("/api/auth/admin/signup/")
-                || path.startsWith("/api/auth/requester/signup/")
                 || path.startsWith("/api/auth/signup/")
                 || path.startsWith("/api/auth/token/refresh/")
                 || path.startsWith("/api/auth/logout/");

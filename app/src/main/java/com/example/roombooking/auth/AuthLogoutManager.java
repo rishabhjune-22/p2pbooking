@@ -16,8 +16,6 @@ import com.example.roombooking.booking.LandingViewModel;
 import com.example.roombooking.cache.LocalJsonCacheStore;
 import com.example.roombooking.home.HomeViewModel;
 import com.example.roombooking.model.common.ApiResponse;
-import com.example.roombooking.requester.RequesterAvailabilityRepository;
-import com.example.roombooking.requester.RequesterLandingViewModel;
 import com.example.roombooking.sync.LightBackgroundSyncScheduler;
 import com.example.roombooking.utils.ListScreenCache;
 
@@ -88,11 +86,9 @@ public final class AuthLogoutManager {
         LocalJsonCacheStore cacheStore = new LocalJsonCacheStore(appContext);
         BookingRepository.clearFirstPageCaches(cacheStore);
         AvailabilityRepository.clearAvailabilityCaches(cacheStore);
-        RequesterAvailabilityRepository.clearRequesterAvailabilityCaches(cacheStore);
         ListScreenCache.clearListScreenCaches(cacheStore);
         HomeViewModel.clearInMemoryFirstPageCacheForLogout();
         LandingViewModel.clearInMemoryAvailabilityCachesForLogout();
-        RequesterLandingViewModel.clearInMemoryAvailabilityCachesForLogout();
 
         WorkManager.getInstance(appContext)
                 .cancelUniqueWork(LightBackgroundSyncScheduler.UNIQUE_WORK_NAME);

@@ -16,8 +16,8 @@ import com.example.roombooking.model.booking.BookingMailTemplate;
 import com.example.roombooking.model.common.ApiResponse;
 import com.example.roombooking.model.common.PaginatedData;
 import com.example.roombooking.model.room.RoomItem;
-import com.example.roombooking.requester.BookingRequestCreateRequest;
 import com.example.roombooking.requester.BookingRequestItem;
+import com.example.roombooking.notification.WorkflowNotificationCounts;
 
 import java.util.List;
 import java.util.Map;
@@ -33,6 +33,14 @@ import retrofit2.http.Path;
 import retrofit2.http.Query;
 
 public interface ApiService {
+
+    @GET("api/workflow-notification-counts/")
+    Call<ApiResponse<WorkflowNotificationCounts>> getWorkflowNotificationCounts();
+
+    @POST("api/workflow-notifications/mark-read/")
+    Call<ApiResponse<WorkflowNotificationCounts>> markWorkflowNotificationsRead(
+            @Body Map<String, List<String>> request
+    );
 
     @GET("api/bookings/")
     Call<ApiResponse<PaginatedData<BookingItem>>> getBookings(
@@ -109,47 +117,6 @@ public interface ApiService {
             @Query("arrival_date") String arrivalDate,
             @Query("departure_date") String departureDate,
             @Query("prefix") String prefix
-    );
-
-    @GET("api/requester/availability/")
-    Call<ApiResponse<RoomAvailabilityResponse>> getRequesterAvailability(
-            @Query("month") int month,
-            @Query("year") int year,
-            @Query("prefix") String prefix
-    );
-
-    @GET("api/requester/available-rooms-range/")
-    Call<ApiResponse<AvailableRoomsRangeResponse>> getRequesterAvailableRoomsByDateRange(
-            @Query("arrival_date") String arrivalDate,
-            @Query("departure_date") String departureDate,
-            @Query("prefix") String prefix
-    );
-
-    @POST("api/requester/booking-requests/")
-    Call<ApiResponse<BookingRequestItem>> createRequesterBookingRequest(
-            @Body BookingRequestCreateRequest request
-    );
-
-    @GET("api/requester/booking-requests/")
-    Call<ApiResponse<List<BookingRequestItem>>> getRequesterBookingRequests(
-            @Query("status") String status
-    );
-
-    @GET("api/requester/booking-requests/{pk}/")
-    Call<ApiResponse<BookingRequestItem>> getRequesterBookingRequest(
-            @Path("pk") int requestId
-    );
-
-    @PATCH("api/requester/booking-requests/{pk}/")
-    Call<ApiResponse<BookingRequestItem>> updateRequesterBookingRequest(
-            @Path("pk") int requestId,
-            @Body BookingRequestCreateRequest request
-    );
-
-    @HTTP(method = "DELETE", path = "api/requester/booking-requests/{pk}/delete/", hasBody = true)
-    Call<ApiResponse<BookingRequestItem>> deleteRequesterBookingRequest(
-            @Path("pk") int requestId,
-            @Body BookingRequestDecisionRequest request
     );
 
     @GET("api/admin/booking-requests/")

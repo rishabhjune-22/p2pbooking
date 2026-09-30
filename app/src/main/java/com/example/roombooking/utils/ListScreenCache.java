@@ -10,7 +10,6 @@ public final class ListScreenCache {
     private static final String ADMIN_BOOKING_REQUESTS_PREFIX = "admin:booking_requests:";
     private static final String ADMIN_REQUESTER_ACCOUNTS_PREFIX = "admin:requester_accounts:";
     private static final String SUPERADMIN_USER_PROFILES_PREFIX = "superadmin:user_profiles:";
-    private static final String REQUESTER_MY_REQUESTS_PREFIX = "requester:my_requests:";
 
     private ListScreenCache() {
         // Utility class.
@@ -28,10 +27,6 @@ public final class ListScreenCache {
         return SUPERADMIN_USER_PROFILES_PREFIX + userId(context);
     }
 
-    public static String requesterMyRequestsKey(Context context) {
-        return REQUESTER_MY_REQUESTS_PREFIX + userId(context);
-    }
-
     public static void clearListScreenCaches(LocalJsonCacheStore cacheStore) {
         if (cacheStore == null) {
             return;
@@ -40,7 +35,6 @@ public final class ListScreenCache {
         cacheStore.deleteByPrefix(ADMIN_BOOKING_REQUESTS_PREFIX);
         cacheStore.deleteByPrefix(ADMIN_REQUESTER_ACCOUNTS_PREFIX);
         cacheStore.deleteByPrefix(SUPERADMIN_USER_PROFILES_PREFIX);
-        cacheStore.deleteByPrefix(REQUESTER_MY_REQUESTS_PREFIX);
     }
 
     public static boolean isStale(long updatedAtMillis, long freshnessWindowMs) {
