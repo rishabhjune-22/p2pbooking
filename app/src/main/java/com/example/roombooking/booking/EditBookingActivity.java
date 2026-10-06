@@ -247,6 +247,7 @@ public class EditBookingActivity extends AppCompatActivity {
     private void setupRoomSpinner() {
         roomAdapter = new RoomSpinnerAdapter(this, new ArrayList<>());
         spinnerRoom.setAdapter(roomAdapter);
+        RoomSpinnerLongPress.attach(spinnerRoom, roomAdapter);
     }
 
     private void setupGenderSpinner() {
