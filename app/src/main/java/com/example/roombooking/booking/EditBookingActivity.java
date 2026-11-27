@@ -46,7 +46,7 @@ import java.util.List;
 
 public class EditBookingActivity extends AppCompatActivity {
 
-    private static final int ATTENDER_CHARGE_PER_SHIFT = 850;
+    private static final int ATTENDER_CHARGE_PER_SHIFT = 865;
     private static final long ONE_DAY_MILLIS = 24L * 60L * 60L * 1000L;
     private static final int GAMMA_ATTACHED_ROOM_RATE = 1500;
     private static final int GAMMA_NON_ATTACHED_ROOM_RATE = 1300;

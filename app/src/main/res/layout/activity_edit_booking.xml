@@ -518,7 +518,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
                     android:alpha="0.45"
-                    android:text="Select Shift(s) * (if attender required) - Attender charges Rs 850 per chargeable shift per day"
+                    android:text="Select Shift(s) * (if attender required) - Attender charges Rs 865 per chargeable shift per day"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
@@ -569,7 +569,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_12"
-                    android:text="Attender Charges Received - Rs 850 per chargeable shift per day (Optional)"
+                    android:text="Attender Charges Received - Rs 865 per chargeable shift per day (Optional)"
                     android:textColor="@color/edit_section_title"
                     android:textStyle="bold" />
 
